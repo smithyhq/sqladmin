@@ -605,6 +605,36 @@ def test_search_query() -> None:
     assert "lower(CAST(profiles.role AS VARCHAR))" in str(stmt)
 
 
+def test_sort_multi_fields() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = [Address.id, User.id, User.name]
+
+    query = select(Address)
+    request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
+    stmt = AddressAdmin().sort_query(query, request)
+
+    stmt_str = str(stmt)
+    assert "ORDER BY users.id ASC" in stmt_str
+    assert stmt_str.count("JOIN") == 1
+
+
+def test_sort_then_search_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name"]
+        column_sortable_list = [User.id]
+
+    query = select(Address)
+    request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
+
+    stmt = AddressAdmin().sort_query(query, request)
+    stmt_after_sort = str(stmt)
+    assert stmt_after_sort.count("JOIN") == 1
+
+    stmt = AddressAdmin().search_query(stmt, "test")
+    stmt_after_search = str(stmt)
+    assert stmt_after_search.count("JOIN") == 1
+
+
 def test_expose_decorator(client: TestClient) -> None:
     class UserAdmin(ModelView, model=User):
         @expose("/profile/{pk}")

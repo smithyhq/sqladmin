@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     Union,
@@ -1148,6 +1149,83 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
         return ", ".join(field_names)
 
+    def _get_joined_entities(self, stmt: Select) -> Set[Any]:
+        """Extract all joined entity classes from a Select statement.
+
+        Args:
+            stmt: The SQLAlchemy select statement to inspect
+
+        Returns:
+            Set of joined entity classes
+        """
+        joined_entities: Set[Any] = set()
+
+        froms = stmt.get_final_froms()
+        if not froms:
+            return joined_entities
+
+        for from_clause in froms:
+            # Check if this is a Join object (has left and right attributes)
+            if not (hasattr(from_clause, "left") and hasattr(from_clause, "right")):
+                continue
+
+            # This is a Join object - recursively extract entities
+            left = from_clause.left  # type: ignore[attr-defined]
+            while hasattr(left, "left") and hasattr(left, "right"):
+                # Left side is also a Join
+                right_entity = getattr(left.right, "entity_namespace", None)  # type: ignore[attr-defined]
+                if right_entity and isinstance(right_entity, type):
+                    joined_entities.add(right_entity)
+                left = left.left  # type: ignore[attr-defined]
+
+            # Add the right side of the current join
+            right_entity = getattr(from_clause.right, "entity_namespace", None)  # type: ignore[attr-defined]
+            if right_entity and isinstance(right_entity, type):
+                joined_entities.add(right_entity)
+
+        return joined_entities
+
+    def _join_relationship_paths(
+        self,
+        stmt: Select,
+        field_path: str,
+        joined_paths: Set[str],
+    ) -> Tuple[Select, Any]:
+        """Join relationship paths and return the statement and target model.
+
+        This helper method navigates through relationship paths (e.g., 'user.profile')
+        and joins each relationship only once, tracking which paths have been joined
+        to avoid duplicate JOINs.
+
+        Args:
+            stmt: The SQLAlchemy select statement to modify
+            field_path: The field path (e.g., 'user.profile.role')
+            joined_paths: Set tracking which relationship paths have been joined
+
+        Returns:
+            Tuple of (modified statement, target model class)
+        """
+        model = self.model
+        parts = field_path.split(".")
+
+        # Get already joined entities from the statement
+        joined_entities = self._get_joined_entities(stmt)
+
+        current_path = ""
+        for part in parts[:-1]:
+            current_path = f"{current_path}.{part}" if current_path else part
+            next_model = getattr(model, part).mapper.class_
+
+            # Check if this path is already tracked OR if the entity is already joined
+            if current_path not in joined_paths and next_model not in joined_entities:
+                stmt = stmt.join(next_model)
+                joined_paths.add(current_path)
+                joined_entities.add(next_model)
+
+            model = next_model
+
+        return stmt, model
+
     def search_query(self, stmt: Select, term: str) -> Select:
         """Specify the search query given the SQLAlchemy statement
         and term to search for.
@@ -1159,15 +1237,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
         expressions = []
-        for field in self._search_fields:
-            model = self.model
-            parts = field.split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+        joined_paths: Set[str] = set()
 
-            field = getattr(model, parts[-1])
-            expressions.append(cast(field, String).ilike(f"%{term}%"))
+        for field in self._search_fields:
+            stmt, model = self._join_relationship_paths(stmt, field, joined_paths)
+            parts = field.split(".")
+            field_attr = getattr(model, parts[-1])
+            expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
         return stmt.filter(or_(*expressions))
 
@@ -1231,13 +1307,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         else:
             sort_fields = self._get_default_sort()
 
-        for sort_field, is_desc in sort_fields:
-            model = self.model
+        joined_paths: Set[str] = set()
 
-            parts = self._get_prop_name(sort_field).split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+        for sort_field, is_desc in sort_fields:
+            field_path = self._get_prop_name(sort_field)
+            stmt, model = self._join_relationship_paths(stmt, field_path, joined_paths)
+            parts = field_path.split(".")
 
             if is_desc:
                 stmt = stmt.order_by(desc(getattr(model, parts[-1])))

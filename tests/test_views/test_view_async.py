@@ -155,8 +155,8 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
-    column_sortable_list = [User.id]
+    column_searchable_list = [User.name, User.status]
+    column_sortable_list = [User.id, User.name]
     column_export_list = [User.name, User.status]
     column_formatters = {
         User.addresses_formattable: lambda m, a: [

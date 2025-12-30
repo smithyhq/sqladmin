@@ -145,7 +145,7 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
+    column_searchable_list = [User.name, User.id]
     column_sortable_list = [User.id]
     column_export_list = [User.name, User.status]
     column_formatters = {
@@ -911,3 +911,58 @@ def test_export_bad_type_is_404(client: TestClient) -> None:
 def test_export_permission(client: TestClient) -> None:
     response = client.get("/admin/movie/export/csv")
     assert response.status_code == 403
+
+
+def test_search_multi_fields_no_duplicate_joins(client: TestClient) -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = [User.id, User.name]
+
+    admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user = User(name="Alice")
+        address = Address(user=user)
+        session.add_all([user, address])
+        session.commit()
+
+    response = client.get("/admin/address/list?search=Alice")
+    assert response.status_code == 200
+
+
+def test_sort_multi_fields_no_duplicate_joins(client: TestClient) -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = [Address.id, User.id, User.name]
+
+    admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user1 = User(name="Bob")
+        user2 = User(name="Alice")
+        address1 = Address(user=user1)
+        address2 = Address(user=user2)
+        session.add_all([user1, user2, address1, address2])
+        session.commit()
+
+    response = client.get("/admin/address/list?sortBy=user.name&sort=asc")
+    assert response.status_code == 200
+
+
+def test_sort_and_search_together_no_duplicate_joins(client: TestClient) -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = [User.name, User.id]
+        column_sortable_list = [Address.id, User.id, User.name]
+
+    admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user1 = User(name="Alice")
+        user2 = User(name="Bob")
+        user3 = User(name="Charlie")
+        address1 = Address(user=user1)
+        address2 = Address(user=user2)
+        address3 = Address(user=user3)
+        session.add_all([user1, user2, user3, address1, address2, address3])
+        session.commit()
+
+    response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
+    assert response.status_code == 200

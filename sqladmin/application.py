@@ -32,6 +32,7 @@ from starlette.responses import (
 )
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE
@@ -56,6 +57,26 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+
+class RootPathMiddleware:
+    """Middleware to normalize request paths when root_path is configured.
+
+    When root_path is set but the request path doesn't include it, this middleware
+    prepends root_path to ensure proper routing for nested mounts like StaticFiles.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            path = scope["path"]
+            root_path = scope.get("root_path", "")
+            if root_path and not path.startswith(root_path):
+                scope = dict(scope)
+                scope["path"] = root_path + path
+        await self.app(scope, receive, send)
 
 
 class BaseAdmin:
@@ -99,10 +120,10 @@ class BaseAdmin:
         self.session_maker.configure(autoflush=False, autocommit=False)
         self.is_async = is_async_session_maker(self.session_maker)
 
-        middlewares = middlewares or []
+        middlewares = list(middlewares or [])
+        middlewares.append(Middleware(RootPathMiddleware))
         self.authentication_backend = authentication_backend
         if authentication_backend:
-            middlewares = list(middlewares)
             middlewares.extend(authentication_backend.middlewares)
 
         self.admin = Starlette(middleware=middlewares)

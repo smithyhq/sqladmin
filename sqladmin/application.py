@@ -60,20 +60,26 @@ logger = logging.getLogger(__name__)
 
 
 class RootPathMiddleware:
-    """Middleware to normalize request paths when root_path is configured.
+    """Middleware to prepend root_path to request path when missing.
 
-    When root_path is set but the request path doesn't include it, this middleware
-    prepends root_path to ensure proper routing for nested mounts like StaticFiles.
+    When deployed behind a reverse proxy that strips a path prefix and sets
+    root_path, Starlette's nested Mount routing breaks because scope["path"]
+    and scope["root_path"] become inconsistent. This middleware normalizes
+    the path before routing occurs.
+
+    Only rewrites requests targeting the given path_prefix to avoid
+    affecting other routes on the host application.
     """
 
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, path_prefix: str = "/admin") -> None:
         self.app = app
+        self.path_prefix = path_prefix
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
             path = scope["path"]
             root_path = scope.get("root_path", "")
-            if root_path and not path.startswith(root_path):
+            if root_path and not path.startswith(root_path) and path.startswith(self.path_prefix):
                 scope = dict(scope)
                 scope["path"] = root_path + path
         await self.app(scope, receive, send)
@@ -121,7 +127,6 @@ class BaseAdmin:
         self.is_async = is_async_session_maker(self.session_maker)
 
         middlewares = list(middlewares or [])
-        middlewares.append(Middleware(RootPathMiddleware))
         self.authentication_backend = authentication_backend
         if authentication_backend:
             middlewares.extend(authentication_backend.middlewares)
@@ -467,6 +472,7 @@ class Admin(BaseAdminView):
         self.admin.router.routes = routes
         self.admin.exception_handlers = {HTTPException: http_exception}
         self.admin.debug = debug
+        self.app.add_middleware(RootPathMiddleware, path_prefix=base_url)
         self.app.mount(base_url, app=self.admin, name="admin")
 
     @login_required

@@ -29,6 +29,16 @@ def prepare_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(engine)
 
 
+def test_root_path_in_redirect_url() -> None:
+    app = Starlette()
+    Admin(app=app, engine=engine)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/admin")
+        assert response.status_code == 200
+        assert str(response.url) == "http://testserver/api/v1/admin/"
+
+
 def test_root_path_admin_routes() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)

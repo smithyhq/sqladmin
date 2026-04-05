@@ -2,7 +2,7 @@ from typing import Generator
 
 import pytest
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
@@ -11,6 +11,8 @@ from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
+
+session_maker = sessionmaker(bind=engine)
 
 Base = declarative_base()  # type: ignore
 
@@ -118,6 +120,86 @@ def test_root_path_matches_base_url() -> None:
 
         response = client.get("/admin/statics/css/main.css")
         assert response.status_code == 200
+
+
+def test_root_path_does_not_rewrite_similar_prefix() -> None:
+    """Routes like /admin-panel should not be affected by the /admin middleware."""
+
+    def admin_panel(request: Request) -> Response:
+        return PlainTextResponse("admin-panel")
+
+    app = Starlette(routes=[Route("/admin-panel", endpoint=admin_panel)])
+    Admin(app=app, engine=engine)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/admin-panel")
+        assert response.status_code == 200
+        assert response.text == "admin-panel"
+
+
+def test_root_path_html_urls_include_root_path() -> None:
+    """Asset and navigation URLs rendered in templates must include root_path."""
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User):
+        ...
+
+    admin.add_view(UserAdmin)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/admin/")
+        assert response.status_code == 200
+
+        # Static asset URLs should include root_path
+        assert "/api/v1/admin/statics/css/main.css" in response.text
+        assert "/api/v1/admin/statics/js/main.js" in response.text
+
+        # Navigation link to model list should include root_path
+        assert "/api/v1/admin/user/list" in response.text
+
+
+def test_root_path_redirect_after_create() -> None:
+    """Redirect URL after creating a model should include root_path."""
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User):
+        ...
+
+    admin.add_view(UserAdmin)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.post(
+            "/admin/user/create",
+            data={"name": "test", "save": "Save"},
+        )
+        assert response.status_code == 200
+        assert "/api/v1/admin/user/list" in str(response.url)
+
+
+def test_root_path_delete_returns_url_with_root_path() -> None:
+    """Delete endpoint returns a list URL that should include root_path."""
+    with session_maker() as session:
+        session.add(User(id=1, name="delete-me"))
+        session.commit()
+
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User):
+        ...
+
+    admin.add_view(UserAdmin)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.delete(
+            "/admin/user/delete",
+            params={"pks": "1"},
+            headers={"Referer": "http://testserver/api/v1/admin/user/list"},
+        )
+        assert response.status_code == 200
+        assert "/api/v1/admin/user/list" in response.text
 
 
 def test_no_root_path_unchanged_behavior() -> None:

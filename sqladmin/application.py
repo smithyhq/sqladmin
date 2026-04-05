@@ -79,7 +79,11 @@ class RootPathMiddleware:
         if scope["type"] == "http":
             path = scope["path"]
             root_path = scope.get("root_path", "")
-            if root_path and not path.startswith(root_path + self.path_prefix) and path.startswith(self.path_prefix):
+            if (
+                root_path
+                and not path.startswith(root_path + self.path_prefix)
+                and path.startswith(self.path_prefix)
+            ):
                 scope = dict(scope)
                 scope["path"] = root_path + path
         await self.app(scope, receive, send)

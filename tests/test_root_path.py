@@ -108,6 +108,18 @@ def test_root_path_already_in_path() -> None:
         assert response.status_code == 200
 
 
+def test_root_path_matches_base_url() -> None:
+    app = Starlette()
+    Admin(app=app, engine=engine)
+
+    with TestClient(app, root_path="/admin") as client:
+        response = client.get("/admin/")
+        assert response.status_code == 200
+
+        response = client.get("/admin/statics/css/main.css")
+        assert response.status_code == 200
+
+
 def test_no_root_path_unchanged_behavior() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)

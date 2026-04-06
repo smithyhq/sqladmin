@@ -45,7 +45,7 @@ class Jinja2Templates:
     def __init__(self, directory: str) -> None:
         @jinja2.pass_context
         def url_for(context: dict, __name: str, **path_params: Any) -> URL:
-            request = context["request"]
+            request: Request = context["request"]
             return request.url_for(__name, **path_params)
 
         loader = jinja2.FileSystemLoader(directory)

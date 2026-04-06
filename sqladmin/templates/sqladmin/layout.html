@@ -7,13 +7,13 @@
       <h1 class="navbar-brand navbar-brand-autodark">
         <a href="{{ url_for('admin:index') }}">
           {% if admin.logo_url %}
-          <img src="{{ admin.logo_url }}" width="64" height="64" alt="Admin" class="navbar-brand-image" />
+          <img src="{{ admin.logo_url }}" width="64" height="64" alt="{{ admin.title }}" />
           {% else %}
           <h3>{{ admin.title }}</h3>
           {% endif %}
         </a>
       </h1>
-      <nav class="navbar navbar-expand-sm" id="navbar-menu">
+      <nav class="navbar navbar-expand-sm shadow-none" id="navbar-menu">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
           aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -23,9 +23,9 @@
         </div>
       </nav>
       {% if admin.authentication_backend %}
-      <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon">
+      <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon m-2 px-2">
+        <span class="me-2">Logout</span>
         <i class="fa fa-sign-out"></i>
-        <span>Logout</span>
       </a>
       {% endif %}
     </div>

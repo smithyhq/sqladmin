@@ -24,7 +24,12 @@ from starlette.datastructures import URL, FormData, MultiDict, UploadFile
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse, Response
+from starlette.responses import (
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -42,7 +47,7 @@ from sqladmin.models import BaseView, ModelView
 from sqladmin.templating import Jinja2Templates
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import async_sessionmaker
+    from sqlalchemy.ext.asyncio import async_sessionmaker  # type: ignore[attr-defined]
 
 __all__ = [
     "Admin",
@@ -83,10 +88,13 @@ class BaseAdmin:
 
         if session_maker:
             self.session_maker = session_maker
-        elif isinstance(engine, Engine):
+        elif isinstance(self.engine, Engine):
             self.session_maker = sessionmaker(bind=self.engine, class_=Session)
         else:
-            self.session_maker = sessionmaker(bind=self.engine, class_=AsyncSession)
+            self.session_maker = sessionmaker(
+                bind=self.engine,  # type: ignore[arg-type]
+                class_=AsyncSession,
+            )
 
         self.session_maker.configure(autoflush=False, autocommit=False)
         self.is_async = is_async_session_maker(self.session_maker)
@@ -113,7 +121,7 @@ class BaseAdmin:
         templates.env.globals["min"] = min
         templates.env.globals["zip"] = zip
         templates.env.globals["admin"] = self
-        templates.env.globals["is_list"] = lambda x: isinstance(x, list)
+        templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
 
         return templates
@@ -140,7 +148,6 @@ class BaseAdmin:
         This is a shortcut that will handle both `add_model_view` and `add_base_view`.
         """
 
-        view._admin_ref = self
         if view.is_model:
             self.add_model_view(view)  # type: ignore
         else:
@@ -181,14 +188,14 @@ class BaseAdmin:
                     func, "_label"
                 )
             if getattr(func, "_add_in_detail"):
-                view_instance._custom_actions_in_detail[
-                    getattr(func, "_slug")
-                ] = getattr(func, "_label")
+                view_instance._custom_actions_in_detail[getattr(func, "_slug")] = (
+                    getattr(func, "_label")
+                )
 
             if getattr(func, "_confirmation_message"):
-                view_instance._custom_actions_confirmation[
-                    getattr(func, "_slug")
-                ] = getattr(func, "_confirmation_message")
+                view_instance._custom_actions_confirmation[getattr(func, "_slug")] = (
+                    getattr(func, "_confirmation_message")
+                )
 
     def _handle_expose_decorated_func(
         self,
@@ -227,6 +234,7 @@ class BaseAdmin:
             ```
         """
 
+        view._admin_ref = self
         # Set database engine from Admin instance
         view.session_maker = self.session_maker
         view.is_async = self.is_async
@@ -266,6 +274,7 @@ class BaseAdmin:
             ```
         """
 
+        view._admin_ref = self
         view.templates = self.templates
         view_instance = view()
 
@@ -306,9 +315,10 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_view_details"):
             pk = request.path_params.get("pk")
-            assert pk is not None and isinstance(
-                pk, str
-            ), f'pk not found in request.path_params "{request.path_params}"'
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
             model = await model_view.get_object_for_details(request)
             can_view_details_row = await model_view.check_can_view_details(
                 request, model
@@ -324,9 +334,11 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_delete"):
             pks = request.query_params.get("pks")
-            assert pks is not None and isinstance(
-                pks, str
-            ), f'pks not found in request.query_params "{request.query_params}"'
+            if pks is None or not isinstance(pks, str):
+                raise ValueError(
+                    f'pks not found in request.query_params "{request.query_params}"'
+                )
+
             for pk in pks.split(","):
                 request.path_params["pk"] = pk
                 model = await model_view.get_object_for_details(request)
@@ -341,9 +353,10 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_edit"):
             pk = request.path_params.get("pk")
-            assert pk is not None and isinstance(
-                pk, str
-            ), f'pk not found in request.path_params "{request.path_params}"'
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
             model = await model_view.get_object_for_details(request)
             can_edit_row = await model_view.check_can_edit(request, model)
             if can_edit_row is not True:
@@ -380,7 +393,7 @@ class Admin(BaseAdminView):
         ```
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         app: Starlette,
         engine: ENGINE_TYPE | None = None,
@@ -408,7 +421,7 @@ class Admin(BaseAdminView):
         super().__init__(
             app=app,
             engine=engine,
-            session_maker=session_maker,
+            session_maker=session_maker,  # type: ignore[arg-type]
             base_url=base_url,
             title=title,
             logo_url=logo_url,
@@ -423,7 +436,9 @@ class Admin(BaseAdminView):
         async def http_exception(
             request: Request, exc: Exception
         ) -> Response | Awaitable[Response]:
-            assert isinstance(exc, HTTPException)
+            if not isinstance(exc, HTTPException):
+                raise TypeError("Expected HTTPException, got %s" % type(exc))
+
             context = {
                 "status_code": exc.status_code,
                 "message": exc.detail,
@@ -545,7 +560,7 @@ class Admin(BaseAdminView):
         referer_params = MultiDict(parse_qsl(referer_url.query))
         url = URL(str(request.url_for("admin:list", identity=identity)))
         url = url.include_query_params(**referer_params)
-        return Response(content=str(url))
+        return PlainTextResponse(content=str(url))
 
     @login_required
     async def create(self, request: Request) -> Response:
@@ -665,7 +680,11 @@ class Admin(BaseAdminView):
         return await model_view.export_data(rows, export_type=export_type)
 
     async def login(self, request: Request) -> Response:
-        assert self.authentication_backend is not None
+        if self.authentication_backend is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Authentication backend not configured.",
+            )
 
         context = {}
         if request.method == "GET":
@@ -681,7 +700,11 @@ class Admin(BaseAdminView):
         return RedirectResponse(request.url_for("admin:index"), status_code=302)
 
     async def logout(self, request: Request) -> Response:
-        assert self.authentication_backend is not None
+        if self.authentication_backend is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Authentication backend not configured.",
+            )
 
         response = await self.authentication_backend.logout(request)
 
@@ -704,8 +727,8 @@ class Admin(BaseAdminView):
 
         try:
             loader: QueryAjaxModelLoader = model_view._form_ajax_refs[name]
-        except KeyError:
-            raise HTTPException(status_code=400)
+        except KeyError as exc:
+            raise HTTPException(status_code=400) from exc
 
         data = [loader.format(m) for m in await loader.get_list(term)]
         return JSONResponse({"results": data})
@@ -723,10 +746,12 @@ class Admin(BaseAdminView):
 
         if form.get("save") == "Save":
             return request.url_for("admin:list", identity=identity)
-        elif form.get("save") == "Save and continue editing" or (
+
+        if form.get("save") == "Save and continue editing" or (
             form.get("save") == "Save as new" and model_view.save_as_continue
         ):
             return request.url_for("admin:edit", identity=identity, pk=identifier)
+
         return request.url_for("admin:create", identity=identity)
 
     async def _handle_form_data(self, request: Request, obj: Any = None) -> FormData:
@@ -778,7 +803,7 @@ class Admin(BaseAdminView):
 def expose(
     path: str,
     *,
-    methods: list[str] = ["GET"],
+    methods: list[str] | None = None,
     identity: str | None = None,
     include_in_schema: bool = True,
 ) -> Callable[..., Any]:
@@ -788,7 +813,7 @@ def expose(
     def wrap(func):
         func._exposed = True
         func._path = path
-        func._methods = methods
+        func._methods = methods or ["GET"]
         func._identity = identity or func.__name__
         func._include_in_schema = include_in_schema
         return login_required(func)

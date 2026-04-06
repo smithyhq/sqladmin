@@ -40,11 +40,13 @@ class Query:
         conditions = []
         for value in values:
             conditions.append(
-                and_(
-                    pk == value
-                    for pk, value in zip(
-                        target_pks,
-                        object_identifier_values(value, target),
+                and_(  # type: ignore[type-var]
+                    *(
+                        pk == value
+                        for pk, value in zip(
+                            target_pks,
+                            object_identifier_values(value, target),
+                        )
                     )
                 )
             )
@@ -65,10 +67,10 @@ class Query:
         # ``relation.local_remote_pairs`` is ordered by the foreign keys
         # but the values are ordered by the primary keys. This dict
         # ensures we write the correct value to the fk fields
-        pk_value = {pk: value for pk, value in zip(pks, values)}
+        pk_value = dict(zip(pks, values))
 
-        for fk, pk in relation.local_remote_pairs:
-            setattr(obj, fk.name, pk_value[pk])
+        for fk, pk in relation.local_remote_pairs or []:
+            setattr(obj, fk.name, pk_value[pk])  # type: ignore[index]
 
         return obj
 
@@ -217,18 +219,24 @@ class Query:
 
     async def delete(self, obj: Any, request: Request) -> None:
         if self.model_view.is_async:
-            await self._delete_async(obj, request)
+            coro = self._delete_async(obj, request)
         else:
-            await anyio.to_thread.run_sync(self._delete_sync, obj, request)
+            coro = anyio.to_thread.run_sync(self._delete_sync, obj, request)
+
+        return await coro
 
     async def insert(self, data: dict, request: Request) -> Any:
         if self.model_view.is_async:
-            return await self._insert_async(data, request)
+            coro = self._insert_async(data, request)
         else:
-            return await anyio.to_thread.run_sync(self._insert_sync, data, request)
+            coro = anyio.to_thread.run_sync(self._insert_sync, data, request)
+
+        return await coro
 
     async def update(self, pk: Any, data: dict, request: Request) -> Any:
         if self.model_view.is_async:
-            return await self._update_async(pk, data, request)
+            coro = self._update_async(pk, data, request)
         else:
-            return await anyio.to_thread.run_sync(self._update_sync, pk, data, request)
+            coro = anyio.to_thread.run_sync(self._update_sync, pk, data, request)
+
+        return await coro

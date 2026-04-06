@@ -15,4 +15,5 @@ examples/
 test.db
 coverage.xml
 dist/
+site/
 .idea/

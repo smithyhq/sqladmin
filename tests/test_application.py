@@ -143,8 +143,7 @@ def test_normalize_wtform_fields() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class DataModelAdmin(ModelView, model=DataModel):
-        ...
+    class DataModelAdmin(ModelView, model=DataModel): ...
 
     datamodel = DataModel(id=1, data="abcdef")
     admin.add_view(DataModelAdmin)
@@ -155,8 +154,7 @@ def test_denormalize_wtform_fields() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class DataModelAdmin(ModelView, model=DataModel):
-        ...
+    class DataModelAdmin(ModelView, model=DataModel): ...
 
     datamodel = DataModel(id=1, data="abcdef")
     admin.add_view(DataModelAdmin)
@@ -169,8 +167,7 @@ def test_validate_page_and_page_size():
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     admin.add_view(UserAdmin)
 
@@ -181,3 +178,23 @@ def test_validate_page_and_page_size():
 
     response = client.get("/admin/user/list?page=aaaa")
     assert response.status_code == 400
+
+
+def test_is_list_template_global():
+    """Test that is_list correctly identifies list and set types."""
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    is_list = admin.templates.env.globals["is_list"]
+
+    # Should return True for list and set
+    assert is_list([1, 2, 3]) is True
+    assert is_list({1, 2, 3}) is True
+    assert is_list([]) is True
+    assert is_list(set()) is True
+
+    # Should return False for non-collection types
+    assert is_list("string") is False
+    assert is_list(123) is False
+    assert is_list(None) is False
+    assert is_list({"key": "value"}) is False

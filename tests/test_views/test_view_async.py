@@ -120,6 +120,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     price = Column(BigInteger)
+    is_sold = Column(Boolean, nullable=False)
 
 
 class EachRowAction(Base):
@@ -132,7 +133,7 @@ class EachRowAction(Base):
     can_delete = Column(Boolean, nullable=True, default=True)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -184,6 +185,8 @@ class UserAdmin(ModelView, model=User):
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
+    column_searchable_list = [Address.id]
+    search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
 
@@ -580,6 +583,53 @@ async def test_check_can_view_details(client: AsyncClient) -> None:
     assert response.status_code == 403
 
 
+@pytest.mark.anyio
+async def test_update_endpoint_with_checkbox_widget(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        session.add_all(
+            [
+                Product(
+                    id=1,
+                    name="RAM",
+                    price=99_999,
+                    is_sold=False,
+                ),
+                Product(
+                    id=2,
+                    name="RAM second",
+                    price=12421,
+                    is_sold=True,
+                ),
+            ]
+        )
+        await session.commit()
+
+    stmt = select(func.count(Product.id))
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    assert result.scalar_one() == 2
+
+    response = await client.get("/admin/product/edit/1")
+
+    assert response.status_code == 200
+
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+    assert "checked" not in response.text
+
+    response = await client.get("/admin/product/edit/2")
+
+    assert response.status_code == 200
+
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+    assert "checked" in response.text
+
+
 async def test_create_endpoint_post_form(client: AsyncClient) -> None:
     data = {"date_of_birth": "Wrong Date Format"}
     response = await client.post("/admin/user/create", data=data)
@@ -838,7 +888,11 @@ async def test_searchable_list(client: AsyncClient) -> None:
 
     response = await client.get("/admin/user/list")
     assert "Search: name" in response.text
+    assert 'data-search-auto-submit="true"' in response.text
     assert "/admin/user/details/1" in response.text
+
+    response = await client.get("/admin/address/list")
+    assert 'data-search-auto-submit="false"' in response.text
 
     response = await client.get("/admin/user/list?search=ro")
     assert "/admin/user/details/1" in response.text

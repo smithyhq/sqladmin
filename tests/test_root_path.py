@@ -14,7 +14,7 @@ from tests.common import sync_engine as engine
 
 session_maker = sessionmaker(bind=engine)
 
-Base = declarative_base()  # type: ignore
+Base = declarative_base()
 
 
 class User(Base):

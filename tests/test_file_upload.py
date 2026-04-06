@@ -29,7 +29,6 @@ class User(Base):
 
 @pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
-    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     yield
     Base.metadata.drop_all(engine)

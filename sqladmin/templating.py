@@ -9,6 +9,8 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.types import Receive, Scope, Send
 
+from sqladmin.helpers import local_url_for
+
 
 class _TemplateResponse(HTMLResponse):
     def __init__(
@@ -46,7 +48,7 @@ class Jinja2Templates:
         @jinja2.pass_context
         def url_for(context: dict, __name: str, **path_params: Any) -> URL:
             request: Request = context["request"]
-            return request.url_for(__name, **path_params)
+            return local_url_for(request, __name, **path_params)
 
         loader = jinja2.FileSystemLoader(directory)
         self.env = jinja2.Environment(loader=loader, autoescape=True, enable_async=True)

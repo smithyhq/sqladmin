@@ -146,21 +146,21 @@ def test_column_list_default() -> None:
     class UserAdmin(ModelView, model=User):
         pass
 
-    assert UserAdmin().get_list_columns() == ["id"]
+    assert UserAdmin(session_maker).get_list_columns() == ["id"]
 
 
 def test_column_list_by_model_columns() -> None:
     class UserAdmin(ModelView, model=User):
         column_list = [User.id, User.name]
 
-    assert UserAdmin().get_list_columns() == ["id", "name"]
+    assert UserAdmin(session_maker).get_list_columns() == ["id", "name"]
 
 
 def test_column_list_by_str_name() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_list = ["id", "user_id"]
 
-    assert AddressAdmin().get_list_columns() == ["id", "user_id"]
+    assert AddressAdmin(session_maker).get_list_columns() == ["id", "user_id"]
 
 
 def test_column_filters() -> None:
@@ -169,7 +169,7 @@ def test_column_filters() -> None:
     class UserAdmin(ModelView, model=User):
         column_filters = [filter]
 
-    all_filters = UserAdmin().get_filters()
+    all_filters = UserAdmin(session_maker).get_filters()
     assert len(all_filters) == 1
     assert all_filters[0] == filter
 
@@ -188,14 +188,18 @@ def test_column_exclude_list_by_str_name() -> None:
     class UserAdmin(ModelView, model=User):
         column_exclude_list = ["id"]
 
-    assert UserAdmin().get_list_columns() == ["addresses", "profile", "groups", "name"]
+    assert UserAdmin(session_maker).get_list_columns() == [
+        "addresses", "profile", "groups", "name",
+    ]
 
 
 def test_column_exclude_list_by_model_column() -> None:
     class UserAdmin(ModelView, model=User):
         column_exclude_list = [User.id]
 
-    assert UserAdmin().get_list_columns() == ["addresses", "profile", "groups", "name"]
+    assert UserAdmin(session_maker).get_list_columns() == [
+        "addresses", "profile", "groups", "name",
+    ]
 
 
 async def test_column_list_formatters() -> None:
@@ -207,8 +211,10 @@ async def test_column_list_formatters() -> None:
 
     user = User(id=1, name="Long Name")
 
-    assert await UserAdmin().get_list_value(user, "id") == (1, 2)
-    assert await UserAdmin().get_list_value(user, "name") == ("Long Name", "L")
+    assert await UserAdmin(session_maker).get_list_value(user, "id") == (1, 2)
+    assert await UserAdmin(
+        session_maker,
+    ).get_list_value(user, "name") == ("Long Name", "L")
 
 
 async def test_column_formatters_detail() -> None:
@@ -220,8 +226,12 @@ async def test_column_formatters_detail() -> None:
 
     user = User(id=1, name="Long Name")
 
-    assert await UserAdmin().get_detail_value(user, "id") == (1, 2)
-    assert await UserAdmin().get_detail_value(user, "name") == ("Long Name", "L")
+    assert await UserAdmin(
+        session_maker,
+    ).get_detail_value(user, "id") == (1, 2)
+    assert await UserAdmin(
+        session_maker,
+    ).get_detail_value(user, "name") == ("Long Name", "L")
 
 
 async def test_column_formatters_default() -> None:
@@ -230,11 +240,11 @@ async def test_column_formatters_default() -> None:
     user = User(id=1, name="Long Name")
     profile = Profile(user=user, is_active=True)
 
-    assert await ProfileAdmin().get_list_value(profile, "is_active") == (
+    assert await ProfileAdmin(session_maker).get_list_value(profile, "is_active") == (
         True,
         Markup("<i class='fa fa-check text-success'></i>"),
     )
-    assert await ProfileAdmin().get_detail_value(profile, "is_active") == (
+    assert await ProfileAdmin(session_maker).get_detail_value(profile, "is_active") == (
         True,
         Markup("<i class='fa fa-check text-success'></i>"),
     )
@@ -256,7 +266,7 @@ def test_column_details_list_default() -> None:
     class UserAdmin(ModelView, model=User):
         pass
 
-    assert UserAdmin().get_details_columns() == [
+    assert UserAdmin(session_maker).get_details_columns() == [
         "addresses",
         "profile",
         "groups",
@@ -269,14 +279,14 @@ def test_column_details_list_by_model_column() -> None:
     class UserAdmin(ModelView, model=User):
         column_details_list = [User.name, User.id]
 
-    assert UserAdmin().get_details_columns() == ["name", "id"]
+    assert UserAdmin(session_maker).get_details_columns() == ["name", "id"]
 
 
 def test_column_details_exclude_list_by_model_column() -> None:
     class UserAdmin(ModelView, model=User):
         column_details_exclude_list = [User.id]
 
-    assert UserAdmin().get_details_columns() == [
+    assert UserAdmin(session_maker).get_details_columns() == [
         "addresses",
         "profile",
         "groups",
@@ -288,7 +298,7 @@ def test_form_columns_default() -> None:
     class UserAdmin(ModelView, model=User):
         pass
 
-    assert UserAdmin().get_form_columns() == [
+    assert UserAdmin(session_maker).get_form_columns() == [
         "addresses",
         "profile",
         "groups",
@@ -301,14 +311,16 @@ def test_form_columns_by_model_columns() -> None:
     class UserAdmin(ModelView, model=User):
         form_columns = [User.id, User.profile, User.name, User.addresses]
 
-    assert UserAdmin().get_form_columns() == ["id", "profile", "name", "addresses"]
+    assert UserAdmin(session_maker).get_form_columns() == [
+        "id", "profile", "name", "addresses",
+    ]
 
 
 def test_form_columns_by_str_name() -> None:
     class AddressAdmin(ModelView, model=Address):
         form_columns = ["id", "user_id"]
 
-    assert AddressAdmin().get_form_columns() == ["id", "user_id"]
+    assert AddressAdmin(session_maker).get_form_columns() == ["id", "user_id"]
 
 
 def test_form_columns_both_include_and_exclude() -> None:
@@ -325,47 +337,51 @@ def test_form_excluded_columns_by_str_name() -> None:
     class UserAdmin(ModelView, model=User):
         form_excluded_columns = ["id"]
 
-    assert UserAdmin().get_form_columns() == ["addresses", "profile", "groups", "name"]
+    assert UserAdmin(session_maker).get_form_columns() == [
+        "addresses", "profile", "groups", "name",
+    ]
 
 
 def test_form_excluded_columns_by_model_column() -> None:
     class UserAdmin(ModelView, model=User):
         form_excluded_columns = [User.id]
 
-    assert UserAdmin().get_form_columns() == ["addresses", "profile", "groups", "name"]
+    assert UserAdmin(session_maker).get_form_columns() == [
+        "addresses", "profile", "groups", "name",
+    ]
 
 
 def test_export_columns_default() -> None:
     class UserAdmin(ModelView, model=User):
         pass
 
-    assert UserAdmin().get_export_columns() == ["id"]
+    assert UserAdmin(session_maker).get_export_columns() == ["id"]
 
 
 def test_export_columns_default_to_list_columns() -> None:
     class UserAdmin(ModelView, model=User):
         column_list = [User.id, User.name]
 
-    assert UserAdmin().get_export_columns() == ["id", "name"]
+    assert UserAdmin(session_maker).get_export_columns() == ["id", "name"]
 
     class UserAdmin2(ModelView, model=User):
         column_list = [User.id]
 
-    assert UserAdmin2().get_export_columns() == ["id"]
+    assert UserAdmin2(session_maker).get_export_columns() == ["id"]
 
 
 def test_export_columns_by_model_columns() -> None:
     class UserAdmin(ModelView, model=User):
         column_export_list = [User.id, User.name]
 
-    assert UserAdmin().get_export_columns() == ["id", "name"]
+    assert UserAdmin(session_maker).get_export_columns() == ["id", "name"]
 
 
 def test_export_columns_by_str_name() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_export_list = ["id", "user_id"]
 
-    assert AddressAdmin().get_export_columns() == ["id", "user_id"]
+    assert AddressAdmin(session_maker).get_export_columns() == ["id", "user_id"]
 
 
 def test_export_columns_both_include_and_exclude() -> None:
@@ -384,7 +400,7 @@ def test_export_excluded_columns_by_str_name() -> None:
     class UserAdmin(ModelView, model=User):
         column_export_exclude_list = ["id"]
 
-    assert UserAdmin().get_export_columns() == [
+    assert UserAdmin(session_maker).get_export_columns() == [
         "addresses",
         "profile",
         "groups",
@@ -396,7 +412,7 @@ def test_export_excluded_columns_by_model_column() -> None:
     class UserAdmin(ModelView, model=User):
         column_export_exclude_list = [User.id]
 
-    assert UserAdmin().get_export_columns() == [
+    assert UserAdmin(session_maker).get_export_columns() == [
         "addresses",
         "profile",
         "groups",
@@ -417,22 +433,24 @@ def test_get_python_type_postgresql() -> None:
 def test_model_default_sort() -> None:
     class UserAdmin(ModelView, model=User): ...
 
-    assert UserAdmin()._get_default_sort() == [("id", False)]
+    assert UserAdmin(session_maker)._get_default_sort() == [("id", False)]
 
     class UserAdmin(ModelView, model=User):
         column_default_sort = "name"
 
-    assert UserAdmin()._get_default_sort() == [("name", False)]
+    assert UserAdmin(session_maker)._get_default_sort() == [("name", False)]
 
     class UserAdmin(ModelView, model=User):
         column_default_sort = ("name", True)
 
-    assert UserAdmin()._get_default_sort() == [("name", True)]
+    assert UserAdmin(session_maker)._get_default_sort() == [("name", True)]
 
     class UserAdmin(ModelView, model=User):
         column_default_sort = [("name", True), ("id", False)]
 
-    assert UserAdmin()._get_default_sort() == [("name", True), ("id", False)]
+    assert UserAdmin(session_maker)._get_default_sort() == [
+        ("name", True), ("id", False),
+    ]
 
 
 async def test_get_model_objects_uses_list_query() -> None:
@@ -448,7 +466,7 @@ async def test_get_model_objects_uses_list_query() -> None:
         def list_query(self, request: Request) -> Select:
             return super().list_query(request).filter(User.name.endswith("man"))
 
-    view = UserAdmin()
+    view = UserAdmin(session_maker)
     request = Request({"type": "http"})
 
     assert len(await view.get_model_objects(request)) == 1
@@ -468,7 +486,7 @@ async def test_get_details_query() -> None:
         async_engine = False
         session_maker = session_maker
 
-    view = UserAdmin()
+    view = UserAdmin(session_maker)
     request = Request({"type": "http", "path_params": {"pk": 123}})
     user = await view.get_object_for_details(request)
     assert len(user.groups) == 2
@@ -496,7 +514,7 @@ async def test_form_edit_query() -> None:
                 .filter(Address.name == "bat cave")
             )
 
-    view = UserAdmin()
+    view = UserAdmin(session_maker)
 
     class RequestObject(object):
         pass
@@ -513,8 +531,12 @@ def test_model_columns_all_keyword() -> None:
         column_list = "__all__"
         column_details_list = "__all__"
 
-    assert AddressAdmin().get_list_columns() == ["user", "id", "name", "user_id"]
-    assert AddressAdmin().get_details_columns() == ["user", "id", "name", "user_id"]
+    assert AddressAdmin(session_maker).get_list_columns() == [
+        "user", "id", "name", "user_id",
+    ]
+    assert AddressAdmin(session_maker).get_details_columns() == [
+        "user", "id", "name", "user_id",
+    ]
 
 
 async def test_get_prop_value() -> None:
@@ -528,9 +550,13 @@ async def test_get_prop_value() -> None:
         session.add_all([user, address, profile])
         session.commit()
 
-    assert await ProfileAdmin().get_prop_value(profile, "role") == "ADMIN"
-    assert await ProfileAdmin().get_prop_value(profile, "status") == "ACTIVE"
-    assert await ProfileAdmin().get_prop_value(profile, "user.name") == "admin"
+    assert await ProfileAdmin(session_maker).get_prop_value(profile, "role") == "ADMIN"
+    assert await ProfileAdmin(
+        session_maker,
+    ).get_prop_value(profile, "status") == "ACTIVE"
+    assert await ProfileAdmin(
+        session_maker,
+    ).get_prop_value(profile, "user.name") == "admin"
 
 
 async def test_model_property_in_columns() -> None:
@@ -539,15 +565,21 @@ async def test_model_property_in_columns() -> None:
 
     user = User(id=1, name="batman")
 
-    assert UserAdmin().get_list_columns() == ["id", "name", "name_with_id"]
-    assert UserAdmin().get_details_columns() == [
+    assert UserAdmin(
+        session_maker
+    ).get_list_columns() == ["id", "name", "name_with_id"]
+    assert UserAdmin(
+        session_maker
+    ).get_details_columns() == [
         "addresses",
         "profile",
         "groups",
         "id",
         "name",
     ]
-    assert await UserAdmin().get_prop_value(user, "name_with_id") == "batman - 1"
+    assert await UserAdmin(
+        session_maker
+    ).get_prop_value(user, "name_with_id") == "batman - 1"
 
 
 def test_sort_query() -> None:
@@ -556,15 +588,15 @@ def test_sort_query() -> None:
     query = select(Address)
 
     request = Request({"type": "http", "query_string": "sortBy=id&sort=asc"})
-    stmt = AddressAdmin().sort_query(query, request)
+    stmt = AddressAdmin(session_maker).sort_query(query, request)
     assert "ORDER BY addresses.id ASC" in str(stmt)
 
     request = Request({"type": "http", "query_string": b"sortBy=user.name&sort=desc"})
-    stmt = AddressAdmin().sort_query(query, request)
+    stmt = AddressAdmin(session_maker).sort_query(query, request)
     assert "ORDER BY users.name DESC" in str(stmt)
 
     request = Request({"type": "http", "query_string": b"sortBy=user.profile.role"})
-    stmt = AddressAdmin().sort_query(query, request)
+    stmt = AddressAdmin(session_maker).sort_query(query, request)
     assert "ORDER BY profiles.role ASC" in str(stmt)
 
 
@@ -573,7 +605,7 @@ def test_count_query() -> None:
         ...
 
     request = Request({"type": "http"})
-    stmt = AddressAdmin().count_query(request)
+    stmt = AddressAdmin(session_maker).count_query(request)
     assert "SELECT count(addresses.id) AS count_1" in str(stmt)
 
 
@@ -592,7 +624,7 @@ async def test_count_multi_bind() -> None:
         session_maker = multi_bind_session_maker
 
     request = Request({"type": "http"})
-    count = await AddressAdmin().count(request)
+    count = await AddressAdmin(session_maker).count(request)
     assert count == 0
 
 
@@ -600,7 +632,7 @@ def test_search_query() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_searchable_list = ["user.name", "user.profile.role"]
 
-    stmt = AddressAdmin().search_query(select(Address), "example")
+    stmt = AddressAdmin(session_maker).search_query(select(Address), "example")
     assert "lower(CAST(users.name AS VARCHAR))" in str(stmt)
     assert "lower(CAST(profiles.role AS VARCHAR))" in str(stmt)
 

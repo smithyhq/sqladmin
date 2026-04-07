@@ -1,11 +1,13 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.requests import Request
 
 from sqladmin import ModelView
 from sqladmin._menu import CategoryMenu, ItemMenu, Menu, ViewMenu
+from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
+session_maker = sessionmaker(bind=engine)
 
 
 class User(Base):
@@ -48,7 +50,7 @@ def test_category_menu_is_active_when_child_is_active():
             "path_params": {"identity": "user"},
         }
     )
-    user_menu = ViewMenu(view=UserAdmin(), name="user")
+    user_menu = ViewMenu(view=UserAdmin(session_maker), name="user")
 
     category_menu = CategoryMenu(name="Models")
     category_menu.add_child(user_menu)
@@ -58,7 +60,7 @@ def test_category_menu_is_active_when_child_is_active():
 
 
 def test_category_menu_is_not_active_when_no_child_is_active():
-    user_menu = ViewMenu(view=UserAdmin(), name="user")
+    user_menu = ViewMenu(view=UserAdmin(session_maker), name="user")
 
     category_menu = CategoryMenu(name="Models")
     category_menu.add_child(user_menu)
@@ -68,7 +70,7 @@ def test_category_menu_is_not_active_when_no_child_is_active():
 
 
 def test_view_menu():
-    item_menu = ViewMenu(view=UserAdmin(), name="view")
+    item_menu = ViewMenu(view=UserAdmin(session_maker), name="view")
 
     assert item_menu.display_name == "Users"
     assert item_menu.type_ == "View"

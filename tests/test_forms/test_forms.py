@@ -228,7 +228,7 @@ async def test_form_override_scaffold() -> None:
     class UserAdmin(ModelView, model=User):
         form = MyForm
 
-    form_type = await UserAdmin().scaffold_form()
+    form_type = await UserAdmin(session_maker).scaffold_form()
     form = form_type()
     assert isinstance(form, MyForm)
     assert len(form._fields) == 1

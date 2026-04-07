@@ -29,9 +29,9 @@
               <td>
                 {% for elem, formatted_elem in zip(value, formatted_value) %}
                   {% if model_view.show_compact_lists %}
-                    <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
+                    <a href="{{ model_view._build_url_for('details', request, elem) }}">({{ formatted_elem }})</a>
                   {% else %}
-                    <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br/>
+                    <a href="{{ model_view._build_url_for('details', request, elem) }}">{{ formatted_elem }}</a><br/>
                   {% endif %}
                 {% endfor %}
               </td>
@@ -50,7 +50,7 @@
       <div class="card-footer container">
         <div class="row row-gap-2">
           <div class="col-auto">
-            <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
+            <a href="{{ url_for('list', identity=model_view.identity) }}" class="btn">
               Go Back
             </a>
           </div>
@@ -65,7 +65,7 @@
           {% endif %}
           {% if model_view.can_edit %}
           <div class="col-auto">
-            <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
+            <a href="{{ model_view._build_url_for('edit', request, model) }}" class="btn btn-primary">
               Edit
             </a>
           </div>

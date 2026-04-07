@@ -1,7 +1,7 @@
 {% extends "sqladmin/base.html" %}
 {% block body %}
 <div class="d-flex align-items-center justify-content-center vh-100">
-  <form class="Fcol-lg-6 col-md-6 card card-md" action="{{ url_for('admin:login') }}" method="POST" autocomplete="off">
+  <form class="Fcol-lg-6 col-md-6 card card-md" action="{{ url_for('login') }}" method="POST" autocomplete="off">
     <div class="card-body">
       <h2 class="card-title text-center mb-4">Login to {{ admin.title }}</h2>
       <div class="mb-3">

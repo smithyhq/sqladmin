@@ -1,5 +1,5 @@
 from typing import Any, Generator, List
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from sqlalchemy import Column, Integer, String
@@ -12,6 +12,7 @@ from starlette.testclient import TestClient
 from sqladmin import Admin, ModelView
 from sqladmin.application import action
 from sqladmin.filters import AllUniqueStringValuesFilter, OperationColumnFilter
+from sqladmin.helpers import local_url_for
 from tests.common import sync_engine as engine
 
 Base: Any = declarative_base()
@@ -55,7 +56,7 @@ class UserAdmin(ModelView, model=User):
             obj_strs.append(repr(obj))
 
         response = RedirectResponse(
-            request.url_for("admin:list", identity=self.identity)
+           local_url_for(request, "list", identity=self.identity)
         )
         response.headers["X-Objs"] = ",".join(obj_strs)
         return response
@@ -204,11 +205,10 @@ def test_model_action(client: TestClient) -> None:
         "list-confirm": "!List Confirm?!",
     }
 
-    request = Mock(Request)
-    request.url_for = Mock()
-
-    admin.views[0]._url_for_action(request, "test")
-    request.url_for.assert_called_with("admin:action-user-test")
+    request = Mock()
+    with patch('sqladmin.models.local_url_for') as mock_func:
+        admin.views[0]._url_for_action(request, "test")
+        mock_func.assert_called_with(request, "action-user-test")
 
     with Session() as session:
         user1 = User()

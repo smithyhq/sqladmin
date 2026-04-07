@@ -19,14 +19,14 @@
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     {% for export_type in model_view.export_types %}
                     <li><a class="dropdown-item"
-                        href="{{ url_for('admin:export', identity=model_view.identity, export_type=export_type) }}">{{
+                        href="{{ url_for('export', identity=model_view.identity, export_type=export_type) }}">{{
                         export_type | upper }}</a></li>
                     {% endfor %}
                   </ul>
                 </div>
                 {% elif model_view.export_types | length == 1 %}
                 <div class="ms-3 d-inline-block">
-                  <a href="{{ url_for('admin:export', identity=model_view.identity, export_type=model_view.export_types[0]) }}"
+                  <a href="{{ url_for('export', identity=model_view.identity, export_type=model_view.export_types[0]) }}"
                     class="btn btn-secondary">
                     Export
                   </a>
@@ -35,7 +35,7 @@
                 {% endif %}
                 {% if model_view.can_create %}
                 <div class="ms-3 d-inline-block">
-                  <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
+                  <a href="{{ url_for('create', identity=model_view.identity) }}" class="btn btn-primary">
                     + New {{ model_view.name }}
                   </a>
                 </div>
@@ -54,7 +54,7 @@
                   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {% if model_view.can_delete %}
                     <a class="dropdown-item" id="action-delete" href="#" data-name="{{ model_view.name }}"
-                      data-url="{{ url_for('admin:delete', identity=model_view.identity) }}" data-bs-toggle="modal"
+                      data-url="{{ url_for('delete', identity=model_view.identity) }}" data-bs-toggle="modal"
                       data-bs-target="#modal-delete">Delete selected items</a>
                     {% endif %}
                     {% for custom_action, label in model_view._custom_actions_in_list.items() %}
@@ -124,13 +124,13 @@
                     </td>
                     <td class="text-end">
                       {% if model_view.can_view_details %}
-                      <a href="{{ model_view._build_url_for('admin:details', request, row) }}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for('details', request, row) }}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="View">
                         <span class="me-1"><i class="fa-solid fa-eye"></i></span>
                       </a>
                       {% endif %}
                       {% if model_view.can_edit %}
-                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for('edit', request, row) }}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="Edit">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>
@@ -152,9 +152,9 @@
                     <td>
                       {% for elem, formatted_elem in zip(value, formatted_value) %}
                         {% if model_view.show_compact_lists %}
-                          <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
+                          <a href="{{ model_view._build_url_for('details', request, elem) }}">({{ formatted_elem }})</a>
                         {% else %}
-                          <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br/>
+                          <a href="{{ model_view._build_url_for('details', request, elem) }}">{{ formatted_elem }}</a><br/>
                         {% endif %}
                       {% endfor %}
                     </td>

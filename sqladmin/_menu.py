@@ -8,6 +8,8 @@ from starlette.requests import Request
 if TYPE_CHECKING:
     from sqladmin.application import BaseView, ModelView
 
+from sqladmin.helpers import local_url_for
+
 
 class ItemMenu:
     def __init__(self, name: str, icon: str | None = None) -> None:
@@ -73,8 +75,8 @@ class ViewMenu(ItemMenu):
 
     def url(self, request: Request) -> str | URL:
         if self.view.is_model:
-            return request.url_for("admin:list", identity=self.view.identity)
-        return request.url_for(f"admin:{self.view.identity}")
+            return local_url_for(request, "list", identity=self.view.identity)
+        return local_url_for(request, self.view.identity)
 
     @property
     def display_name(self) -> str:

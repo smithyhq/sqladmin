@@ -222,10 +222,14 @@ async def test_ajax_response_limit(client: AsyncClient) -> None:
 
 async def test_create_ajax_loader_exceptions() -> None:
     with pytest.raises(ValueError):
-        create_ajax_loader(model_admin=AddressAdmin(), name="x", options={})
+        create_ajax_loader(
+            model_admin=AddressAdmin(session_maker), name="x", options={},
+        )
 
     with pytest.raises(ValueError):
-        create_ajax_loader(model_admin=AddressAdmin(), name="user", options={})
+        create_ajax_loader(
+            model_admin=AddressAdmin(session_maker), name="user", options={},
+        )
 
 
 async def test_create_page_template(client: AsyncClient) -> None:

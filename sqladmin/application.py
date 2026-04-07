@@ -41,6 +41,7 @@ from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
     get_object_identifier,
     is_async_session_maker,
+    local_url_for,
     slugify_action_name,
 )
 from sqladmin.models import BaseView, ModelView
@@ -236,13 +237,12 @@ class BaseAdmin:
 
         view._admin_ref = self
         # Set database engine from Admin instance
-        view.session_maker = self.session_maker
         view.is_async = self.is_async
         view.ajax_lookup_url = urljoin(
             self.base_url + "/", f"{view.identity}/ajax/lookup"
         )
         view.templates = self.templates
-        view_instance = view()
+        view_instance = view(self.session_maker)
 
         self._find_decorated_funcs(
             view, view_instance, self._handle_action_decorated_func
@@ -367,6 +367,7 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        mount_name: str = "admin",
     ) -> None:
         """
         Args:
@@ -446,7 +447,7 @@ class Admin(BaseAdminView):
         self.admin.router.routes = routes
         self.admin.exception_handlers = {HTTPException: http_exception}
         self.admin.debug = debug
-        self.app.mount(base_url, app=self.admin, name="admin")
+        self.app.mount(base_url, app=self.admin, name=mount_name)
 
     @login_required
     async def index(self, request: Request) -> Response:
@@ -519,7 +520,7 @@ class Admin(BaseAdminView):
 
         referer_url = URL(request.headers.get("referer", ""))
         referer_params = MultiDict(parse_qsl(referer_url.query))
-        url = URL(str(request.url_for("admin:list", identity=identity)))
+        url = URL(str(local_url_for(request, "list", identity=identity)))
         url = url.include_query_params(**referer_params)
         return PlainTextResponse(content=str(url))
 
@@ -658,7 +659,7 @@ class Admin(BaseAdminView):
                 request, "sqladmin/login.html", context, status_code=400
             )
 
-        return RedirectResponse(request.url_for("admin:index"), status_code=302)
+        return RedirectResponse(local_url_for(request, "index"), status_code=302)
 
     async def logout(self, request: Request) -> Response:
         if self.authentication_backend is None:
@@ -672,7 +673,7 @@ class Admin(BaseAdminView):
         if isinstance(response, Response):
             return response
 
-        return RedirectResponse(request.url_for("admin:index"), status_code=302)
+        return RedirectResponse(local_url_for(request, "index"), status_code=302)
 
     async def ajax_lookup(self, request: Request) -> Response:
         """Ajax lookup route."""
@@ -706,14 +707,14 @@ class Admin(BaseAdminView):
         identifier = get_object_identifier(obj)
 
         if form.get("save") == "Save":
-            return request.url_for("admin:list", identity=identity)
+            return local_url_for(request, "list", identity=identity)
 
         if form.get("save") == "Save and continue editing" or (
             form.get("save") == "Save as new" and model_view.save_as_continue
         ):
-            return request.url_for("admin:edit", identity=identity, pk=identifier)
+            return local_url_for(request, "edit", identity=identity, pk=identifier)
 
-        return request.url_for("admin:create", identity=identity)
+        return local_url_for(request, "create", identity=identity)
 
     async def _handle_form_data(self, request: Request, obj: Any = None) -> FormData:
         """

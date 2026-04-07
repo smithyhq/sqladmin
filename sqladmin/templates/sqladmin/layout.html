@@ -5,7 +5,7 @@
   <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark">
     <div class="container-fluid">
       <h1 class="navbar-brand navbar-brand-autodark">
-        <a href="{{ url_for('admin:index') }}">
+        <a href="{{ url_for('index') }}">
           {% if admin.logo_url %}
           <img src="{{ admin.logo_url }}" width="64" height="64" alt="{{ admin.title }}" />
           {% else %}
@@ -23,7 +23,7 @@
         </div>
       </nav>
       {% if admin.authentication_backend %}
-      <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon m-2 px-2">
+      <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-icon m-2 px-2">
         <span class="me-2">Logout</span>
         <i class="fa fa-sign-out"></i>
       </a>

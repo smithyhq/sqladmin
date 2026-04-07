@@ -8,6 +8,8 @@ from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 
+from sqladmin.helpers import local_url_for
+
 
 class AuthenticationBackend:
     """Base class for implementing the Authentication into SQLAdmin.
@@ -66,7 +68,9 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
             if isinstance(response, Response):
                 return response
             if not bool(response):
-                return RedirectResponse(request.url_for("admin:login"), status_code=302)
+                return RedirectResponse(
+                    local_url_for(request, "login"), status_code=302
+                )
 
         if inspect.iscoroutinefunction(func):
             return await func(*args, **kwargs)

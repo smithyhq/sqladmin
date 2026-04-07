@@ -59,11 +59,10 @@ class TestPrettyExport:
     async def test_get_export_row_values_basic(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
-            session_maker = session_maker
             is_async = False
 
         user = User(id=1, name="John Doe", email="john@example.com", is_active=True)
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
         column_names = ["id", "name", "email"]
 
         values = await PrettyExport._get_export_row_values(
@@ -78,7 +77,6 @@ class TestPrettyExport:
     async def test_get_export_row_values_with_custom_export_cell(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
-            session_maker = session_maker
             is_async = False
 
             async def custom_export_cell(
@@ -91,7 +89,7 @@ class TestPrettyExport:
                 return None
 
         user = User(id=1, name="John Doe", email="john@example.com")
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
         column_names = ["id", "name", "email"]
 
         values = await PrettyExport._get_export_row_values(
@@ -106,11 +104,10 @@ class TestPrettyExport:
     async def test_get_export_row_values_with_base_export_cell(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "is_active"]
-            session_maker = session_maker
             is_async = False
 
         user = User(id=1, name="John Doe", is_active=True)
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
         column_names = ["id", "name", "is_active"]
 
         values = await PrettyExport._get_export_row_values(
@@ -125,11 +122,10 @@ class TestPrettyExport:
     async def test_get_export_row_values_with_none_values(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
-            session_maker = session_maker
             is_async = False
 
         user = User(id=1, name="John Doe", email=None)
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
         column_names = ["id", "name", "email"]
 
         values = await PrettyExport._get_export_row_values(
@@ -144,12 +140,11 @@ class TestPrettyExport:
     async def test_get_export_row_values_with_relationships(self):
         class AddressAdmin(ModelView, model=Address):
             column_list = ["id", "street", "user.name"]
-            session_maker = session_maker
             is_async = False
 
         user = User(id=1, name="John Doe")
         address = Address(id=1, street="123 Main St", user=user)
-        model_view = AddressAdmin()
+        model_view = AddressAdmin(session_maker)
         column_names = ["id", "street", "user.name"]
 
         values = await PrettyExport._get_export_row_values(
@@ -164,14 +159,13 @@ class TestPrettyExport:
     async def test_pretty_export_csv_basic(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
-            session_maker = session_maker
             is_async = False
 
         users = [
             User(id=1, name="John Doe", email="john@example.com"),
             User(id=2, name="Jane Smith", email="jane@example.com"),
         ]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
         assert isinstance(response, StreamingResponse)
@@ -197,13 +191,12 @@ class TestPrettyExport:
                 "name": "Full Name",
                 "email": "Email Address",
             }
-            session_maker = session_maker
             is_async = False
 
         users = [
             User(id=1, name="John Doe", email="john@example.com"),
         ]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
         csv_content = await self._get_csv_content(response)
@@ -219,13 +212,12 @@ class TestPrettyExport:
             column_labels = {
                 "name": "Full Name",
             }
-            session_maker = session_maker
             is_async = False
 
         users = [
             User(id=1, name="John Doe", email="john@example.com"),
         ]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
         csv_content = await self._get_csv_content(response)
@@ -239,7 +231,6 @@ class TestPrettyExport:
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "is_active"]
             column_labels = {"id": "ID", "name": "Name", "is_active": "Active Status"}
-            session_maker = session_maker
             is_async = False
 
             async def custom_export_cell(
@@ -253,7 +244,7 @@ class TestPrettyExport:
             User(id=1, name="John Doe", is_active=True),
             User(id=2, name="Jane Smith", is_active=False),
         ]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
 
@@ -268,11 +259,10 @@ class TestPrettyExport:
     async def test_pretty_export_csv_empty_data(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
-            session_maker = session_maker
             is_async = False
 
         users = []
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
 
@@ -288,13 +278,12 @@ class TestPrettyExport:
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email", "is_active"]
             column_export_list = ["name", "email"]
-            session_maker = session_maker
             is_async = False
 
         users = [
             User(id=1, name="John Doe", email="john@example.com", is_active=True),
         ]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
         csv_content = await self._get_csv_content(response)
@@ -308,13 +297,12 @@ class TestPrettyExport:
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
             use_pretty_export = True
-            session_maker = session_maker
             is_async = False
 
         users = [
             User(id=1, name="John Doe", email="john@example.com"),
         ]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await model_view.export_data(users, "csv")
         csv_content = await self._get_csv_content(response)
@@ -329,14 +317,13 @@ class TestPrettyExport:
     async def test_pretty_export_csv_filename_generation(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name"]
-            session_maker = session_maker
             is_async = False
 
             def get_export_name(self, export_type: str) -> str:
                 return f"test_export_with_special_chars!@#.{export_type}"
 
         users = [User(id=1, name="John Doe")]
-        model_view = UserAdmin()
+        model_view = UserAdmin(session_maker)
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
         content_disposition = response.headers["Content-Disposition"]

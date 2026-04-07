@@ -51,6 +51,7 @@ from sqladmin.helpers import (
     Writer,
     get_object_identifier,
     get_primary_keys,
+    local_url_for,
     object_identifier_values,
     prettify_class_name,
     secure_filename,
@@ -210,12 +211,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Internals
     pk_columns: ClassVar[Tuple[Column]]
-    session_maker: ClassVar[  # type: ignore[no-any-unimported]
-        Union[
-            sessionmaker,
-            "async_sessionmaker",
-        ]
-    ]
     is_async: ClassVar[bool] = False
     is_model: ClassVar[bool] = True
     ajax_lookup_url: ClassVar[str] = ""
@@ -703,7 +698,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self, session_maker: Union[sessionmaker, "async_sessionmaker"]
+    ) -> None:
+        self.session_maker = session_maker
         self._mapper = inspect(self.model)
         self._prop_names = [attr.key for attr in self._mapper.attrs]
         self._relations = [
@@ -795,8 +793,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     def _url_for_delete(self, request: Request, obj: Any) -> str:
         pk = get_object_identifier(obj)
         query_params = urlencode({"pks": pk})
-        url = request.url_for(
-            "admin:delete", identity=slugify_class_name(obj.__class__.__name__)
+        url = local_url_for(
+            request, "delete", identity=slugify_class_name(obj.__class__.__name__)
         )
         return str(url) + "?" + query_params
 
@@ -804,13 +802,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         target = getattr(obj, prop, None)
         if target is None:
             return URL()
-        return self._build_url_for("admin:details", request, target)
+        return self._build_url_for("details", request, target)
 
     def _url_for_action(self, request: Request, action_name: str) -> str:
-        return str(request.url_for(f"admin:action-{self.identity}-{action_name}"))
+        return str(local_url_for(request, f"action-{self.identity}-{action_name}"))
 
     def _build_url_for(self, name: str, request: Request, obj: Any) -> URL:
-        return request.url_for(
+        return local_url_for(
+            request,
             name,
             identity=slugify_class_name(obj.__class__.__name__),
             pk=get_object_identifier(obj),

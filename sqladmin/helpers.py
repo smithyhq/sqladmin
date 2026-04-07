@@ -18,6 +18,9 @@ from typing import (
 from sqlalchemy import Column, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import RelationshipProperty, sessionmaker
+from starlette.datastructures import URL
+from starlette.requests import Request
+from starlette.routing import Mount, Router
 
 from sqladmin._types import MODEL_PROPERTY
 
@@ -322,3 +325,58 @@ def choice_type_coerce_factory(type_: Any) -> Callable[[Any], Any]:
 
 def is_async_session_maker(session_maker: sessionmaker) -> bool:
     return AsyncSession in session_maker.class_.__mro__
+
+
+def local_url_for(request: Request, name: str, **kwargs: Any) -> URL:
+    """
+    Generate a URL for the specified route, taking router hierarchy into account.
+
+    If the current router matches the target router or is not defined, uses the standard
+    `request.url_for()` method. Otherwise, adds a router name prefix to the route name.
+
+    Args:
+        request (Request): HTTP request object.
+        name (str): route name for URL generation.
+        **kwargs (Any): additional parameters for `request.url_for()`
+            (e.g., path parameters).
+
+    Returns:
+        URL: generated URL for the specified route.
+    """
+    target_router = request.app.router
+    start_router = request.scope.get("router")
+    if not start_router or start_router == target_router:
+        return request.url_for(name, **kwargs)
+    router_name = get_current_router_name(start_router, target_router)
+    name_prefix = f"{router_name}:" if router_name else ""
+    return request.url_for(f"{name_prefix}{name}", **kwargs)
+
+
+def get_current_router_name(start_router: Any, target_router: Router) -> str | None:
+    """
+    Find the router name in the hierarchy that corresponds to the target router.
+
+    Traverses the routes of the start router and its nested applications
+    (of type `Mount`) to find a match with the target router.
+
+    Args:
+        start_router (Any): starting router from which the search begins.
+        target_router (Router): target router whose name needs to be found.
+
+    Returns:
+        str | None: router name (possibly composite in the format `parent:child`)
+            if the target router is found.`None` if the router is not found
+            in the hierarchy.
+    """
+    for router in getattr(start_router, "routes", []):
+        if router == target_router:
+            return router.name
+        if not isinstance(router, Mount):
+            continue
+        app_router = getattr(router.app, "router", None)
+        if app_router == target_router:
+            return router.name
+        sub_name = get_current_router_name(router, target_router)
+        if sub_name is not None:
+            return f"{router.name}:{sub_name}"
+    return None

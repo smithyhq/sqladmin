@@ -11,6 +11,7 @@ from starlette.testclient import TestClient
 
 from sqladmin import Admin, BaseView, action, expose
 from sqladmin.authentication import AuthenticationBackend
+from sqladmin.helpers import local_url_for
 from sqladmin.models import ModelView
 from tests.common import sync_engine as engine
 
@@ -39,7 +40,7 @@ class CustomBackend(AuthenticationBackend):
 
     async def authenticate(self, request: Request) -> bool:
         if "token" not in request.session:
-            return RedirectResponse(request.url_for("admin:login"), status_code=302)
+            return RedirectResponse(local_url_for(request, "login"), status_code=302)
         return True
 
 

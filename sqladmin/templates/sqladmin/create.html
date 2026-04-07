@@ -7,7 +7,7 @@
       <h3 class="card-title">New {{ model_view.name }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
-      <form action="{{ url_for('admin:create', identity=model_view.identity) }}" method="POST"
+      <form action="{{ url_for('create', identity=model_view.identity) }}" method="POST"
         enctype="multipart/form-data">
         <div class="row">
           {% if error %}
@@ -19,7 +19,7 @@
         </fieldset>
         <div class="row">
           <div class="col-md-2">
-            <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
+            <a href="{{ url_for('list', identity=model_view.identity) }}" class="btn">
               Cancel
             </a>
           </div>

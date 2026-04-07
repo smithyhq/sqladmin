@@ -105,7 +105,7 @@ def test_get_save_redirect_url():
 
     admin.add_view(UserAdmin)
 
-    @app.route("/{identity}", methods=["POST"])
+    @admin.admin.route("/{identity}", methods=["POST"])
     async def index(request: Request):
         obj = User(id=1)
         form_data = await request.form()
@@ -114,16 +114,16 @@ def test_get_save_redirect_url():
 
     client = TestClient(app)
 
-    response = client.post("/user", data={"save": "Save"})
+    response = client.post("/admin/user", data={"save": "Save"})
     assert response.text == "http://testserver/admin/user/list"
 
-    response = client.post("/user", data={"save": "Save and continue editing"})
+    response = client.post("/admin/user", data={"save": "Save and continue editing"})
     assert response.text == "http://testserver/admin/user/edit/1"
 
-    response = client.post("/user", data={"save": "Save as new"})
+    response = client.post("/admin/user", data={"save": "Save as new"})
     assert response.text == "http://testserver/admin/user/edit/1"
 
-    response = client.post("/user", data={"save": "Save and add another"})
+    response = client.post("/admin/user", data={"save": "Save and add another"})
     assert response.text == "http://testserver/admin/user/create"
 
 

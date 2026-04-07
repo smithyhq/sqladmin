@@ -329,13 +329,12 @@ def is_async_session_maker(session_maker: sessionmaker) -> bool:
 
 def local_url_for(request: Request, name: str, **kwargs: Any) -> URL:
     target_router = request.app.router
-    start_router = request.scope["router"]
-    if start_router == target_router:
+    start_router = request.scope.get("router")
+    if not start_router or start_router == target_router:
         return request.url_for(name, **kwargs)
     router_name = get_current_router_name(start_router, target_router)
-    return request.url_for(
-        f"{f'{router_name}:' if router_name else ''}{name}", **kwargs
-    )
+    name_prefix = f'{router_name}:' if router_name else ''
+    return request.url_for(f"{name_prefix}{name}", **kwargs)
 
 
 def get_current_router_name(start_router: Any, target_router: Router) -> str | None:

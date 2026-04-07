@@ -348,7 +348,7 @@ def local_url_for(request: Request, name: str, **kwargs: Any) -> URL:
     if not start_router or start_router == target_router:
         return request.url_for(name, **kwargs)
     router_name = get_current_router_name(start_router, target_router)
-    name_prefix = f'{router_name}:' if router_name else ''
+    name_prefix = f"{router_name}:" if router_name else ""
     return request.url_for(f"{name_prefix}{name}", **kwargs)
 
 
@@ -356,8 +356,8 @@ def get_current_router_name(start_router: Any, target_router: Router) -> str | N
     """
     Find the router name in the hierarchy that corresponds to the target router.
 
-    Traverses the routes of the start router and its nested applications (of type `Mount`)
-    to find a match with the target router.
+    Traverses the routes of the start router and its nested applications
+    (of type `Mount`) to find a match with the target router.
 
     Args:
         start_router (Any): starting router from which the search begins.
@@ -365,7 +365,8 @@ def get_current_router_name(start_router: Any, target_router: Router) -> str | N
 
     Returns:
         str | None: router name (possibly composite in the format `parent:child`)
-            if the target router is found. `None` if the router is not found in the hierarchy.
+            if the target router is found.`None` if the router is not found
+            in the hierarchy.
     """
     for router in getattr(start_router, "routes", []):
         if router == target_router:

@@ -45,7 +45,10 @@ class AjaxSelect2Widget(widgets.Select):
 
     def __call__(self, field: "AjaxSelectField", **kwargs: Any) -> Markup:
         kwargs.setdefault("data-role", "select2-ajax")
-        kwargs.setdefault("data-url", field.loader.model_admin.ajax_lookup_url)
+        ajax_url = kwargs.pop("data_url", None)
+        if ajax_url is None:
+            ajax_url = field.loader.model_admin.ajax_lookup_url
+        kwargs.setdefault("data-url", ajax_url)
 
         allow_blank = getattr(field, "allow_blank", False)
         if allow_blank and not self.multiple:

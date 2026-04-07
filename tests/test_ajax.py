@@ -233,12 +233,12 @@ async def test_create_page_template(client: AsyncClient) -> None:
 
     assert 'data-json="[]"' in response.text
     assert 'data-role="select2-ajax"' in response.text
-    assert 'data-url="/admin/user/ajax/lookup"' in response.text
+    assert 'data-url="http://testserver/admin/user/ajax/lookup"' in response.text
 
     response = await client.get("/admin/address/create")
 
     assert 'data-role="select2-ajax"' in response.text
-    assert 'data-url="/admin/address/ajax/lookup"' in response.text
+    assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
 
 
 async def test_edit_page_template(client: AsyncClient) -> None:
@@ -257,7 +257,7 @@ async def test_edit_page_template(client: AsyncClient) -> None:
         in response.text
     )
     assert 'data-role="select2-ajax"' in response.text
-    assert 'data-url="/admin/user/ajax/lookup"' in response.text
+    assert 'data-url="http://testserver/admin/user/ajax/lookup"' in response.text
 
     response = await client.get("/admin/address/edit/1")
     assert (
@@ -265,7 +265,7 @@ async def test_edit_page_template(client: AsyncClient) -> None:
         in response.text
     )
     assert 'data-role="select2-ajax"' in response.text
-    assert 'data-url="/admin/address/ajax/lookup"' in response.text
+    assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
 
 
 async def test_create_and_edit_forms(client: AsyncClient) -> None:

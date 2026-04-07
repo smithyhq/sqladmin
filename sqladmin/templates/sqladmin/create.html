@@ -15,7 +15,7 @@
           {% endif %}
         </div>
         <fieldset class="form-fieldset">
-          {{ render_form_fields(form, form_opts=form_opts) }}
+          {{ render_form_fields(form, form_opts=form_opts, ajax_lookup_url=url_for('admin:ajax_lookup', identity=model_view.identity)) }}
         </fieldset>
         <div class="row">
           <div class="col-md-2">

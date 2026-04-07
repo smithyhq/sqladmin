@@ -159,7 +159,7 @@ def test_flash_shortcuts(
 # --- Integration tests: flash renders as toast in HTTP response context ---
 
 
-class _AlwaysAuthBackend(AuthenticationBackend):
+class AlwaysAuthBackend(AuthenticationBackend):
     async def login(self, request: Request) -> bool:
         return True
 
@@ -170,25 +170,25 @@ class _AlwaysAuthBackend(AuthenticationBackend):
         return True
 
 
-class _FlashTriggerView(BaseView):
+class FlashTriggerView(BaseView):
     @expose("/flash-trigger", methods=["GET"])
     async def trigger_flash(self, request: Request):
         flash(request, message="Toast test message", category="success", title="Done")
         return RedirectResponse(request.url_for("admin:index"), status_code=302)
 
 
-_app = Starlette()
-_admin = Admin(
-    app=_app,
+app = Starlette()
+admin = Admin(
+    app=app,
     engine=engine,
-    authentication_backend=_AlwaysAuthBackend(secret_key="test-flash"),
+    authentication_backend=AlwaysAuthBackend(secret_key="test-flash"),
 )
-_admin.add_base_view(_FlashTriggerView)
+admin.add_base_view(FlashTriggerView)
 
 
 @pytest.fixture
 def flash_client() -> Generator[TestClient, None, None]:
-    with TestClient(_app, base_url="http://testserver") as c:
+    with TestClient(app, base_url="http://testserver") as c:
         yield c
 
 

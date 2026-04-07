@@ -1,7 +1,15 @@
-import pytest
-from starlette.requests import Request
+from typing import Generator
 
+import pytest
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
+from starlette.testclient import TestClient
+
+from sqladmin import Admin, BaseView, expose
+from sqladmin.authentication import AuthenticationBackend
 from sqladmin.flash import Flash, FlashLevel, flash, get_flashed_messages
+from tests.common import sync_engine as engine
 
 
 @pytest.fixture
@@ -146,3 +154,56 @@ def test_flash_shortcuts(
         "title": title,
         "message": message,
     }
+
+
+# --- Integration tests: flash renders as toast in HTTP response context ---
+
+
+class _AlwaysAuthBackend(AuthenticationBackend):
+    async def login(self, request: Request) -> bool:
+        return True
+
+    async def logout(self, request: Request) -> bool:
+        return True
+
+    async def authenticate(self, request: Request) -> bool:
+        return True
+
+
+class _FlashTriggerView(BaseView):
+    @expose("/flash-trigger", methods=["GET"])
+    async def trigger_flash(self, request: Request):
+        flash(request, message="Toast test message", category="success", title="Done")
+        return RedirectResponse(request.url_for("admin:index"), status_code=302)
+
+
+_app = Starlette()
+_admin = Admin(
+    app=_app,
+    engine=engine,
+    authentication_backend=_AlwaysAuthBackend(secret_key="test-flash"),
+)
+_admin.add_base_view(_FlashTriggerView)
+
+
+@pytest.fixture
+def flash_client() -> Generator[TestClient, None, None]:
+    with TestClient(_app, base_url="http://testserver") as c:
+        yield c
+
+
+def test_flash_renders_toast_in_request_context(flash_client: TestClient) -> None:
+    response = flash_client.get("/admin/flash-trigger")
+
+    assert response.status_code == 200
+    assert "toast-container" in response.text
+    assert "Toast test message" in response.text
+    assert "text-bg-success" in response.text
+    assert "Done" in response.text
+
+
+def test_flash_toast_consumed_after_one_render(flash_client: TestClient) -> None:
+    flash_client.get("/admin/flash-trigger")
+
+    second_response = flash_client.get("/admin/")
+    assert "Toast test message" not in second_response.text

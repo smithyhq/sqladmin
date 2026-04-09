@@ -38,6 +38,7 @@ from wtforms.fields.core import UnboundField
 
 from sqladmin._queries import Query
 from sqladmin._types import (
+    _UNSET,
     MODEL_ATTR,
     ColumnFilter,
     OperationColumnFilter,
@@ -867,9 +868,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         for filter_ in self.get_filters():
             filter_param_name = filter_.parameter_name
             filter_value = request.query_params.get(filter_param_name)
-            default_value = getattr(filter_, "default_value", None)
+            default_value = getattr(filter_, "default_value", _UNSET)
 
-            if filter_value or default_value is not None:
+            if filter_value or default_value is not _UNSET:
                 if hasattr(filter_, "has_operator") and filter_.has_operator:
                     # Use operation-based filtering
                     operation_filter = typing_cast(OperationColumnFilter, filter_)

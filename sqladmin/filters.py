@@ -17,7 +17,7 @@ from sqlalchemy.sql.expression import Select, select
 from sqlalchemy.sql.sqltypes import TypeEngine, _Binary
 from starlette.requests import Request
 
-from sqladmin._types import MODEL_ATTR
+from sqladmin._types import _UNSET, MODEL_ATTR, UnsetAny, UnsetBool
 
 # Try to import UUID type for SQLAlchemy 2.0+
 try:
@@ -73,7 +73,7 @@ class BooleanFilter:
         column: MODEL_ATTR,
         title: Optional[str] = None,
         parameter_name: Optional[str] = None,
-        default_value: Optional[bool] = None,
+        default_value: UnsetBool = "_UNSET",
     ):
         self.column = column
         self.title = title or get_title(column)
@@ -98,7 +98,7 @@ class BooleanFilter:
             return query.filter(column_obj.is_(True))
         if value == "false":
             return query.filter(column_obj.is_(False))
-        if value is None and self.default_value is not None:
+        if value is None and self.default_value is not _UNSET:
             return query.filter(column_obj.is_(self.default_value))
         return query
 
@@ -146,7 +146,7 @@ class StaticValuesFilter:
         values: List[Tuple[str, str]],
         title: Optional[str] = None,
         parameter_name: Optional[str] = None,
-        default_value: Optional[Any] = None,
+        default_value: UnsetAny = "_UNSET",
     ):
         self.column = column
         self.title = title or get_title(column)
@@ -154,7 +154,11 @@ class StaticValuesFilter:
         self.values = values
         self.default_value = default_value
 
-        if default_value is not None and default_value not in [v[0] for v in values]:
+        if (
+            default_value is not _UNSET
+            and default_value is not None
+            and default_value not in [v[0] for v in values]
+        ):
             raise ValueError("Default value must be one of the provided values")
 
     async def lookups(
@@ -163,12 +167,16 @@ class StaticValuesFilter:
         model: Any,
         run_query: Callable[[Select], Any],
     ) -> List[Tuple[str, str]]:
-        return [("", "All")] + self.values
+        return [("__all", "All")] + self.values
 
     async def get_filtered_query(self, query: Select, value: Any, model: Any) -> Select:
         column_obj = get_column_obj(self.column, model)
-        if value == "":
-            if self.default_value is None:
+
+        if value == "__all":
+            return query
+
+        if value == "" or value is None:
+            if self.default_value is _UNSET:
                 return query
             value = self.default_value
         return query.filter(column_obj == value)

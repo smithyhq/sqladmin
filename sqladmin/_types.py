@@ -2,8 +2,11 @@ from typing import (
     Any,
     Callable,
     List,
+    Literal,
+    Optional,
     Protocol,
     Tuple,
+    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -18,6 +21,16 @@ MODEL_PROPERTY = Union[ColumnProperty, RelationshipProperty]
 ENGINE_TYPE = Union[Engine, AsyncEngine]
 MODEL_ATTR = Union[str, InstrumentedAttribute]
 
+T = TypeVar("T")
+
+_UNSET = "_UNSET"
+
+Unset = Union[T, Literal["_UNSET"]]
+UnsetN = Union[T, Literal["_UNSET"], None]
+
+UnsetAny = UnsetN[Any]
+UnsetBool = UnsetN[bool]
+
 
 @runtime_checkable
 class SimpleColumnFilter(Protocol):
@@ -25,6 +38,7 @@ class SimpleColumnFilter(Protocol):
 
     title: str
     parameter_name: str
+    default_value: Optional[UnsetAny] = _UNSET
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]

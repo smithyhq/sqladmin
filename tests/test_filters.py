@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -162,7 +163,9 @@ async def prepare_data(prepare_database: Any) -> AsyncGenerator[None, None]:
             salary=80000.50,
             description="Senior administrator with management responsibilities",
             birthdate=datetime.date(2001, 7, 14),
-            created_at=datetime.datetime(2024, 11, 12, 3, 4, 5, tzinfo=datetime.timezone.utc),
+            created_at=datetime.datetime(
+                2024, 11, 12, 3, 4, 5, tzinfo=datetime.timezone.utc
+            ),
         )
         user2 = User(
             name="Regular User",
@@ -173,7 +176,9 @@ async def prepare_data(prepare_database: Any) -> AsyncGenerator[None, None]:
             salary=55000.75,
             description="Software developer specializing in web applications",
             birthdate=datetime.date(1994, 5, 31),
-            created_at=datetime.datetime(2024, 12, 31, 23, 59, 58, tzinfo=datetime.timezone.utc),
+            created_at=datetime.datetime(
+                2024, 12, 31, 23, 59, 58, tzinfo=datetime.timezone.utc
+            ),
         )
         user3 = User(
             name="Test User",
@@ -184,7 +189,9 @@ async def prepare_data(prepare_database: Any) -> AsyncGenerator[None, None]:
             salary=65000.00,
             description="Data analyst working on business intelligence",
             birthdate=datetime.date(1998, 10, 31),
-            created_at=datetime.datetime(2023, 3, 14, 12, 30, 0, tzinfo=datetime.timezone.utc),
+            created_at=datetime.datetime(
+                2023, 3, 14, 12, 30, 0, tzinfo=datetime.timezone.utc
+            ),
         )
         session.add_all([user1, user2, user3])
         await session.commit()
@@ -304,6 +311,45 @@ async def test_static_values_filter_functionality(client: AsyncClient) -> None:
     assert "Admin User" in response.text
     assert "Regular User" not in response.text
     assert_records_count(1, 1, 1, response.text)
+
+
+@pytest.mark.anyio
+async def test_boolean_filter_default_value(prepare_data: Any) -> None:
+    """Test that BooleanFilter applies and overrides default_value correctly."""
+    boolean_filter = BooleanFilter(User.is_admin, default_value=False)
+
+    async with session_maker() as session:
+        stmt = await boolean_filter.get_filtered_query(select(User), None, User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Regular User", "Test User"]
+
+        stmt = await boolean_filter.get_filtered_query(select(User), "true", User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Admin User"]
+
+
+@pytest.mark.anyio
+async def test_static_values_filter_default_value(prepare_data: Any) -> None:
+    """Test that StaticValuesFilter applies and overrides default_value correctly."""
+    static_filter = StaticValuesFilter(
+        User.name,
+        [
+            ("Admin User", "adminadmin"),
+            ("Regular User", "regularregular"),
+        ],
+        default_value="Admin User",
+    )
+
+    async with session_maker() as session:
+        stmt = await static_filter.get_filtered_query(select(User), "", User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Admin User"]
+
+        stmt = await static_filter.get_filtered_query(
+            select(User), "Regular User", User
+        )
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Regular User"]
 
 
 @pytest.mark.anyio
@@ -918,7 +964,9 @@ async def test_column_filter_conversion_edge_cases():
     result = created_at_filter._convert_value_for_column(
         "2021-11-30T22:33:43+00:00", User.created_at.property.columns[0]
     )
-    assert result == datetime.datetime(2021, 11, 30, 22, 33, 43, tzinfo=datetime.timezone.utc)
+    assert result == datetime.datetime(
+        2021, 11, 30, 22, 33, 43, tzinfo=datetime.timezone.utc
+    )
 
     # Test valid date conversion
     birthdate_filter = OperationColumnFilter(User.birthdate)

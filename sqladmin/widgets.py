@@ -119,8 +119,8 @@ class BooleanInputWidget(widgets.Input):
         if field.data:
             kwargs["checked"] = True
 
-        return Markup(
-            '<div class="form-switch d-flex align-items-center h-100">'
-            + str(Markup.escape(super().__call__(field, **kwargs)))
-            + "</div>"
+        template = Markup(
+            '<div class="form-switch d-flex align-items-center h-100">{text}</div>'
         )
+
+        return template.format(text=super().__call__(field, **kwargs))

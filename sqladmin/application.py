@@ -754,8 +754,8 @@ class Admin(BaseAdminView):
             reserved_field_name = field_name[:-1]
             if (
                 field_name in data
-                and not getattr(obj, field_name, None)
-                and getattr(obj, reserved_field_name, None)
+                and not hasattr(obj, field_name)
+                and hasattr(obj, reserved_field_name)
             ):
                 data[reserved_field_name] = data.pop(field_name)
         return data

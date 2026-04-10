@@ -74,6 +74,7 @@ class Profile(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -766,6 +767,28 @@ def test_update_submit_form(client: TestClient) -> None:
         result = s.execute(stmt).all()
     for address in result:
         assert address[0].user_id == 1
+
+
+def test_update_wtforms_reserved_filed_names(client: TestClient) -> None:
+    with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        session.commit()
+
+    data = {"data": "new_data"}
+    response = client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 200
+
+    stmt = select(Profile).limit(1)
+    with session_maker() as s:
+        profile = s.execute(stmt).scalar_one()
+
+    assert profile.data == "new_data"
 
 
 def test_searchable_list(client: TestClient) -> None:

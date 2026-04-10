@@ -77,6 +77,7 @@ class Profile(Base):
 
     id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -793,6 +794,28 @@ async def test_update_submit_form(client: AsyncClient) -> None:
         result = await s.execute(stmt)
     for address in result:
         assert address[0].user_id == 1
+
+
+async def test_update_wtforms_reserved_filed_names(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        await session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        await session.commit()
+
+    data = {"data": "new_data"}
+    response = await client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 302
+
+    stmt = select(Profile).limit(1)
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    profile = result.scalar_one()
+    assert profile.data == "new_data"
 
 
 async def test_searchable_list(client: AsyncClient) -> None:

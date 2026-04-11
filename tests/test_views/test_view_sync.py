@@ -913,51 +913,19 @@ def test_export_permission(client: TestClient) -> None:
     assert response.status_code == 403
 
 
-def test_search_multi_fields_no_duplicate_joins(client: TestClient) -> None:
+def test_sort_and_search_together_no_ambigious_column_error(
+    client: TestClient,
+) -> None:
     class AddressAdmin(ModelView, model=Address):
-        column_searchable_list = [User.id, User.name]
+        column_searchable_list = ["user.name", "user.email"]
+        column_sortable_list = [Address.id, "user.id", "user.name"]
 
     admin.add_view(AddressAdmin)
 
     with session_maker() as session:
-        user = User(name="Alice")
-        address = Address(user=user)
-        session.add_all([user, address])
-        session.commit()
-
-    response = client.get("/admin/address/list?search=Alice")
-    assert response.status_code == 200
-
-
-def test_sort_multi_fields_no_duplicate_joins(client: TestClient) -> None:
-    class AddressAdmin(ModelView, model=Address):
-        column_sortable_list = [Address.id, User.id, User.name]
-
-    admin.add_view(AddressAdmin)
-
-    with session_maker() as session:
-        user1 = User(name="Bob")
-        user2 = User(name="Alice")
-        address1 = Address(user=user1)
-        address2 = Address(user=user2)
-        session.add_all([user1, user2, address1, address2])
-        session.commit()
-
-    response = client.get("/admin/address/list?sortBy=user.name&sort=asc")
-    assert response.status_code == 200
-
-
-def test_sort_and_search_together_no_duplicate_joins(client: TestClient) -> None:
-    class AddressAdmin(ModelView, model=Address):
-        column_searchable_list = [User.name, User.id]
-        column_sortable_list = [Address.id, User.id, User.name]
-
-    admin.add_view(AddressAdmin)
-
-    with session_maker() as session:
-        user1 = User(name="Alice")
-        user2 = User(name="Bob")
-        user3 = User(name="Charlie")
+        user1 = User(name="Alice", email="alice@example.com")
+        user2 = User(name="Bob", email="bob@example.com")
+        user3 = User(name="Charlie", email="charlie@example.com")
         address1 = Address(user=user1)
         address2 = Address(user=user2)
         address3 = Address(user=user3)

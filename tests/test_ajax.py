@@ -207,7 +207,7 @@ async def test_ajax_response_limit(client: AsyncClient) -> None:
     # (up to default cap of 10)
     assert response.json() == {
         "results": [
-            {"id": f"{i+1}", "text": f"User {i+1}"} for i in range(users_to_create)
+            {"id": f"{i + 1}", "text": f"User {i + 1}"} for i in range(users_to_create)
         ]
     }
 
@@ -216,7 +216,7 @@ async def test_ajax_response_limit(client: AsyncClient) -> None:
     assert response.status_code == 200
     # Room admin has a limit 3 of
     assert response.json() == {
-        "results": [{"id": f"{i+1}", "text": f"User {i+1}"} for i in range(3)]
+        "results": [{"id": f"{i + 1}", "text": f"User {i + 1}"} for i in range(3)]
     }
 
 

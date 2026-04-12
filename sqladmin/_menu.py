@@ -93,6 +93,6 @@ class Menu:
         # Only works for one-level menu
         for root in self.items:
             if root.name == item.name:
-                root.children.append(*item.children)
+                root.children.extend(item.children)
                 return
         self.items.append(item)

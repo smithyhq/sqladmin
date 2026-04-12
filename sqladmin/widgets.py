@@ -1,9 +1,14 @@
+# mypy: disable-error-code="override"
+
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup
-from wtforms import Field, widgets
+from wtforms import Field, SelectFieldBase, widgets
 from wtforms.widgets import html_params
+
+if TYPE_CHECKING:
+    from sqladmin.fields import AjaxSelectField
 
 __all__ = [
     "AjaxSelect2Widget",
@@ -38,7 +43,7 @@ class AjaxSelect2Widget(widgets.Select):
         self.multiple = multiple
         self.lookup_url = ""
 
-    def __call__(self, field: Field, **kwargs: Any) -> Markup:
+    def __call__(self, field: "AjaxSelectField", **kwargs: Any) -> Markup:
         kwargs.setdefault("data-role", "select2-ajax")
         kwargs.setdefault("data-url", field.loader.model_admin.ajax_lookup_url)
 
@@ -61,11 +66,11 @@ class AjaxSelect2Widget(widgets.Select):
             if data:
                 kwargs["data-json"] = json.dumps([data])
 
-        return Markup(f"<select {html_params(name=field.name, **kwargs)}></select>")
+        return Markup(f"<select {html_params(name=field.name, **kwargs)}></select>")  # nosec: markupsafe_markup_xss
 
 
 class Select2TagsWidget(widgets.Select):
-    def __call__(self, field: Field, **kwargs: Any) -> str:
+    def __call__(self, field: SelectFieldBase, **kwargs: Any) -> str:
         kwargs.setdefault("data-role", "select2-tags")
         kwargs.setdefault("data-json", json.dumps(field.data))
         kwargs.setdefault("multiple", "multiple")
@@ -77,24 +82,45 @@ class FileInputWidget(widgets.FileInput):
     File input widget with clear checkbox.
     """
 
-    def __call__(self, field: Field, **kwargs: Any) -> str:
+    def __call__(self, field: Field, **kwargs: Any) -> Markup:
         if not field.flags.required:
             checkbox_id = f"{field.id}_checkbox"
             checkbox_label = Markup(
-                f'<label class="form-check-label" for="{checkbox_id}">Clear</label>'
-            )
+                '<label class="form-check-label" for="{}">Clear</label>'
+            ).format(checkbox_id)
+
             checkbox_input = Markup(
-                f'<input class="form-check-input" type="checkbox" id="{checkbox_id}" name="{checkbox_id}">'  # noqa: E501
-            )
-            checkbox = Markup(
-                f'<div class="form-check">{checkbox_input}{checkbox_label}</div>'
+                '<input class="form-check-input" type="checkbox" id="{}" name="{}">'  # noqa: E501
+            ).format(checkbox_id, checkbox_id)
+            checkbox = Markup('<div class="form-check">{}{}</div>').format(
+                checkbox_input, checkbox_label
             )
         else:
             checkbox = Markup()
 
         if field.data:
-            current_value = Markup(f"<p>Currently: {field.data}</p>")
+            current_value = Markup("<p>Currently: {}</p>").format(field.data)
             field.flags.required = False
             return current_value + checkbox + super().__call__(field, **kwargs)
-        else:
-            return super().__call__(field, **kwargs)
+
+        return super().__call__(field, **kwargs)
+
+
+class BooleanInputWidget(widgets.Input):
+    """
+    Render a checkbox.
+
+    The ``checked`` HTML attribute is set if the field's data is a non-false value.
+    """
+
+    input_type = "checkbox"
+
+    def __call__(self, field: Field, **kwargs: Any) -> Markup:
+        if field.data:
+            kwargs["checked"] = True
+
+        return Markup(
+            '<div class="form-switch d-flex align-items-center h-100">'
+            + str(Markup.escape(super().__call__(field, **kwargs)))
+            + "</div>"
+        )

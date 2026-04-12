@@ -93,8 +93,8 @@ def create_ajax_loader(
 
     try:
         attr = mapper.relationships[name]
-    except KeyError:
-        raise ValueError(f"{model_admin.model}.{name} is not a relation.")
+    except KeyError as exc:
+        raise ValueError(f"{model_admin.model}.{name} is not a relation.") from exc
 
     remote_model = attr.mapper.class_
     return QueryAjaxModelLoader(name, remote_model, model_admin, **options)

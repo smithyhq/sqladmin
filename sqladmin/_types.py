@@ -28,11 +28,11 @@ class SimpleColumnFilter(Protocol):
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]
-    ) -> List[Tuple[str, str]]:
-        ...  # pragma: no cover
+    ) -> List[Tuple[str, str]]: ...  # pragma: no cover
 
-    async def get_filtered_query(self, query: Select, value: Any, model: Any) -> Select:
-        ...  # pragma: no cover
+    async def get_filtered_query(
+        self, query: Select, value: Any, model: Any
+    ) -> Select: ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -45,13 +45,11 @@ class OperationColumnFilter(Protocol):
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]
-    ) -> List[Tuple[str, str]]:
-        ...  # pragma: no cover
+    ) -> List[Tuple[str, str]]: ...  # pragma: no cover
 
     async def get_filtered_query(
         self, query: Select, operation: str, value: Any, model: Any
-    ) -> Select:
-        ...  # pragma: no cover
+    ) -> Select: ...  # pragma: no cover
 
 
 ColumnFilter = Union[SimpleColumnFilter, OperationColumnFilter]

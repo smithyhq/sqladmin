@@ -123,7 +123,11 @@ def secure_filename(filename: str) -> str:
     if (
         os.name == "nt"
         and filename
-        and filename.split(".")[0].upper() in _windows_device_files
+        and filename.split(
+            ".",
+            maxsplit=1,
+        )[0].upper()
+        in _windows_device_files
     ):
         filename = f"_{filename}"  # pragma: no cover
 
@@ -238,7 +242,9 @@ def object_identifier_values(id_string: str, model: Any) -> tuple:
 
 
 def get_direction(prop: MODEL_PROPERTY) -> str:
-    assert isinstance(prop, RelationshipProperty)
+    if not isinstance(prop, RelationshipProperty):
+        raise TypeError("Expected RelationshipProperty, got %s" % type(prop))
+
     name = prop.direction.name
     if name == "ONETOMANY" and not prop.uselist:
         return "ONETOONE"
@@ -285,10 +291,11 @@ def parse_interval(value: str) -> timedelta | None:
 def is_falsy_value(value: Any) -> bool:
     if value is None:
         return True
-    elif not value and isinstance(value, str):
+
+    if not value and isinstance(value, str):
         return True
-    else:
-        return False
+
+    return False
 
 
 def choice_type_coerce_factory(type_: Any) -> Callable[[Any], Any]:

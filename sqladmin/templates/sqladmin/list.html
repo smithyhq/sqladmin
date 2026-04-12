@@ -77,6 +77,7 @@
                 <div class="col-md-4 text-muted">
                   <div class="input-group">
                     <input id="search-input" type="text" class="form-control"
+                      data-search-auto-submit="{{ 'true' if model_view.search_auto_submit else 'false' }}"
                       placeholder="Search: {{ model_view.search_placeholder() }}"
                       value="{{ request.query_params.get('search', '') }}">
                     <button id="search-button" class="btn" type="button">Search</button>
@@ -136,9 +137,11 @@
                       {% endif %}
                       {% if model_view.can_delete %}
                       <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(row) }}"
-                        data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
-                        data-bs-target="#modal-delete" title="Delete">
-                        <span class="me-1"><i class="fa-solid fa-trash"></i></span>
+                         data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
+                         data-bs-target="#modal-delete">
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                          <span class="me-1"><i class="fa-solid fa-trash"></i></span>
+                        </span>
                       </a>
                       {% endif %}
                     </td>
@@ -265,12 +268,23 @@
               {% else %}
               <!-- Fallback for other filter types -->
               <div class="mb-3">
-                <div class="fw-bold text-truncate">{{ filter.title }}</div>
+                <div class="fw-bold text-truncate fs-3 mb-2">{{ filter.title }}</div>
                 <div>
                   {% for lookup in filter.lookups(request, model_view.model, model_view._run_arbitrary_query) %}
-                  <a href="{{ request.url.include_query_params(**{filter.parameter_name: lookup[0]}) }}" class="d-block text-decoration-none text-truncate">
+                  {% if request.query_params.get(filter.parameter_name) == lookup[0] %}
+                  <div class="d-flex align-items-center justify-content-between bg-secondary-lt px-2 py-1 rounded">
+                    <span class="text-truncate fw-bold text-dark">
+                      {{ lookup[1] }}
+                    </span>
+                    <a href="{{ request.url.remove_query_params(filter.parameter_name) }}" class="text-decoration-none ms-2" title="Clear filter">
+                      <i class="fa-solid fa-times"></i>
+                    </a>
+                  </div>
+                  {% else %}
+                  <a href="{{ request.url.include_query_params(**{filter.parameter_name: lookup[0]}) }}" class="d-block text-decoration-none text-truncate px-2 py-1">
                     {{ lookup[1] }}
                   </a>
+                  {% endif %}
                   {% endfor %}
                 </div>
               </div>

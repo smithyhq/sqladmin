@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/aminalaee/sqladmin/issues.
+Report bugs at https://github.com/smithyhq/sqladmin/issues.
 
 If you are reporting a bug, please include:
 
@@ -35,7 +35,7 @@ articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/aminalaee/sqladmin.
+The best way to send feedback is to file an issue at https://github.com/smithyhq/sqladmin.
 
 If you are proposing a feature:
 
@@ -55,13 +55,19 @@ Ready to contribute? Here's how to set up `sqladmin` for local development.
     $ git clone git@github.com:your_name_here/sqladmin.git
     ```
 
-3. Install [`Hatch`](https://hatch.pypa.io/latest/install/) for project management:
+3. Install [`uv`](https://docs.astral.sh/uv/) for project management. Install dependencies
+   ```
+   $ make setup
+   ```
+
+4. Install [`pre-commit`](https://pre-commit.com/) and apply it:
 
     ```
-    $ pip install hatch
+    $ pip install pre-commit
+    $ pre-commit install
     ```
 
-4. Create a branch for local development:
+5. Create a branch for local development:
 
     ```
     $ git checkout -b name-of-your-bugfix-or-feature
@@ -69,20 +75,20 @@ Ready to contribute? Here's how to set up `sqladmin` for local development.
 
     Now you can make your changes locally.
 
-5. Apply linting and formatting, if not already done:
+6. Apply linting and formatting, if not already done:
 
     ```
-    $ hatch run lint:format
+    $ make format
     ```
 
-6. When you're done making changes, check that your changes pass the tests:
+7. When you're done making changes, check that your changes pass the tests:
 
     ```
-    $ hatch run lint:check
-    $ hatch run test:test
+    $ make lint
+    $ make test
     ```
 
-7. Commit your changes and push your branch to GitHub:
+8. Commit your changes and push your branch to GitHub:
 
     ```
     $ git add .
@@ -90,7 +96,7 @@ Ready to contribute? Here's how to set up `sqladmin` for local development.
     $ git push origin name-of-your-bugfix-or-feature
     ```
 
-8. Submit a pull request through the GitHub website.
+9.  Submit a pull request through the GitHub website.
 
 ## Pull Request Guidelines
 
@@ -100,6 +106,6 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
-3. The pull request should work for Python 3.7, 3.8, 3.9 and 3.10. Check
-   https://github.com/aminalaee/sqladmin/actions
+3. The pull request should work from Python 3.9 till 3.14. Check
+   https://github.com/smithyhq/sqladmin/actions
    and make sure that the tests pass for all supported Python versions.

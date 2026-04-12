@@ -5,7 +5,7 @@
     <div class="card-header">
       <h3 class="card-title">
         {% for pk in model_view.pk_columns -%}
-        {{ pk.name }}
+        {{ pk.name | title }}
         {%- if not loop.last %};{% endif -%}
         {% endfor %}: {{ get_object_identifier(model) }}</h3>
     </div>
@@ -48,14 +48,14 @@
         </table>
       </div>
       <div class="card-footer container">
-        <div class="row">
-          <div class="col-md-1">
+        <div class="row row-gap-2">
+          <div class="col-auto">
             <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
               Go Back
             </a>
           </div>
           {% if model_view.can_delete %}
-          <div class="col-md-1">
+          <div class="col-auto">
             <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(model) }}"
               data-url="{{ model_view._url_for_delete(request, model) }}" data-bs-toggle="modal"
               data-bs-target="#modal-delete" class="btn btn-danger">
@@ -64,14 +64,14 @@
           </div>
           {% endif %}
           {% if model_view.can_edit %}
-          <div class="col-md-1">
+          <div class="col-auto">
             <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
               Edit
             </a>
           </div>
           {% endif %}
           {% for custom_action,label in model_view._custom_actions_in_detail.items() %}
-          <div class="col-md-1">
+          <div class="col-auto">
             {% if custom_action in model_view._custom_actions_confirmation %}
             <a href="#" class="btn btn-secondary" data-bs-toggle="modal"
               data-bs-target="#modal-confirmation-{{ custom_action }}">

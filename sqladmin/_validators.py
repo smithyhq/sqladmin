@@ -11,8 +11,10 @@ class CurrencyValidator:
 
         try:
             Currency(field.data)
-        except (TypeError, ValueError):
-            raise ValidationError("Not a valid ISO currency code (e.g. USD, EUR, CNY).")
+        except (TypeError, ValueError) as exc:
+            raise ValidationError(
+                "Not a valid ISO currency code (e.g. USD, EUR, CNY)."
+            ) from exc
 
 
 class PhoneNumberValidator:
@@ -23,8 +25,8 @@ class PhoneNumberValidator:
 
         try:
             PhoneNumber(field.data)
-        except PhoneNumberParseException:
-            raise ValidationError("Not a valid phone number.")
+        except PhoneNumberParseException as exc:
+            raise ValidationError("Not a valid phone number.") from exc
 
 
 class ColorValidator:
@@ -35,8 +37,10 @@ class ColorValidator:
 
         try:
             Color(field.data)
-        except ValueError:
-            raise ValidationError('Not a valid color (e.g. "red", "#f00", "#ff0000").')
+        except ValueError as exc:
+            raise ValidationError(
+                'Not a valid color (e.g. "red", "#f00", "#ff0000").'
+            ) from exc
 
 
 class TimezoneValidator:
@@ -48,5 +52,7 @@ class TimezoneValidator:
     def __call__(self, form: Form, field: Field) -> None:
         try:
             self.coerce_function(str(field.data))
-        except Exception:
-            raise ValidationError("Not a valid timezone (e.g. 'Asia/Singapore').")
+        except Exception as exc:
+            raise ValidationError(
+                "Not a valid timezone (e.g. 'Asia/Singapore')."
+            ) from exc

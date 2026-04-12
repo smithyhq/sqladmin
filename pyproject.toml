@@ -1,17 +1,20 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "sqladmin"
+module-root = ""
 
 [project]
 name = "sqladmin"
+version = "0.24.0"
 description = 'SQLAlchemy admin for FastAPI and Starlette'
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = "BSD-3-Clause"
 keywords = ["sqlalchemy", "fastapi", "starlette", "admin"]
-authors = [
-  { name = "Amin Alaee", email = "me@aminalaee.dev" },
-]
+authors = [{ name = "Amin Alaee", email = "mohammadamin.alaee@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -29,39 +32,24 @@ classifiers = [
 ]
 dependencies = [
   "starlette",
-  "sqlalchemy >=1.4",
   "wtforms >=3.1, <3.2",
   "jinja2",
   "python-multipart",
+  "sqlalchemy >= 2.0",
 ]
-dynamic = ["version"]
+
 
 [project.optional-dependencies]
-full = [
-    "itsdangerous",
-]
+full = ["itsdangerous"]
 
 [project.urls]
-Documentation = "https://aminalaee.github.io/sqladmin/"
-Issues = "https://github.com/aminalaee/sqladmin/issues"
-Source = "https://github.com/aminalaee/sqladmin"
+Documentation = "https://smithyhq.github.io/sqladmin/"
+Issues = "https://github.com/smithyhq/sqladmin/issues"
+Source = "https://github.com/smithyhq/sqladmin"
 
-[tool.hatch.version]
-path = "sqladmin/__init__.py"
 
-[tool.hatch.build.targets.wheel]
-[tool.hatch.build.targets.sdist]
-include = [
-    "/sqladmin",
-]
-
-[tool.hatch.build]
-exclude = [
-  "tests/*",
-]
-
-[tool.hatch.envs.test]
-dependencies = [
+[dependency-groups]
+dev = [
   "aiosqlite",
   "arrow",
   "asyncpg",
@@ -76,68 +64,50 @@ dependencies = [
   "itsdangerous",
   "phonenumbers",
   "pillow",
+  "psycopg2-binary",
   "psycopg[binary]",
   "pytest",
   "python-dateutil",
   "sqlalchemy_utils",
+  "sqlmodel",
+  "bandit",
 ]
 
-[tool.hatch.envs.lint]
-dependencies = [
-  "mypy==1.8.0",
-  "ruff==0.1.5",
-  "sqlalchemy~=1.4", # MyPy issues with SQLAlchemy V2
-]
+lint = ["mypy==1.19.1", "ruff==0.15.4", "types-wtforms>=3.2.1.20250809"]
 
-[tool.hatch.envs.docs]
-dependencies = [
-  "mkdocs-material==9.6.14",
+docs = [
+  "mkdocs-material==9.7.1",
   "mkdocs==1.6.1",
-  "mkdocstrings[python]==0.26.1",
+  "mkdocstrings[python]==0.30.1",
 ]
-
-[tool.hatch.envs.test.scripts]
-cov = [
-  "coverage report --show-missing --skip-covered --fail-under=99",
-  "coverage xml",
-]
-test = "coverage run -a --concurrency=thread,greenlet -m pytest {args}"
-
-[tool.hatch.envs.lint.scripts]
-check = [
-  "ruff .",
-  "ruff format --check .",
-  "mypy sqladmin",
-]
-format = [
-  "ruff format .",
-  "ruff --fix .",
-]
-
-[tool.hatch.envs.docs.scripts]
-build = "mkdocs build"
-serve = "mkdocs serve --dev-addr localhost:8080"
-deploy = "mkdocs gh-deploy --force"
 
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
 show_error_codes = true
+check_untyped_defs = true
+strict_optional = true
+no_implicit_optional = true
+disable_error_code = ["var-annotated"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
 
 [tool.ruff]
-select = ["E", "F", "I"]
+lint.select = ["E", "F", "I"]
 
 [tool.coverage.run]
-source_pkgs = [
-  "sqladmin",
-  "tests",
-]
+source_pkgs = ["sqladmin", "tests"]
 
 [tool.coverage.report]
 exclude_lines = [
-    "pragma: no cover",
-    "pragma: nocover",
-    "except NotImplementedError",
-    "raise NotImplementedError",
-    "if TYPE_CHECKING:",
+  "pragma: no cover",
+  "pragma: nocover",
+  "except NotImplementedError",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
 ]
+fail_under = 95
+show_missing = true
+skip_covered = true

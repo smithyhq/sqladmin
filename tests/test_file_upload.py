@@ -40,8 +40,7 @@ def client(prepare_database: Any) -> Generator[TestClient, None, None]:
         yield c
 
 
-class UserAdmin(ModelView, model=User):
-    ...
+class UserAdmin(ModelView, model=User): ...
 
 
 admin.add_view(UserAdmin)

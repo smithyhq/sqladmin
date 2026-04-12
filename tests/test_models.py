@@ -225,8 +225,7 @@ async def test_column_formatters_detail() -> None:
 
 
 async def test_column_formatters_default() -> None:
-    class ProfileAdmin(ModelView, model=Profile):
-        ...
+    class ProfileAdmin(ModelView, model=Profile): ...
 
     user = User(id=1, name="Long Name")
     profile = Profile(user=user, is_active=True)
@@ -416,8 +415,7 @@ def test_get_python_type_postgresql() -> None:
 
 
 def test_model_default_sort() -> None:
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     assert UserAdmin()._get_default_sort() == [("id", False)]
 
@@ -553,8 +551,7 @@ async def test_model_property_in_columns() -> None:
 
 
 def test_sort_query() -> None:
-    class AddressAdmin(ModelView, model=Address):
-        ...
+    class AddressAdmin(ModelView, model=Address): ...
 
     query = select(Address)
 
@@ -569,6 +566,34 @@ def test_sort_query() -> None:
     request = Request({"type": "http", "query_string": b"sortBy=user.profile.role"})
     stmt = AddressAdmin().sort_query(query, request)
     assert "ORDER BY profiles.role ASC" in str(stmt)
+
+
+def test_count_query() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        ...
+
+    request = Request({"type": "http"})
+    stmt = AddressAdmin().count_query(request)
+    assert "SELECT count(addresses.id) AS count_1" in str(stmt)
+
+
+async def test_count_multi_bind() -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import declarative_base
+
+    OtherBase = declarative_base()
+    other_engine = create_engine("sqlite:///:memory:")
+
+    multi_bind_session_maker = sessionmaker(
+        binds={Base: engine, OtherBase: other_engine}
+    )
+
+    class AddressAdmin(ModelView, model=Address):
+        session_maker = multi_bind_session_maker
+
+    request = Request({"type": "http"})
+    count = await AddressAdmin().count(request)
+    assert count == 0
 
 
 def test_search_query() -> None:

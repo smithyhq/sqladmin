@@ -257,7 +257,9 @@ def test_root_path_ajax_lookup_url_includes_root_path() -> None:
         assert response.status_code == 200
         assert 'data-url="http://testserver/api/v1/admin/user/ajax/lookup"' in response.text
 
-        # data_url (underscore) should not leak as a raw HTML attribute
+        # The template passes data_url (underscore) as a kwarg. WTForms'
+        # clean_key converts it to data-url (dash) before the widget sees it.
+        # Verify the underscore variant doesn't leak as a raw HTML attribute.
         assert "data_url=" not in response.text
 
         # Edit page should also have ajax data-url with root_path

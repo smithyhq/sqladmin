@@ -24,7 +24,7 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, asc, cast, desc, func, inspect, or_
+from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.orm import selectinload, sessionmaker
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -1200,9 +1200,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             field_attr = getattr(model, parts[-1])
             expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
-        if not expressions:
-            return stmt
-        return stmt.filter(or_(*expressions))
+        return stmt.filter(or_(false(), *expressions))
 
     def list_query(self, request: Request) -> Select:
         """

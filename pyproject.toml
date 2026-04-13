@@ -15,6 +15,9 @@ requires-python = ">=3.9"
 license = "BSD-3-Clause"
 keywords = ["sqlalchemy", "fastapi", "starlette", "admin"]
 authors = [{ name = "Amin Alaee", email = "mohammadamin.alaee@gmail.com" }]
+maintainers = [
+  { name = "Miradil Zeynalli", email = "miradil.zeynalli@gmail.com" },
+]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",

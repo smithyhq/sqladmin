@@ -80,13 +80,20 @@ class RootPathMiddleware:
             path = scope["path"]
             root_path = scope.get("root_path", "")
             prefix = self.path_prefix
-            if (
-                root_path
-                and not path.startswith(root_path + prefix)
-                and (path == prefix or path.startswith(prefix + "/"))
-            ):
-                scope = dict(scope)
-                scope["path"] = root_path + path
+
+            if root_path:
+                # Strip duplicate root_path prefix
+                # if present (uvicorn --root-path without proxy)
+                double_prefix = root_path + root_path
+                if path.startswith(double_prefix):
+                    scope = dict(scope)
+                    scope["path"] = path[len(root_path) :]  # strip exactly one copy
+                elif not path.startswith(root_path + prefix) and (
+                    path == prefix or path.startswith(prefix + "/")
+                ):
+                    scope = dict(scope)
+                    scope["path"] = root_path + path
+
         await self.app(scope, receive, send)
 
 

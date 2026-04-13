@@ -56,8 +56,7 @@ def test_root_path_admin_routes() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     admin.add_view(UserAdmin)
 
@@ -153,8 +152,7 @@ def test_root_path_html_urls_include_root_path() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     admin.add_view(UserAdmin)
 
@@ -175,8 +173,7 @@ def test_root_path_redirect_after_create() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     admin.add_view(UserAdmin)
 
@@ -198,8 +195,7 @@ def test_root_path_delete_returns_url_with_root_path() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     admin.add_view(UserAdmin)
 
@@ -217,8 +213,7 @@ def test_no_root_path_unchanged_behavior() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     admin.add_view(UserAdmin)
 
@@ -245,8 +240,7 @@ def test_root_path_ajax_lookup_url_includes_root_path() -> None:
             }
         }
 
-    class AddressAdmin(ModelView, model=Address):
-        ...
+    class AddressAdmin(ModelView, model=Address): ...
 
     admin.add_view(UserAdmin)
     admin.add_view(AddressAdmin)
@@ -255,7 +249,10 @@ def test_root_path_ajax_lookup_url_includes_root_path() -> None:
         # Create page should have ajax data-url with root_path
         response = client.get("/admin/user/create")
         assert response.status_code == 200
-        assert 'data-url="http://testserver/api/v1/admin/user/ajax/lookup"' in response.text
+        assert (
+            'data-url="http://testserver/api/v1/admin/user/ajax/lookup"'
+            in response.text
+        )
 
         # The template passes data_url (underscore) as a kwarg. WTForms'
         # clean_key converts it to data-url (dash) before the widget sees it.
@@ -269,5 +266,74 @@ def test_root_path_ajax_lookup_url_includes_root_path() -> None:
 
         response = client.get("/admin/user/edit/1")
         assert response.status_code == 200
-        assert 'data-url="http://testserver/api/v1/admin/user/ajax/lookup"' in response.text
+        assert (
+            'data-url="http://testserver/api/v1/admin/user/ajax/lookup"'
+            in response.text
+        )
         assert "data_url=" not in response.text
+
+
+def test_root_path_double_prefix_static_files() -> None:
+    """When uvicorn runs with --root-path without a reverse proxy, static file
+    requests may arrive with the root_path duplicated in the path."""
+    app = Starlette()
+    Admin(app=app, engine=engine)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/api/v1/admin/statics/css/main.css")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/css")
+
+
+def test_root_path_double_prefix_admin_routes() -> None:
+    """Admin HTML pages should be accessible even when root_path is duplicated."""
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User): ...
+
+    admin.add_view(UserAdmin)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/api/v1/admin/")
+        assert response.status_code == 200
+
+        response = client.get("/api/v1/admin/user/list")
+        assert response.status_code == 200
+
+
+def test_root_path_double_prefix_does_not_affect_non_admin_routes() -> None:
+    """The double-prefix stripping should only apply to admin paths."""
+
+    def hello(request: Request) -> Response:
+        return PlainTextResponse("hello")
+
+    app = Starlette(routes=[Route("/hello", endpoint=hello)])
+    Admin(app=app, engine=engine)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/hello")
+        assert response.status_code == 200
+        assert response.text == "hello"
+
+
+def test_root_path_double_prefix_with_custom_base_url() -> None:
+    """Double-prefix stripping should work with a custom base_url."""
+    app = Starlette()
+    Admin(app=app, engine=engine, base_url="/dashboard")
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/api/v1/dashboard/statics/css/main.css")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/css")
+
+
+def test_root_path_triple_prefix_is_not_stripped() -> None:
+    """Only one duplicate should be stripped -
+    triple prefix should not accidentally resolve."""
+    app = Starlette()
+    Admin(app=app, engine=engine)
+
+    with TestClient(app, root_path="/api/v1") as client:
+        response = client.get("/api/v1/api/v1/api/v1/admin/")
+        assert response.status_code == 404

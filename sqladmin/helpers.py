@@ -14,6 +14,8 @@ from typing import (
     Callable,
     Generator,
     TypeVar,
+    get_args,
+    get_origin,
 )
 
 from sqlalchemy import Column
@@ -255,14 +257,20 @@ def get_direction(prop: MODEL_PROPERTY) -> str:
 
 def get_column_python_type(column: Column) -> type:
     try:
-        return column.type.python_type
+        python_type = column.type.python_type
     except NotImplementedError:
         if hasattr(column.type, "impl"):
             try:
-                return column.type.impl.python_type
+                python_type = column.type.impl.python_type
             except NotImplementedError:
-                ...
-        return str
+                return str
+        else:
+            return str
+
+    if get_origin(python_type) is not None:
+        python_type = get_args(python_type)[0]
+
+    return python_type
 
 
 def is_relationship(prop: MODEL_PROPERTY) -> bool:

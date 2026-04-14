@@ -1,11 +1,14 @@
+import uuid
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Any
+from typing import Annotated, Any
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
-from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Time
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Time, Uuid
 from sqlalchemy.orm import declarative_base
 
 from sqladmin.helpers import (
+    get_column_python_type,
     get_object_identifier,
     is_falsy_value,
     object_identifier_values,
@@ -147,3 +150,45 @@ def test_catch_malformed_id():
 
     test_case("Missing;1")
     test_case("Johnson;7;A;Extra")
+
+
+class UUIDPKModel(Base):
+    __tablename__ = "uuid_pk_model"
+    id = Column(Uuid, primary_key=True)
+
+
+def test_get_column_python_type_with_uuid_pk():
+    """Regression #981: must not raise TypeError when python_type
+    returns a type annotation instead of a plain class."""
+    pk = UUIDPKModel.__table__.c["id"]
+    result = get_column_python_type(pk)
+    assert callable(result)
+
+
+def test_get_column_python_type_annotated_type_no_typeerror():
+    """When python_type returns Annotated[uuid.UUID, ...], issubclass
+    must not be called on it — no TypeError should be raised."""
+    mock_col = MagicMock()
+    mock_col.type.python_type = Annotated[uuid.UUID, "meta"]
+    # Before the fix: TypeError: issubclass() arg 1 must be a class
+    result = get_column_python_type(mock_col)
+    assert callable(result)
+
+
+def test_get_column_python_type_annotated_returns_origin():
+    """When python_type is Annotated[uuid.UUID, ...], the returned
+    type should resolve to the origin class (uuid.UUID)."""
+    mock_col = MagicMock()
+    mock_col.type.python_type = Annotated[uuid.UUID, "meta"]
+    result = get_column_python_type(mock_col)
+    assert result is uuid.UUID
+
+
+def test_get_column_python_type_not_implemented_no_impl():
+    """Falls back to str when python_type raises NotImplementedError
+    and there is no impl."""
+    mock_col = MagicMock(spec=["type"])
+    t = MagicMock(spec=["python_type"])
+    type(t).python_type = PropertyMock(side_effect=NotImplementedError)
+    mock_col.type = t
+    assert get_column_python_type(mock_col) is str

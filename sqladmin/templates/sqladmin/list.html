@@ -77,6 +77,7 @@
                 <div class="col-md-4 text-muted">
                   <div class="input-group">
                     <input id="search-input" type="text" class="form-control"
+                      data-search-auto-submit="{{ 'true' if model_view.search_auto_submit else 'false' }}"
                       placeholder="Search: {{ model_view.search_placeholder() }}"
                       value="{{ request.query_params.get('search', '') }}">
                     <button id="search-button" class="btn" type="button">Search</button>
@@ -136,9 +137,11 @@
                       {% endif %}
                       {% if model_view.can_delete %}
                       <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(row) }}"
-                        data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
-                        data-bs-target="#modal-delete" title="Delete">
-                        <span class="me-1"><i class="fa-solid fa-trash"></i></span>
+                         data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
+                         data-bs-target="#modal-delete">
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                          <span class="me-1"><i class="fa-solid fa-trash"></i></span>
+                        </span>
                       </a>
                       {% endif %}
                     </td>

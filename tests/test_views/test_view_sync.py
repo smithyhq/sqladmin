@@ -5,6 +5,7 @@ from typing import Any, Generator
 import pytest
 from sqlalchemy import (
     JSON,
+    Boolean,
     Column,
     Date,
     Enum,
@@ -116,6 +117,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     price = Column(Integer)
+    is_sold = Column(Boolean, nullable=False)
 
 
 @pytest.fixture
@@ -165,6 +167,8 @@ class UserAdmin(ModelView, model=User):
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
+    column_searchable_list = [Address.id]
+    search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
 
@@ -476,6 +480,54 @@ def test_create_endpoint_with_required_fields(client: TestClient) -> None:
     )
 
 
+def test_update_endpoint_with_checkbox_widget(client: TestClient) -> None:
+    with session_maker() as session:
+        session.add_all(
+            [
+                Product(
+                    id=1,
+                    name="RAM",
+                    price=99_999,
+                    is_sold=False,
+                ),
+                Product(
+                    id=2,
+                    name="RAM second",
+                    price=12421,
+                    is_sold=True,
+                ),
+            ]
+        )
+        session.commit()
+
+    stmt = select(func.count(Product.id))
+    with session_maker() as s:
+        result = s.execute(stmt)
+    assert result.scalar_one() == 2
+
+    response = client.get("/admin/product/edit/1")
+
+    assert response.status_code == 200
+
+    assert (
+        '<div class="form-switch d-flex align-items-center h-100">'
+        f'<input class="form-check-input" id="{Product.is_sold.key}" '
+        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
+        in response.text
+    )
+
+    response = client.get("/admin/product/edit/2")
+
+    assert response.status_code == 200
+
+    assert (
+        '<div class="form-switch d-flex align-items-center h-100">'
+        f'<input checked class="form-check-input" id="{Product.is_sold.key}" '
+        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
+        in response.text
+    )
+
+
 def test_create_endpoint_post_form(client: TestClient) -> None:
     data: dict = {"birthdate": "Wrong Date Format"}
     response = client.post("/admin/user/create", data=data)
@@ -726,7 +778,11 @@ def test_searchable_list(client: TestClient) -> None:
 
     response = client.get("/admin/user/list")
     assert "Search: name" in response.text
+    assert 'data-search-auto-submit="true"' in response.text
     assert "/admin/user/details/1" in response.text
+
+    response = client.get("/admin/address/list")
+    assert 'data-search-auto-submit="false"' in response.text
 
     response = client.get("/admin/user/list?search=ro")
     assert "/admin/user/details/1" in response.text

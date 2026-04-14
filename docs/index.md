@@ -1,18 +1,18 @@
 <p align="center">
-<a href="https://github.com/aminalaee/sqladmin">
-    <img width="400px" src="https://raw.githubusercontent.com/aminalaee/sqladmin/main/docs/assets/images/banner.png" alt"SQLAdmin">
+<a href="https://github.com/smithyhq/sqladmin">
+    <img width="400px" src="https://raw.githubusercontent.com/smithyhq/sqladmin/main/docs/assets/images/banner.png" alt"SQLAdmin">
 </a>
 </p>
 
 <p align="center">
-<a href="https://github.com/aminalaee/sqladmin/actions">
-    <img src="https://github.com/aminalaee/sqladmin/workflows/Test%20Suite/badge.svg" alt="Build Status">
+<a href="https://github.com/smithyhq/sqladmin/actions">
+    <img src="https://github.com/smithyhq/sqladmin/workflows/Test%20Suite/badge.svg" alt="Build Status">
 </a>
-<a href="https://github.com/aminalaee/sqladmin/actions">
-    <img src="https://github.com/aminalaee/sqladmin/workflows/Publish/badge.svg" alt="Publish Status">
+<a href="https://github.com/smithyhq/sqladmin/actions">
+    <img src="https://github.com/smithyhq/sqladmin/workflows/Publish/badge.svg" alt="Publish Status">
 </a>
-<a href="https://codecov.io/gh/aminalaee/sqladmin">
-    <img src="https://codecov.io/gh/aminalaee/sqladmin/branch/main/graph/badge.svg" alt="Coverage">
+<a href="https://codecov.io/gh/smithyhq/sqladmin">
+    <img src="https://codecov.io/gh/smithyhq/sqladmin/branch/main/graph/badge.svg" alt="Coverage">
 </a>
 <a href="https://pypi.org/project/sqladmin/">
     <img src="https://badge.fury.io/py/sqladmin.svg" alt="Package version">
@@ -39,11 +39,9 @@ Main features include:
 
 ---
 
-**Documentation**: [https://aminalaee.github.io/sqladmin](https://aminalaee.github.io/sqladmin)
+**Documentation**: [https://smithyhq.github.io/sqladmin](https://smithyhq.github.io/sqladmin)
 
-**Source Code**: [https://github.com/aminalaee/sqladmin](https://github.com/aminalaee/sqladmin)
-
-**Online Demo**: [Demo](https://sqladmin-demo.aminalaee.dev/admin/)
+**Source Code**: [https://github.com/smithyhq/sqladmin](https://github.com/smithyhq/sqladmin)
 
 ---
 

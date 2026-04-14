@@ -1,14 +1,27 @@
 from typing import Generator
 
 import pytest
+from sqlalchemy import Column, Integer
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse
 from starlette.testclient import TestClient
 
-from sqladmin import Admin
+from sqladmin import Admin, BaseView, action, expose
 from sqladmin.authentication import AuthenticationBackend
+from sqladmin.models import ModelView
 from tests.common import sync_engine as engine
+
+Base = declarative_base()  # type: Any
+session_maker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+
+class Movie(Base):
+    __tablename__ = "movies"
+
+    id = Column(Integer, primary_key=True)
 
 
 class CustomBackend(AuthenticationBackend):
@@ -25,14 +38,28 @@ class CustomBackend(AuthenticationBackend):
         return True
 
     async def authenticate(self, request: Request) -> bool:
-        if "token" in request.session:
+        if "token" not in request.session:
             return RedirectResponse(request.url_for("admin:login"), status_code=302)
-        return False
+        return True
+
+
+class CustomAdmin(BaseView):
+    @expose("/custom", methods=["GET"])
+    async def custom(self, request: Request):
+        return JSONResponse({"status": "ok"})
+
+
+class MovieAdmin(ModelView, model=Movie):
+    @action(name="test")
+    async def test_page(self, request: Request):
+        return JSONResponse({"status": "ok"})
 
 
 app = Starlette()
 authentication_backend = CustomBackend(secret_key="sqladmin")
 admin = Admin(app=app, engine=engine, authentication_backend=authentication_backend)
+admin.add_base_view(CustomAdmin)
+admin.add_model_view(MovieAdmin)
 
 
 @pytest.fixture
@@ -41,7 +68,7 @@ def client() -> Generator[TestClient, None, None]:
         yield c
 
 
-def test_access_logion_required_views(client: TestClient) -> None:
+def test_access_login_required_views(client: TestClient) -> None:
     response = client.get("/admin/")
     assert response.url == "http://testserver/admin/login"
 
@@ -69,3 +96,25 @@ def test_logout(client: TestClient) -> None:
     assert len(response.cookies) == 0
     assert response.status_code == 200
     assert response.url == "http://testserver/admin/login"
+
+
+def test_expose_access_login_required_views(client: TestClient) -> None:
+    response = client.get("/admin/custom")
+    assert response.url == "http://testserver/admin/login"
+
+    response = client.post("/admin/login", data={"username": "a", "password": "b"})
+    client.cookies = response.cookies
+
+    response = client.get("/admin/custom")
+    assert {"status": "ok"} == response.json()
+
+
+def test_action_access_login_required_views(client: TestClient) -> None:
+    response = client.get("/admin/movie/action/test")
+    assert response.url == "http://testserver/admin/login"
+
+    response = client.post("/admin/login", data={"username": "a", "password": "b"})
+    client.cookies = response.cookies
+
+    response = client.get("/admin/movie/action/test")
+    assert {"status": "ok"} == response.json()

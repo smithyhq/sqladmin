@@ -4,12 +4,16 @@ name: Publish
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   publish:
     name: "Publish release"
     runs-on: "ubuntu-latest"
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
 
     steps:
       - uses: "actions/checkout@v3"
@@ -19,7 +23,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: "Install dependencies"
         run: uv sync --group docs
       - name: "Build package & docs"
@@ -30,6 +34,3 @@ jobs:
         run: |
           make publish
           make docs-deploy
-        env:
-          UV_PUBLISH_USERNAME: __token__
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}

@@ -114,6 +114,7 @@ The options available are:
 - `column_exclude_list`: List of columns or column names to be excluded in the list page.
 - `column_formatters`: Dictionary of column formatters in the list page.
 - `column_searchable_list`: List of columns or column names to be searchable in the list page.
+- `search_auto_submit`: Enable or disable automatic search submit while typing in the list page search input. Default is `True`.
 - `column_sortable_list`: List of columns or column names to be sortable in the list page.
 - `column_default_sort`: Default sorting if no sorting is applied, tuple of (column, is_descending)
   or list of the tuple for multiple columns.
@@ -129,6 +130,7 @@ The options available are:
     class UserAdmin(ModelView, model=User):
         column_list = [User.id, User.name, "address.zip_code"]
         column_searchable_list = [User.name]
+        search_auto_submit = False
         column_sortable_list = [User.id]
         column_formatters = {User.name: lambda m, a: m.name[:10]}
         column_default_sort = [(User.email, True), (User.name, False)]
@@ -185,7 +187,11 @@ The following built in column filters are available. All filters have a default 
 * AllUniqueStringValuesFilter - A filter for string columns, with the values of all unique values in the column
 * StaticValuesFilter - A filter for string columns, with the values of a static list of values. This is similar to AllUniqueStringValuesFilter, but instead of getting the list of possible values from the database, you can provide a static list of values.
 * ForeignKeyFilter - A filter for foreign key columns, with the values of all unique values in the foreign key column. To make this filter readable, you need to provide the field name from the foreign model that you want to display as the name of the filter.
-* OperationColumnFilter - A flexible filter that automatically detects column types and provides appropriate operations. For string columns, it offers Contains, Equals, StartsWith, and EndsWith operations. For numeric columns (integer, float), it offers Equals, GreaterThan, and LessThan operations. For UUID columns (SQLAlchemy 2.0+), it offers Contains, Equals, and StartsWith operations.
+* OperationColumnFilter - A flexible filter that automatically detects column types and provides appropriate operations.
+    - For string columns, it offers Contains, Equals, StartsWith, and EndsWith operations.
+    - For numeric columns (integer, float), it offers Equals, GreaterThan, and LessThan operations.
+    - For date columns (Date, DateTime), it offers Equals, GreaterThan, and LessThan operations.
+    - For UUID columns (SQLAlchemy 2.0+), it offers Contains, Equals, and StartsWith operations.
 
 Here is an example of how to use BooleanFilter, AllUniqueStringValuesFilter, ForeignKeyFilter, and OperationColumnFilter:
 
@@ -204,6 +210,7 @@ class User(Base):
     salary: Mapped[float] = mapped_column(Float, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=True)
     site: Mapped[Optional["Site"]] = relationship(back_populates="users")
+    created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
 
 class Site(Base):
     __tablename__ = "sites"
@@ -215,7 +222,7 @@ class Site(Base):
 
 # Define User Admin View
 class UserAdmin(ModelView, model=User):
-    column_list = ["id", "name", "email", "is_admin", "age"]
+    column_list = ["id", "name", "email", "is_admin", "age", "created_at"]
     column_filters = [
         BooleanFilter(User.is_admin),
         AllUniqueStringValuesFilter(User.name),
@@ -223,6 +230,7 @@ class UserAdmin(ModelView, model=User):
         # OperationColumnFilter provides dropdown UI with multiple operations
         OperationColumnFilter(User.email),        # String operations: Contains, Equals, Starts with, Ends with
         OperationColumnFilter(User.age),          # Numeric operations: Equals, Greater than, Less than
+        OperationColumnFilter(User.created_at),   # DateTime operations: Equals, Greater than, Less than
     ]
     can_create = True
     can_edit = True

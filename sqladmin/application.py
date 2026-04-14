@@ -24,7 +24,12 @@ from starlette.datastructures import URL, FormData, MultiDict, UploadFile
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse, Response
+from starlette.responses import (
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -143,7 +148,6 @@ class BaseAdmin:
         This is a shortcut that will handle both `add_model_view` and `add_base_view`.
         """
 
-        view._admin_ref = self
         if view.is_model:
             self.add_model_view(view)  # type: ignore
         else:
@@ -230,6 +234,7 @@ class BaseAdmin:
             ```
         """
 
+        view._admin_ref = self
         # Set database engine from Admin instance
         view.session_maker = self.session_maker
         view.is_async = self.is_async
@@ -269,6 +274,7 @@ class BaseAdmin:
             ```
         """
 
+        view._admin_ref = self
         view.templates = self.templates
         view_instance = view()
 
@@ -515,7 +521,7 @@ class Admin(BaseAdminView):
         referer_params = MultiDict(parse_qsl(referer_url.query))
         url = URL(str(request.url_for("admin:list", identity=identity)))
         url = url.include_query_params(**referer_params)
-        return Response(content=str(url))
+        return PlainTextResponse(content=str(url))
 
     @login_required
     async def create(self, request: Request) -> Response:

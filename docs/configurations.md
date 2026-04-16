@@ -463,6 +463,16 @@ There are four methods you can override to achieve this:
 
 By default these methods do nothing.
 
+### Controlling the response with `after_model_change`
+
+`after_model_change` can optionally return a value to control the HTTP response
+after a successful create or edit:
+
+- **`None`** (default) – the normal redirect happens.
+- **`dict`** – the create/edit template is re-rendered with the dict merged into
+  the template context. The created/updated object is also available as `obj`.
+- **`Response`** – a custom Starlette `Response` is returned directly.
+
 !!! example
 
     ```python
@@ -475,6 +485,12 @@ By default these methods do nothing.
             # Perform some other action
             ...
     ```
+
+!!! tip
+
+    See the [Displaying one-time secrets](cookbook/displaying_one_time_secrets.md)
+    cookbook for a practical example of using a `dict` return to show a secret
+    on the create page after generating a token.
 
 ## Custom Action
 

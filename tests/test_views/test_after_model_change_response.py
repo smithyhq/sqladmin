@@ -1,5 +1,7 @@
 """Tests for after_model_change returning dict or Response."""
 
+from __future__ import annotations
+
 from typing import Any, AsyncGenerator
 
 import pytest

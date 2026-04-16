@@ -32,7 +32,6 @@ from starlette.responses import (
 )
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE
@@ -57,44 +56,6 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
-
-
-class RootPathMiddleware:
-    """Middleware to prepend root_path to request path when missing.
-
-    When deployed behind a reverse proxy that strips a path prefix and sets
-    root_path, Starlette's nested Mount routing breaks because scope["path"]
-    and scope["root_path"] become inconsistent. This middleware normalizes
-    the path before routing occurs.
-
-    Only rewrites requests targeting the given path_prefix to avoid
-    affecting other routes on the host application.
-    """
-
-    def __init__(self, app: ASGIApp, path_prefix: str = "/admin") -> None:
-        self.app = app
-        self.path_prefix = path_prefix
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http":
-            path = scope["path"]
-            root_path = scope.get("root_path", "")
-            prefix = self.path_prefix
-
-            if root_path:
-                # Strip duplicate root_path prefix
-                # if present (uvicorn --root-path without proxy)
-                double_prefix = root_path + root_path
-                if path.startswith(double_prefix):
-                    scope = dict(scope)
-                    scope["path"] = path[len(root_path) :]  # strip exactly one copy
-                elif not path.startswith(root_path + prefix) and (
-                    path == prefix or path.startswith(prefix + "/")
-                ):
-                    scope = dict(scope)
-                    scope["path"] = root_path + path
-
-        await self.app(scope, receive, send)
 
 
 class BaseAdmin:
@@ -484,7 +445,6 @@ class Admin(BaseAdminView):
         self.admin.router.routes = routes
         self.admin.exception_handlers = {HTTPException: http_exception}
         self.admin.debug = debug
-        self.app.add_middleware(RootPathMiddleware, path_prefix=base_url)
         self.app.mount(base_url, app=self.admin, name="admin")
 
     @login_required

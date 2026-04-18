@@ -5,7 +5,18 @@ site_url: https://smithyhq.github.io/sqladmin/
 theme:
   name: "material"
   palette:
-    primary: white
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to light mode
   features:
     - content.code.copy
 

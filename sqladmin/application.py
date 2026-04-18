@@ -730,6 +730,11 @@ class Admin(BaseAdminView):
     async def ajax_lookup(self, request: Request) -> Response:
         """Ajax lookup route."""
 
+        if self.authentication_backend is not None:
+            authenticated = await self.authentication_backend.authenticate(request)
+            if not authenticated or isinstance(authenticated, Response):
+                return RedirectResponse(request.url_for("admin:login"), status_code=302)
+
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
 

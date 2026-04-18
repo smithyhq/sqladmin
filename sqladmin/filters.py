@@ -1,8 +1,11 @@
+import datetime
 import re
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 from sqlalchemy import (
     BigInteger,
+    Date,
+    DateTime,
     Float,
     Integer,
     Numeric,
@@ -11,7 +14,7 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.sql.expression import Select, select
-from sqlalchemy.sql.sqltypes import _Binary
+from sqlalchemy.sql.sqltypes import TypeEngine, _Binary
 from starlette.requests import Request
 
 from sqladmin._types import MODEL_ATTR
@@ -64,6 +67,7 @@ def get_model_from_column(column: Any) -> Any:
 
 class BooleanFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -100,6 +104,7 @@ class BooleanFilter:
 
 class AllUniqueStringValuesFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -134,6 +139,7 @@ class AllUniqueStringValuesFilter:
 
 class StaticValuesFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -164,6 +170,7 @@ class StaticValuesFilter:
 
 class ForeignKeyFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -222,6 +229,7 @@ class OperationColumnFilter:
     """Universal filter that provides appropriate filter types based on column type"""
 
     has_operator = True
+    template = "sqladmin/filters/operation_filter.html"
 
     def __init__(
         self,
@@ -244,6 +252,13 @@ class OperationColumnFilter:
             ]
 
         if self._is_numeric_type(column_obj):
+            return [
+                ("equals", "Equals"),
+                ("greater_than", "Greater than"),
+                ("less_than", "Less than"),
+            ]
+
+        if self._is_date_type(column_obj):
             return [
                 ("equals", "Equals"),
                 ("greater_than", "Greater than"),
@@ -274,6 +289,9 @@ class OperationColumnFilter:
             column_obj.type, (Integer, Numeric, Float, BigInteger, SmallInteger)
         )
 
+    def _is_date_type(self, column_obj: Any) -> bool:
+        return isinstance(column_obj.type, (Date, DateTime))
+
     def _is_uuid_type(self, column_obj: Any) -> bool:
         # Check if UUID support is available and column is UUID type
         return HAS_UUID_SUPPORT and isinstance(column_obj.type, Uuid)
@@ -286,10 +304,12 @@ class OperationColumnFilter:
 
         column_type = column_obj.type
 
-        converters = [
+        converters: List[Tuple[Tuple[Type[TypeEngine], ...], Callable[[str], Any]]] = [
             ((String, Text, _Binary), str),
             ((Integer, BigInteger, SmallInteger), int),
             ((Numeric, Float), float),
+            ((DateTime,), datetime.datetime.fromisoformat),
+            ((Date,), datetime.date.fromisoformat),
         ]
 
         try:

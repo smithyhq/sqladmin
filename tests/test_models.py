@@ -100,6 +100,19 @@ class Profile(Base):
     user = relationship("User", back_populates="profile")
 
 
+class Shipment(Base):
+    __tablename__ = "shipments"
+
+    id = Column(Integer, primary_key=True)
+    origin_address_id = Column(Integer, ForeignKey("addresses.id"))
+    destination_address_id = Column(Integer, ForeignKey("addresses.id"))
+
+    origin_address = relationship("Address", foreign_keys=[origin_address_id])
+    destination_address = relationship(
+        "Address", foreign_keys=[destination_address_id]
+    )
+
+
 @pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
@@ -568,6 +581,34 @@ def test_sort_query() -> None:
     assert "ORDER BY profiles.role ASC" in str(stmt)
 
 
+def test_count_query() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        ...
+
+    request = Request({"type": "http"})
+    stmt = AddressAdmin().count_query(request)
+    assert "SELECT count(addresses.id) AS count_1" in str(stmt)
+
+
+async def test_count_multi_bind() -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import declarative_base
+
+    OtherBase = declarative_base()
+    other_engine = create_engine("sqlite:///:memory:")
+
+    multi_bind_session_maker = sessionmaker(
+        binds={Base: engine, OtherBase: other_engine}
+    )
+
+    class AddressAdmin(ModelView, model=Address):
+        session_maker = multi_bind_session_maker
+
+    request = Request({"type": "http"})
+    count = await AddressAdmin().count(request)
+    assert count == 0
+
+
 def test_search_query() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_searchable_list = ["user.name", "user.profile.role"]
@@ -575,6 +616,55 @@ def test_search_query() -> None:
     stmt = AddressAdmin().search_query(select(Address), "example")
     assert "lower(CAST(users.name AS VARCHAR))" in str(stmt)
     assert "lower(CAST(profiles.role AS VARCHAR))" in str(stmt)
+
+
+def test_sort_multi_fields_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = [Address.id, User.id, User.name]
+
+    query = select(Address)
+    request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
+    stmt = AddressAdmin().sort_query(query, request)
+
+    stmt_str = str(stmt)
+    assert "ORDER BY users.id ASC" in stmt_str
+    assert stmt_str.count("JOIN") == 1
+
+
+def test_search_multi_fields_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name", "user.id"]
+
+    stmt = AddressAdmin().search_query(select(Address), "example")
+    assert str(stmt).count("JOIN") == 1
+
+
+def test_sort_then_search_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name"]
+        column_sortable_list = [User.id]
+
+    query = select(Address)
+    request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
+
+    stmt = AddressAdmin().sort_query(query, request)
+    stmt_after_sort = str(stmt)
+    assert stmt_after_sort.count("JOIN") == 1
+
+    stmt = AddressAdmin().search_query(stmt, "test")
+    stmt_after_search = str(stmt)
+    assert stmt_after_search.count("JOIN") == 1
+
+
+def test_search_two_fks_to_same_model() -> None:
+    class ShipmentAdmin(ModelView, model=Shipment):
+        column_searchable_list = ["origin_address.name", "destination_address.name"]
+
+    stmt = ShipmentAdmin().search_query(select(Shipment), "example")
+    stmt_str = str(stmt)
+    assert stmt_str.count("JOIN") == 2
+    assert "origin_address_id" in stmt_str
+    assert "destination_address_id" in stmt_str
 
 
 def test_expose_decorator(client: TestClient) -> None:

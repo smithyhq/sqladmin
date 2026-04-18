@@ -8,13 +8,13 @@ module-root = ""
 
 [project]
 name = "sqladmin"
-version = "0.23.0"
+version = "0.24.0"
 description = 'SQLAlchemy admin for FastAPI and Starlette'
 readme = "README.md"
 requires-python = ">=3.9"
 license = "BSD-3-Clause"
 keywords = ["sqlalchemy", "fastapi", "starlette", "admin"]
-authors = [{ name = "Amin Alaee", email = "me@aminalaee.dev" }]
+authors = [{ name = "Amin Alaee", email = "mohammadamin.alaee@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -43,9 +43,9 @@ dependencies = [
 full = ["itsdangerous"]
 
 [project.urls]
-Documentation = "https://aminalaee.github.io/sqladmin/"
-Issues = "https://github.com/aminalaee/sqladmin/issues"
-Source = "https://github.com/aminalaee/sqladmin"
+Documentation = "https://smithyhq.github.io/sqladmin/"
+Issues = "https://github.com/smithyhq/sqladmin/issues"
+Source = "https://github.com/smithyhq/sqladmin"
 
 
 [dependency-groups]

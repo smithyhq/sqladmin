@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     Union,
@@ -23,7 +24,7 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, asc, cast, desc, func, inspect, or_
+from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.orm import selectinload, sessionmaker
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -324,6 +325,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         class UserAdmin(ModelView, model=User):
             column_searchable_list = [User.name]
         ```
+    """
+
+    search_auto_submit: ClassVar[bool] = True
+    """Automatically submit search while typing in list view.
+
+    When set to `True`, typing in the search input triggers a delayed search.
+    Set to `False` to require pressing `Enter` or clicking the search button.
     """
 
     column_filters: ClassVar[Sequence[ColumnFilter]] = []
@@ -1142,6 +1150,38 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
         return ", ".join(field_names)
 
+    def _join_relationship_paths(
+        self,
+        stmt: Select,
+        field_path: str,
+        joined_paths: Set[str],
+    ) -> Tuple[Select, Any]:
+        """Join relationship paths and return the statement and target model.
+
+        Navigates through a dotted relationship path (e.g. ``user.profile.role``)
+        and joins each segment via its relationship attribute, which lets
+        SQLAlchemy pick the correct foreign key when a model has multiple
+        relationships to the same target. Paths are tracked to avoid duplicate
+        joins within a single call; SQLAlchemy itself dedupes joins on the same
+        relationship attribute across calls.
+        """
+        model = self.model
+        parts = field_path.split(".")
+
+        current_path = ""
+        for part in parts[:-1]:
+            current_path = f"{current_path}.{part}" if current_path else part
+            relationship_attr = getattr(model, part)
+            next_model = relationship_attr.mapper.class_
+
+            if current_path not in joined_paths:
+                stmt = stmt.join(relationship_attr)
+                joined_paths.add(current_path)
+
+            model = next_model
+
+        return stmt, model
+
     def search_query(self, stmt: Select, term: str) -> Select:
         """Specify the search query given the SQLAlchemy statement
         and term to search for.
@@ -1153,17 +1193,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
         expressions = []
+        joined_paths: Set[str] = set()
+
         for field in self._search_fields:
-            model = self.model
+            stmt, model = self._join_relationship_paths(stmt, field, joined_paths)
             parts = field.split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+            field_attr = getattr(model, parts[-1])
+            expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
-            field = getattr(model, parts[-1])
-            expressions.append(cast(field, String).ilike(f"%{term}%"))
-
-        return stmt.filter(or_(*expressions))
+        return stmt.filter(or_(false(), *expressions))
 
     def list_query(self, request: Request) -> Select:
         """
@@ -1207,7 +1245,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         By default it will select all objects without any filters.
         """
 
-        return select(func.count(self.pk_columns[0]))
+        return select(func.count(self.pk_columns[0])).select_from(self.model)
 
     def sort_query(self, stmt: Select, request: Request) -> Select:
         """
@@ -1225,13 +1263,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         else:
             sort_fields = self._get_default_sort()
 
-        for sort_field, is_desc in sort_fields:
-            model = self.model
+        joined_paths: Set[str] = set()
 
-            parts = self._get_prop_name(sort_field).split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+        for sort_field, is_desc in sort_fields:
+            field_path = self._get_prop_name(sort_field)
+            stmt, model = self._join_relationship_paths(stmt, field_path, joined_paths)
+            parts = field_path.split(".")
 
             if is_desc:
                 stmt = stmt.order_by(desc(getattr(model, parts[-1])))

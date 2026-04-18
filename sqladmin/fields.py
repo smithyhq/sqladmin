@@ -397,4 +397,12 @@ class FileField(fields.FileField):
     File field which is clearable.
     """
 
-    widget = sqladmin_widgets.FileInputWidget()  # type: ignore[assignment]
+    widget = sqladmin_widgets.FileInputWidget()
+
+
+class BooleanField(fields.BooleanField):
+    """
+    Boolean checkbox field.
+    """
+
+    widget = sqladmin_widgets.BooleanInputWidget()

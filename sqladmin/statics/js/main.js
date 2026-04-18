@@ -67,6 +67,9 @@ var timeout = null;
 // Search
 $(document).on('keyup', '#search-input', function (e) {
   clearTimeout(timeout);
+  if ($(this).data('searchAutoSubmit') === false) {
+    return;
+  }
   // Make a new timeout set to go off in 1000ms (1 second)
   timeout = setTimeout(function () {
     $('#search-button').click();

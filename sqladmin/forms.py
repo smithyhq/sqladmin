@@ -28,7 +28,6 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql.elements import Label
 from wtforms import (
-    BooleanField,
     DecimalField,
     Field,
     Form,
@@ -52,6 +51,7 @@ from sqladmin.exceptions import NoConverterFound
 from sqladmin.fields import (
     AjaxSelectField,
     AjaxSelectMultipleField,
+    BooleanField,
     DateField,
     DateTimeField,
     FileField,

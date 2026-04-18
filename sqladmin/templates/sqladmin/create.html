@@ -7,6 +7,7 @@
       <h3 class="card-title">New {{ model_view.name }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
+      {% block create_form %}
       <form action="{{ url_for('admin:create', identity=model_view.identity) }}" method="POST"
         enctype="multipart/form-data">
         <div class="row">
@@ -25,13 +26,16 @@
           </div>
           <div class="col-md-6">
             <div class="btn-group flex-wrap" data-toggle="buttons">
-              <input type="submit" name="save" value="Save" class="btn">
-              <input type="submit" name="save" value="Save and continue editing" class="btn">
-              <input type="submit" name="save" value="Save and add another" class="btn">
+              {% block submit_buttons_bottom  %}
+                <input type="submit" name="save" value="Save" class="btn">
+                <input type="submit" name="save" value="Save and continue editing" class="btn">
+                <input type="submit" name="save" value="Save and add another" class="btn">
+              {% endblock %}
             </div>
           </div>
         </div>
       </form>
+      {% endblock %}
     </div>
   </div>
 </div>

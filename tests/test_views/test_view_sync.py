@@ -5,6 +5,7 @@ from typing import Any, Generator
 import pytest
 from sqlalchemy import (
     JSON,
+    Boolean,
     Column,
     Date,
     Enum,
@@ -73,6 +74,7 @@ class Profile(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -116,6 +118,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     price = Column(Integer)
+    is_sold = Column(Boolean, nullable=False)
 
 
 @pytest.fixture
@@ -143,7 +146,7 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
+    column_searchable_list = [User.name, User.id]
     column_sortable_list = [User.id]
     column_export_list = [User.name, User.status]
     column_formatters = {
@@ -165,6 +168,8 @@ class UserAdmin(ModelView, model=User):
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
+    column_searchable_list = [Address.id]
+    search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
 
@@ -476,6 +481,54 @@ def test_create_endpoint_with_required_fields(client: TestClient) -> None:
     )
 
 
+def test_update_endpoint_with_checkbox_widget(client: TestClient) -> None:
+    with session_maker() as session:
+        session.add_all(
+            [
+                Product(
+                    id=1,
+                    name="RAM",
+                    price=99_999,
+                    is_sold=False,
+                ),
+                Product(
+                    id=2,
+                    name="RAM second",
+                    price=12421,
+                    is_sold=True,
+                ),
+            ]
+        )
+        session.commit()
+
+    stmt = select(func.count(Product.id))
+    with session_maker() as s:
+        result = s.execute(stmt)
+    assert result.scalar_one() == 2
+
+    response = client.get("/admin/product/edit/1")
+
+    assert response.status_code == 200
+
+    assert (
+        '<div class="form-switch d-flex align-items-center h-100">'
+        f'<input class="form-check-input" id="{Product.is_sold.key}" '
+        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
+        in response.text
+    )
+
+    response = client.get("/admin/product/edit/2")
+
+    assert response.status_code == 200
+
+    assert (
+        '<div class="form-switch d-flex align-items-center h-100">'
+        f'<input checked class="form-check-input" id="{Product.is_sold.key}" '
+        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
+        in response.text
+    )
+
+
 def test_create_endpoint_post_form(client: TestClient) -> None:
     data: dict = {"birthdate": "Wrong Date Format"}
     response = client.post("/admin/user/create", data=data)
@@ -716,6 +769,28 @@ def test_update_submit_form(client: TestClient) -> None:
         assert address[0].user_id == 1
 
 
+def test_update_wtforms_reserved_filed_names(client: TestClient) -> None:
+    with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        session.commit()
+
+    data = {"data": "new_data"}
+    response = client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 200
+
+    stmt = select(Profile).limit(1)
+    with session_maker() as s:
+        profile = s.execute(stmt).scalar_one()
+
+    assert profile.data == "new_data"
+
+
 def test_searchable_list(client: TestClient) -> None:
     with session_maker() as session:
         user = User(name="Ross")
@@ -726,7 +801,11 @@ def test_searchable_list(client: TestClient) -> None:
 
     response = client.get("/admin/user/list")
     assert "Search: name" in response.text
+    assert 'data-search-auto-submit="true"' in response.text
     assert "/admin/user/details/1" in response.text
+
+    response = client.get("/admin/address/list")
+    assert 'data-search-auto-submit="false"' in response.text
 
     response = client.get("/admin/user/list?search=ro")
     assert "/admin/user/details/1" in response.text
@@ -855,3 +934,26 @@ def test_export_bad_type_is_404(client: TestClient) -> None:
 def test_export_permission(client: TestClient) -> None:
     response = client.get("/admin/movie/export/csv")
     assert response.status_code == 403
+
+
+def test_sort_and_search_together_no_ambigious_column_error(
+    client: TestClient,
+) -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name", "user.email"]
+        column_sortable_list = [Address.id, "user.id", "user.name"]
+
+    admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user1 = User(name="Alice", email="alice@example.com")
+        user2 = User(name="Bob", email="bob@example.com")
+        user3 = User(name="Charlie", email="charlie@example.com")
+        address1 = Address(user=user1)
+        address2 = Address(user=user2)
+        address3 = Address(user=user3)
+        session.add_all([user1, user2, user3, address1, address2, address3])
+        session.commit()
+
+    response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
+    assert response.status_code == 200

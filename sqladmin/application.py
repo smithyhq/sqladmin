@@ -15,7 +15,7 @@ from typing import (
 )
 from urllib.parse import parse_qsl, urljoin
 
-from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader
+from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, sessionmaker
@@ -114,6 +114,9 @@ class BaseAdmin:
         templates = Jinja2Templates("templates")
         loaders = [
             FileSystemLoader(self.templates_dir),
+            PrefixLoader(
+                {"sqladmin_original": PackageLoader("sqladmin", "templates/sqladmin")}
+            ),
             PackageLoader("sqladmin", "templates"),
         ]
 
@@ -754,8 +757,8 @@ class Admin(BaseAdminView):
             reserved_field_name = field_name[:-1]
             if (
                 field_name in data
-                and not getattr(obj, field_name, None)
-                and getattr(obj, reserved_field_name, None)
+                and not hasattr(obj, field_name)
+                and hasattr(obj, reserved_field_name)
             ):
                 data[reserved_field_name] = data.pop(field_name)
         return data

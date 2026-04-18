@@ -10,6 +10,7 @@
         {% endfor %}: {{ get_object_identifier(model) }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
+      {% block details_table %}
       <div class="table-responsive">
         <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
           <thead>
@@ -47,6 +48,7 @@
           </tbody>
         </table>
       </div>
+      {% endblock %}
       <div class="card-footer container">
         <div class="row row-gap-2">
           <div class="col-auto">
@@ -90,6 +92,7 @@
     </div>
   </div>
 </div>
+{% block action_buttons_bottom  %}
 {% if model_view.can_delete %}
 {% include 'sqladmin/modals/delete.html' %}
 {% endif %}
@@ -102,5 +105,5 @@ url=model_view._url_for_action(request, custom_action) + '?pks=' + (get_object_i
 {% endwith %}
 {% endif %}
 {% endfor %}
-
+{% endblock %}
 {% endblock %}

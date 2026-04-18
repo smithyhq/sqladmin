@@ -6,6 +6,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     Column,
     Date,
     Enum,
@@ -76,6 +77,7 @@ class Profile(Base):
 
     id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -119,6 +121,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     price = Column(BigInteger)
+    is_sold = Column(Boolean, nullable=False)
 
 
 @pytest.fixture
@@ -153,8 +156,8 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
-    column_sortable_list = [User.id]
+    column_searchable_list = [User.name, User.status]
+    column_sortable_list = [User.id, User.name]
     column_export_list = [User.name, User.status]
     column_formatters = {
         User.addresses_formattable: lambda m, a: [
@@ -173,6 +176,8 @@ class UserAdmin(ModelView, model=User):
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
+    column_searchable_list = [Address.id]
+    search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
 
@@ -494,6 +499,55 @@ async def test_create_endpoint_with_required_fields(client: AsyncClient) -> None
     )
 
 
+@pytest.mark.anyio
+async def test_update_endpoint_with_checkbox_widget(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        session.add_all(
+            [
+                Product(
+                    id=1,
+                    name="RAM",
+                    price=99_999,
+                    is_sold=False,
+                ),
+                Product(
+                    id=2,
+                    name="RAM second",
+                    price=12421,
+                    is_sold=True,
+                ),
+            ]
+        )
+        await session.commit()
+
+    stmt = select(func.count(Product.id))
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    assert result.scalar_one() == 2
+
+    response = await client.get("/admin/product/edit/1")
+
+    assert response.status_code == 200
+
+    assert (
+        '<div class="form-switch d-flex align-items-center h-100">'
+        f'<input class="form-check-input" id="{Product.is_sold.key}" '
+        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
+        in response.text
+    )
+
+    response = await client.get("/admin/product/edit/2")
+
+    assert response.status_code == 200
+
+    assert (
+        '<div class="form-switch d-flex align-items-center h-100">'
+        f'<input checked class="form-check-input" id="{Product.is_sold.key}" '
+        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
+        in response.text
+    )
+
+
 async def test_create_endpoint_post_form(client: AsyncClient) -> None:
     data = {"date_of_birth": "Wrong Date Format"}
     response = await client.post("/admin/user/create", data=data)
@@ -742,6 +796,28 @@ async def test_update_submit_form(client: AsyncClient) -> None:
         assert address[0].user_id == 1
 
 
+async def test_update_wtforms_reserved_filed_names(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        await session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        await session.commit()
+
+    data = {"data": "new_data"}
+    response = await client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 302
+
+    stmt = select(Profile).limit(1)
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    profile = result.scalar_one()
+    assert profile.data == "new_data"
+
+
 async def test_searchable_list(client: AsyncClient) -> None:
     async with session_maker() as session:
         user = User(name="Ross")
@@ -752,7 +828,11 @@ async def test_searchable_list(client: AsyncClient) -> None:
 
     response = await client.get("/admin/user/list")
     assert "Search: name" in response.text
+    assert 'data-search-auto-submit="true"' in response.text
     assert "/admin/user/details/1" in response.text
+
+    response = await client.get("/admin/address/list")
+    assert 'data-search-auto-submit="false"' in response.text
 
     response = await client.get("/admin/user/list?search=ro")
     assert "/admin/user/details/1" in response.text

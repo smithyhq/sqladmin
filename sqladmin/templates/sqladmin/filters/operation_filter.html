@@ -1,0 +1,38 @@
+{% extends "sqladmin/filters/base_filter.html" %}
+
+{% block filter_body %}
+  {% set current_filter = request.query_params.get(filter.parameter_name, '') %}
+  {% set current_op = request.query_params.get(filter.parameter_name + '_op', '') %}
+
+  {% if current_filter %}
+  <div class="mb-2 text-muted small">
+    Current: {{ current_op }} {{ current_filter }}
+    <a href="{{ request.url.remove_query_params(filter.parameter_name).remove_query_params(filter.parameter_name + '_op') }}" class="text-decoration-none">[Clear]</a>
+  </div>
+  {% endif %}
+
+  <form method="get" class="d-flex flex-column" style="gap: 8px;">
+    {% for key, value in request.query_params.items() %}
+      {% if key != filter.parameter_name and key != filter.parameter_name + '_op' %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% endif %}
+    {% endfor %}
+
+    <select name="{{ filter.parameter_name }}_op" class="form-select form-select-sm" required>
+      <option value="">Select operation...</option>
+      {% for op_value, op_label in filter.get_operation_options_for_model(model_view.model) %}
+      <option value="{{ op_value }}" {% if current_op == op_value %}selected{% endif %}>{{ op_label }}</option>
+      {% endfor %}
+    </select>
+
+    <input
+      type="text"
+      name="{{ filter.parameter_name }}"
+      placeholder="Enter value"
+      class="form-control form-control-sm"
+      value="{{ current_filter }}"
+      required>
+
+    <button type="submit" class="btn btn-sm btn-outline-primary">Apply Filter</button>
+  </form>
+{% endblock %}

@@ -9,37 +9,39 @@
             <div class="card-header">
               <h3 class="card-title">{{ model_view.name_plural }}</h3>
               <div class="ms-auto">
-                {% if model_view.can_export %}
-                {% if model_view.export_types | length > 1 %}
-                <div class="ms-3 d-inline-block dropdown">
-                  <a href="#" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1" data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                    Export
-                  </a>
-                  <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    {% for export_type in model_view.export_types %}
-                    <li><a class="dropdown-item"
-                        href="{{ url_for('admin:export', identity=model_view.identity, export_type=export_type) }}">{{
-                        export_type | upper }}</a></li>
-                    {% endfor %}
-                  </ul>
-                </div>
-                {% elif model_view.export_types | length == 1 %}
-                <div class="ms-3 d-inline-block">
-                  <a href="{{ url_for('admin:export', identity=model_view.identity, export_type=model_view.export_types[0]) }}"
-                    class="btn btn-secondary">
-                    Export
-                  </a>
-                </div>
-                {% endif %}
-                {% endif %}
-                {% if model_view.can_create %}
-                <div class="ms-3 d-inline-block">
-                  <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
-                    + New {{ model_view.name }}
-                  </a>
-                </div>
-                {% endif %}
+                {% block model_menu_bar %}
+                  {% if model_view.can_export %}
+                  {% if model_view.export_types | length > 1 %}
+                  <div class="ms-3 d-inline-block dropdown">
+                    <a href="#" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1" data-bs-toggle="dropdown"
+                      aria-expanded="false">
+                      Export
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                      {% for export_type in model_view.export_types %}
+                      <li><a class="dropdown-item"
+                          href="{{ url_for('admin:export', identity=model_view.identity, export_type=export_type) }}">{{
+                          export_type | upper }}</a></li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% elif model_view.export_types | length == 1 %}
+                  <div class="ms-3 d-inline-block">
+                    <a href="{{ url_for('admin:export', identity=model_view.identity, export_type=model_view.export_types[0]) }}"
+                      class="btn btn-secondary">
+                      Export
+                    </a>
+                  </div>
+                  {% endif %}
+                  {% endif %}
+                  {% if model_view.can_create %}
+                  <div class="ms-3 d-inline-block">
+                    <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
+                      + New {{ model_view.name }}
+                    </a>
+                  </div>
+                  {% endif %}
+                {% endblock %}
               </div>
             </div>
             <div class="card-body border-bottom py-3">
@@ -77,6 +79,7 @@
                 <div class="col-md-4 text-muted">
                   <div class="input-group">
                     <input id="search-input" type="text" class="form-control"
+                      data-search-auto-submit="{{ 'true' if model_view.search_auto_submit else 'false' }}"
                       placeholder="Search: {{ model_view.search_placeholder() }}"
                       value="{{ request.query_params.get('search', '') }}">
                     <button id="search-button" class="btn" type="button">Search</button>
@@ -87,6 +90,7 @@
                 {% endif %}
               </div>
             </div>
+            {% block model_list_table %}
             <div class="table-responsive">
               <table class="table card-table table-vcenter text-nowrap">
                 <thead>
@@ -169,6 +173,7 @@
                 </tbody>
               </table>
             </div>
+            {% endblock %}
             <div class="card-footer d-flex justify-content-between align-items-center gap-2">
               <p class="m-0 text-muted">Showing <span>{{ ((pagination.page - 1) * pagination.page_size) + 1 }}</span> to
                 <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> of <span>{{ pagination.count
@@ -225,69 +230,7 @@
             </div>
             <div class="card-body">
               {% for filter in model_view.get_filters() %}
-              {% if filter.has_operator %}
-              <div class="mb-3">
-                <div class="fw-bold text-truncate">{{ filter.title }}</div>
-                <div>
-                  <!-- Show current filter if active -->
-                  {% set current_filter = request.query_params.get(filter.parameter_name, '') %}
-                  {% set current_op = request.query_params.get(filter.parameter_name + '_op', '') %}
-                  {% if current_filter %}
-                  <div class="mb-2 text-muted small">
-                    Current: {{ current_op }} {{ current_filter }} 
-                    <a href="{{ request.url.remove_query_params(filter.parameter_name).remove_query_params(filter.parameter_name + '_op') }}" class="text-decoration-none">[Clear]</a>
-                  </div>
-                  {% endif %}
-                  <!-- Single form with dropdown for operations -->
-                  <form method="get" class="d-flex flex-column" style="gap: 8px;">
-                    <!-- Preserve existing query parameters -->
-                    {% for key, value in request.query_params.items() %}
-                      {% if key != filter.parameter_name and key != filter.parameter_name + '_op' %}
-                      <input type="hidden" name="{{ key }}" value="{{ value }}">
-                      {% endif %}
-                    {% endfor %}
-                    <!-- Operation dropdown -->
-                    <select name="{{ filter.parameter_name }}_op" class="form-select form-select-sm" required>
-                      <option value="">Select operation...</option>
-                      {% for op_value, op_label in filter.get_operation_options_for_model(model_view.model) %}
-                      <option value="{{ op_value }}" {% if current_op == op_value %}selected{% endif %}>{{ op_label }}</option>
-                      {% endfor %}
-                    </select>
-                    <!-- Value input -->
-                    <input type="text" 
-                           name="{{ filter.parameter_name }}" 
-                           placeholder="Enter value"
-                           class="form-control form-control-sm"
-                           value="{{ current_filter }}"
-                           required>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Apply Filter</button>
-                  </form>
-                </div>
-              </div>
-              {% else %}
-              <!-- Fallback for other filter types -->
-              <div class="mb-3">
-                <div class="fw-bold text-truncate fs-3 mb-2">{{ filter.title }}</div>
-                <div>
-                  {% for lookup in filter.lookups(request, model_view.model, model_view._run_arbitrary_query) %}
-                  {% if request.query_params.get(filter.parameter_name) == lookup[0] %}
-                  <div class="d-flex align-items-center justify-content-between bg-secondary-lt px-2 py-1 rounded">
-                    <span class="text-truncate fw-bold text-dark">
-                      {{ lookup[1] }}
-                    </span>
-                    <a href="{{ request.url.remove_query_params(filter.parameter_name) }}" class="text-decoration-none ms-2" title="Clear filter">
-                      <i class="fa-solid fa-times"></i>
-                    </a>
-                  </div>
-                  {% else %}
-                  <a href="{{ request.url.include_query_params(**{filter.parameter_name: lookup[0]}) }}" class="d-block text-decoration-none text-truncate px-2 py-1">
-                    {{ lookup[1] }}
-                  </a>
-                  {% endif %}
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
+              {% include filter.template %}
               {% endfor %}
             </div>
           </div>

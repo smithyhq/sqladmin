@@ -1,9 +1,19 @@
+import datetime
 import re
 from typing import Any, AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
@@ -31,7 +41,7 @@ Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 app = Starlette()
-admin = Admin(app=app, engine=engine)
+admin = Admin(app=app, engine=engine, templates_dir="tests/templates")
 
 
 def create_user_table():
@@ -48,6 +58,8 @@ def create_user_table():
         age = Column(Integer)
         salary = Column(Float)
         description = Column(String)
+        birthdate = Column(Date)
+        created_at = Column(DateTime(timezone=True))
 
         # Add UUID column only if SQLAlchemy 2.0+ is available
         if HAS_UUID_SUPPORT:
@@ -73,8 +85,32 @@ class Office(Base):
     name = Column(String)
 
 
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    priority = Column(Integer)
+
+
+class CustomLookupFilter(StaticValuesFilter):
+    template = "sqladmin/filters/custom_lookup_filter.html"
+
+
+class CustomOperationFilter(OperationColumnFilter):
+    template = "sqladmin/filters/custom_operation_filter.html"
+
+
 class UserAdmin(ModelView, model=User):
-    column_list = [User.name, User.title, User.age, User.salary, User.description]
+    column_list = [
+        User.name,
+        User.title,
+        User.age,
+        User.salary,
+        User.description,
+        User.birthdate,
+        User.created_at,
+    ]
     can_create = True
     can_edit = True
     can_delete = True
@@ -92,6 +128,8 @@ class UserAdmin(ModelView, model=User):
         OperationColumnFilter(User.age),
         OperationColumnFilter(User.salary),
         OperationColumnFilter(User.description),
+        OperationColumnFilter(User.birthdate),
+        OperationColumnFilter(User.created_at),
     ]
 
     # Add UUID filter only if UUID column exists
@@ -108,8 +146,25 @@ class AddressAdmin(ModelView, model=Address):
     # This admin will NOT have filters defined
 
 
+class ProjectAdmin(ModelView, model=Project):
+    column_list = [Project.name, Project.priority]
+    can_create = True
+    can_edit = True
+    can_delete = True
+    can_view_details = True
+    column_filters = [
+        CustomLookupFilter(
+            Project.name,
+            [("Alpha", "Alpha"), ("Beta", "Beta")],
+            parameter_name="project_name",
+        ),
+        CustomOperationFilter(Project.priority),
+    ]
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
+admin.add_view(ProjectAdmin)
 
 
 @pytest.fixture
@@ -139,6 +194,8 @@ async def prepare_data(prepare_database: Any) -> AsyncGenerator[None, None]:
             age=35,
             salary=80000.50,
             description="Senior administrator with management responsibilities",
+            birthdate=datetime.date(2001, 7, 14),
+            created_at=datetime.datetime(2024, 11, 12, 3, 4, 5, tzinfo=datetime.timezone.utc),
         )
         user2 = User(
             name="Regular User",
@@ -148,6 +205,8 @@ async def prepare_data(prepare_database: Any) -> AsyncGenerator[None, None]:
             age=28,
             salary=55000.75,
             description="Software developer specializing in web applications",
+            birthdate=datetime.date(1994, 5, 31),
+            created_at=datetime.datetime(2024, 12, 31, 23, 59, 58, tzinfo=datetime.timezone.utc),
         )
         user3 = User(
             name="Test User",
@@ -157,8 +216,15 @@ async def prepare_data(prepare_database: Any) -> AsyncGenerator[None, None]:
             age=42,
             salary=65000.00,
             description="Data analyst working on business intelligence",
+            birthdate=datetime.date(1998, 10, 31),
+            created_at=datetime.datetime(2023, 3, 14, 12, 30, 0, tzinfo=datetime.timezone.utc),
         )
         session.add_all([user1, user2, user3])
+        await session.commit()
+
+        project1 = Project(name="Alpha", priority=1)
+        project2 = Project(name="Beta", priority=2)
+        session.add_all([project1, project2])
         await session.commit()
 
     yield
@@ -205,6 +271,15 @@ async def test_column_filters_sidebar_existence(client: AsyncClient) -> None:
 
     # Verify filter sidebar does not appear
     assert '<div id="filter-sidebar"' not in response.text
+
+
+@pytest.mark.anyio
+async def test_column_filter_custom_templates(client: AsyncClient) -> None:
+    """Custom templates set on filters should be rendered instead of defaults."""
+    response = await client.get("/admin/project/list")
+    assert response.status_code == 200
+    assert 'data-testid="custom-lookup-filter"' in response.text
+    assert 'data-testid="custom-operation-filter"' in response.text
 
 
 @pytest.mark.anyio
@@ -404,6 +479,85 @@ async def test_column_filter_numeric_operations(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+async def test_column_filter_date_operations(client: AsyncClient) -> None:
+    """Test that ColumnFilter correctly handles date operations."""
+
+    # Test greater_than operation for created_at (datetime)
+    url = (
+        "/admin/user/list?"
+        "created_at=2024-04-22T12:30:00%2B00:00&created_at_op=greater_than"
+    )
+    response = await client.get(url)
+    assert "Admin User" in response.text
+    assert "Regular User" in response.text
+    assert "Test User" not in response.text
+
+    # Test less_than operation for created_at (datetime)
+    url = (
+        "/admin/user/list?"
+        "created_at=2024-04-22T12:30:00%2B00:00&created_at_op=less_than"
+    )
+    response = await client.get(url)
+    assert "Admin User" not in response.text
+    assert "Regular User" not in response.text
+    assert "Test User" in response.text
+
+    # Test equals operation for created_at (datetime)
+    url = "/admin/user/list?created_at=2024-12-31T23:59:58%2B00:00&created_at_op=equals"
+    response = await client.get(url)
+    assert "Admin User" not in response.text
+    assert "Regular User" in response.text
+    assert "Test User" not in response.text
+
+    # Test greater_than operation for birthdate (date)
+    url = "/admin/user/list?birthdate=1996-06-30&birthdate_op=greater_than"
+    response = await client.get(url)
+    assert "Admin User" in response.text
+    assert "Regular User" not in response.text
+    assert "Test User" in response.text
+
+    # Test less_than operation for birthdate (date)
+    url = "/admin/user/list?birthdate=1996-06-30&birthdate_op=less_than"
+    response = await client.get(url)
+    assert "Admin User" not in response.text
+    assert "Regular User" in response.text
+    assert "Test User" not in response.text
+
+    # Test equals operation for birthdate (date)
+    url = "/admin/user/list?birthdate=1994-05-31&birthdate_op=equals"
+    response = await client.get(url)
+    assert "Admin User" not in response.text
+    assert "Regular User" in response.text
+    assert "Test User" not in response.text
+
+
+@pytest.mark.skipif(engine.name != "sqlite", reason="Sqlite only")
+@pytest.mark.anyio
+async def test_column_filter_naive_datetime_operations(client: AsyncClient) -> None:
+    """Test that ColumnFilter correctly handles naive datetime format."""
+    # Test greater_than operation for created_at (datetime)
+    url = "/admin/user/list?created_at=2024-04-22+12:30:00&created_at_op=greater_than"
+    response = await client.get(url)
+    assert "Admin User" in response.text
+    assert "Regular User" in response.text
+    assert "Test User" not in response.text
+
+    # Test less_than operation for created_at (datetime)
+    url = "/admin/user/list?created_at=2024-04-22+12:30:00&created_at_op=less_than"
+    response = await client.get(url)
+    assert "Admin User" not in response.text
+    assert "Regular User" not in response.text
+    assert "Test User" in response.text
+
+    # Test equals operation for created_at (datetime)
+    url = "/admin/user/list?created_at=2024-12-31+23:59:58&created_at_op=equals"
+    response = await client.get(url)
+    assert "Admin User" not in response.text
+    assert "Regular User" in response.text
+    assert "Test User" not in response.text
+
+
+@pytest.mark.anyio
 async def test_column_filter_description_operations(client: AsyncClient) -> None:
     """Test ColumnFilter string operations on description field."""
     # Test contains operation
@@ -469,6 +623,10 @@ async def test_column_filter_dropdown_ui_presence(client: AsyncClient) -> None:
     # Description filter dropdown (string operations)
     assert 'name="description_op"' in response.text
 
+    # Created at filter dropdown (date operations)
+    assert 'name="created_at_op"' in response.text
+    assert 'name="birthdate_op"' in response.text
+
     # UUID filter dropdown if supported
     if HAS_UUID_SUPPORT and hasattr(User, "user_uuid"):
         assert 'name="user_uuid_op"' in response.text
@@ -497,6 +655,24 @@ async def test_column_filter_invalid_values(client: AsyncClient) -> None:
 
     # Test invalid numeric value for salary
     url = "/admin/user/list?salary=not_a_number&salary_op=greater_than"
+    response = await client.get(url)
+    assert response.status_code == 200
+    # Should show all users when invalid value is provided
+    assert "Admin User" in response.text
+    assert "Regular User" in response.text
+    assert "Test User" in response.text
+
+    # Test invalid datetime value for created_at
+    url = "/admin/user/list?created_at=not_a_datetime&created_at_op=less_than"
+    response = await client.get(url)
+    assert response.status_code == 200
+    # Should show all users when invalid value is provided
+    assert "Admin User" in response.text
+    assert "Regular User" in response.text
+    assert "Test User" in response.text
+
+    # Test invalid date value for birthdate
+    url = "/admin/user/list?birthdate=not_a_date&birthdate_op=less_than"
     response = await client.get(url)
     assert response.status_code == 200
     # Should show all users when invalid value is provided
@@ -614,14 +790,35 @@ async def test_column_filter_type_detection():
     # Test string type detection
     assert filter_instance._is_string_type(User.name.property.columns[0]) is True
     assert filter_instance._is_numeric_type(User.name.property.columns[0]) is False
+    assert filter_instance._is_date_type(User.name.property.columns[0]) is False
 
     # Test numeric type detection
     assert filter_instance._is_numeric_type(User.age.property.columns[0]) is True
     assert filter_instance._is_string_type(User.age.property.columns[0]) is False
+    assert filter_instance._is_date_type(User.age.property.columns[0]) is False
 
     # Test float type detection
     assert filter_instance._is_numeric_type(User.salary.property.columns[0]) is True
     assert filter_instance._is_string_type(User.salary.property.columns[0]) is False
+    assert filter_instance._is_date_type(User.salary.property.columns[0]) is False
+
+    # Test date type detection
+    assert filter_instance._is_date_type(User.created_at.property.columns[0]) is True
+    assert filter_instance._is_date_type(User.birthdate.property.columns[0]) is True
+    assert filter_instance._is_string_type(User.created_at.property.columns[0]) is False
+    assert (
+        filter_instance._is_numeric_type(
+            User.created_at.property.columns[0],
+        )
+        is False
+    )
+    assert filter_instance._is_string_type(User.birthdate.property.columns[0]) is False
+    assert (
+        filter_instance._is_numeric_type(
+            User.birthdate.property.columns[0],
+        )
+        is False
+    )
 
     # Test UUID type detection (if available)
     if hasattr(User, "user_uuid") and HAS_UUID_SUPPORT:
@@ -762,6 +959,20 @@ async def test_column_filter_conversion_edge_cases():
         "1234.56", User.salary.property.columns[0]
     )
     assert result == 1234.56
+
+    # Test valid datetime conversion for ISO 8601 format
+    created_at_filter = OperationColumnFilter(User.created_at)
+    result = created_at_filter._convert_value_for_column(
+        "2021-11-30T22:33:43+00:00", User.created_at.property.columns[0]
+    )
+    assert result == datetime.datetime(2021, 11, 30, 22, 33, 43, tzinfo=datetime.timezone.utc)
+
+    # Test valid date conversion
+    birthdate_filter = OperationColumnFilter(User.birthdate)
+    result = birthdate_filter._convert_value_for_column(
+        "2021-11-30", User.birthdate.property.columns[0]
+    )
+    assert result == datetime.date(2021, 11, 30)
 
 
 @pytest.mark.skipif(

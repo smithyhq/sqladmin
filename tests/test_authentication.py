@@ -2,8 +2,8 @@ from typing import Generator
 
 import pytest
 from sqlalchemy import Column, Integer
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
@@ -14,8 +14,10 @@ from sqladmin.authentication import AuthenticationBackend
 from sqladmin.models import ModelView
 from tests.common import sync_engine as engine
 
-Base = declarative_base()  # type: Any
-session_maker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+Base = declarative_base()
+session_maker = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 class Movie(Base):
@@ -86,14 +88,14 @@ def test_login_failure(client: TestClient) -> None:
 def test_login(client: TestClient) -> None:
     response = client.post("/admin/login", data={"username": "a", "password": "b"})
 
-    assert len(response.cookies) == 1
+    assert len(client.cookies) == 1
     assert response.status_code == 200
 
 
 def test_logout(client: TestClient) -> None:
     response = client.get("/admin/logout")
 
-    assert len(response.cookies) == 0
+    assert len(client.cookies) == 0
     assert response.status_code == 200
     assert response.url == "http://testserver/admin/login"
 
@@ -103,7 +105,6 @@ def test_expose_access_login_required_views(client: TestClient) -> None:
     assert response.url == "http://testserver/admin/login"
 
     response = client.post("/admin/login", data={"username": "a", "password": "b"})
-    client.cookies = response.cookies
 
     response = client.get("/admin/custom")
     assert {"status": "ok"} == response.json()
@@ -114,7 +115,6 @@ def test_action_access_login_required_views(client: TestClient) -> None:
     assert response.url == "http://testserver/admin/login"
 
     response = client.post("/admin/login", data={"username": "a", "password": "b"})
-    client.cookies = response.cookies
 
     response = client.get("/admin/movie/action/test")
     assert {"status": "ok"} == response.json()

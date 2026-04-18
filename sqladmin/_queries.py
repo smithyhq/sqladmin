@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, Any
 
 import anyio
@@ -191,8 +192,20 @@ class Query:
             await session.commit()
             await self.model_view.after_model_delete(obj, request)
 
+    def _get_model_object(self, data: dict[str, Any]) -> Any:
+        if dataclasses.is_dataclass(self.model_view.model):
+            init_fields = {
+                f.name for f in dataclasses.fields(self.model_view.model) if f.init
+            }
+            data = {k: v for k, v in data.items() if k in init_fields}
+
+        else:
+            data = {}
+
+        return self.model_view.model(**data)
+
     def _insert_sync(self, data: dict[str, Any], request: Request) -> Any:
-        obj = self.model_view.model()
+        obj = self._get_model_object(data)
 
         with self.model_view.session_maker(expire_on_commit=False) as session:
             anyio.from_thread.run(
@@ -207,7 +220,7 @@ class Query:
             return obj
 
     async def _insert_async(self, data: dict[str, Any], request: Request) -> Any:
-        obj = self.model_view.model()
+        obj = self._get_model_object(data)
 
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             await self.model_view.on_model_change(data, obj, True, request)

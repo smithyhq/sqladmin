@@ -2,8 +2,8 @@ import enum
 
 import pytest
 from sqlalchemy import Column, Integer
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 from sqlalchemy_utils import (
     ArrowType,
     ChoiceType,
@@ -23,8 +23,8 @@ from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: ignore
-session_maker = sessionmaker(bind=engine, class_=AsyncSession)
+Base = declarative_base()
+session_maker = async_sessionmaker(bind=engine, class_=AsyncSession)
 
 
 class RoleEnum(enum.Enum):

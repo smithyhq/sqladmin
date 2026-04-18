@@ -1,0 +1,22 @@
+{% extends "sqladmin/filters/base_filter.html" %}
+
+{% block filter_title_classes %}fw-bold text-truncate fs-3 mb-2{% endblock %}
+
+{% block filter_body %}
+  {% for lookup in filter.lookups(request, model_view.model, model_view._run_arbitrary_query) %}
+  {% if request.query_params.get(filter.parameter_name) == lookup[0] %}
+  <div class="d-flex align-items-center justify-content-between bg-secondary-lt px-2 py-1 rounded">
+    <span class="text-truncate fw-bold text-dark">
+      {{ lookup[1] }}
+    </span>
+    <a href="{{ request.url.remove_query_params(filter.parameter_name) }}" class="text-decoration-none ms-2" title="Clear filter">
+      <i class="fa-solid fa-times"></i>
+    </a>
+  </div>
+  {% else %}
+  <a href="{{ request.url.include_query_params(**{filter.parameter_name: lookup[0]}) }}" class="d-block text-decoration-none text-truncate px-2 py-1">
+    {{ lookup[1] }}
+  </a>
+  {% endif %}
+  {% endfor %}
+{% endblock %}

@@ -21,11 +21,7 @@ from typing import (
 import anyio
 from sqlalchemy import Boolean, select
 from sqlalchemy import inspect as sqlalchemy_inspect
-from sqlalchemy.orm import (
-    ColumnProperty,
-    RelationshipProperty,
-    sessionmaker,
-)
+from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.elements import Label
 from wtforms import (
     DecimalField,
@@ -39,7 +35,7 @@ from wtforms import (
 )
 from wtforms.fields.core import UnboundField
 
-from sqladmin._types import MODEL_PROPERTY
+from sqladmin._types import MODEL_PROPERTY, SESSION_MAKER
 from sqladmin._validators import (
     ColorValidator,
     CurrencyValidator,
@@ -61,6 +57,7 @@ from sqladmin.fields import (
     QuerySelectMultipleField,
     Select2TagsField,
     SelectField,
+    UuidField,
 )
 from sqladmin.helpers import (
     choice_type_coerce_factory,
@@ -128,7 +125,7 @@ class ModelConverterBase:
     async def _prepare_kwargs(
         self,
         prop: MODEL_PROPERTY,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
         field_args: dict[str, Any],
         field_widget_args: dict[str, Any],
         form_include_pk: bool,
@@ -210,7 +207,7 @@ class ModelConverterBase:
         self,
         prop: RelationshipProperty,
         kwargs: dict,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
         loader: QueryAjaxModelLoader | None = None,
     ) -> dict:
         nullable = True
@@ -230,7 +227,7 @@ class ModelConverterBase:
     async def _prepare_select_options(
         self,
         prop: RelationshipProperty,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
     ) -> list[tuple[str, Any]]:
         target_model = prop.mapper.class_
         stmt = select(target_model)
@@ -288,7 +285,7 @@ class ModelConverterBase:
         self,
         model: type,
         prop: MODEL_PROPERTY,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
         field_args: dict[str, Any],
         field_widget_args: dict[str, Any],
         form_include_pk: bool,
@@ -516,9 +513,7 @@ class ModelConverter(ModelConverterBase):
         prop: ColumnProperty,
         kwargs: dict[str, Any],
     ) -> UnboundField:
-        kwargs.setdefault("validators", [])
-        kwargs["validators"].append(validators.UUID())
-        return StringField(**kwargs)
+        return UuidField(**kwargs)
 
     @converts(
         "sqlalchemy.dialects.postgresql.base.ARRAY",
@@ -682,7 +677,7 @@ class ModelConverter(ModelConverterBase):
 
 async def get_model_form(
     model: type,
-    session_maker: sessionmaker,
+    session_maker: SESSION_MAKER,
     only: Sequence[str] | None = None,
     exclude: Sequence[str] | None = None,
     column_labels: dict[str, str] | None = None,

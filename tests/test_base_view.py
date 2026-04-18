@@ -27,6 +27,12 @@ class CustomAdmin(BaseView):
     async def custom_report(self, request: Request):
         return await self.templates.TemplateResponse(request, "custom.html")
 
+    # Add this for second test: Before alphabetically (!)
+    # first `expose` was BaseView url, now it's first by `order`
+    @expose("/a")
+    async def a(self, request: Request):
+        return await self.templates.TemplateResponse(request, "custom.html")
+
 
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
@@ -44,3 +50,14 @@ def test_base_view(client: TestClient) -> None:
 
     response = client.get("/admin/custom/report")
     assert response.status_code == 200
+
+
+def test_menu_view_url(client: TestClient) -> None:
+    admin.add_view(CustomAdmin)
+
+    response = client.get("/admin")
+    assert response.status_code == 200
+
+    assert (
+        '<a class="nav-link " href="http://testserver/admin/custom">' in response.text
+    )

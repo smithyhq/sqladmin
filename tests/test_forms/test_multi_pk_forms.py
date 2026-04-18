@@ -2,16 +2,16 @@ from typing import AsyncGenerator
 
 import pytest
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base, relationship
 
 from sqladmin.forms import get_model_form
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: ignore
-session_maker = sessionmaker(bind=engine, class_=AsyncSession)
+Base = declarative_base()
+session_maker = async_sessionmaker(bind=engine, class_=AsyncSession)
 
 
 class Service(Base):

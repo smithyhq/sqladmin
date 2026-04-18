@@ -1,10 +1,10 @@
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import Column, ForeignKey, Integer, String, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base, relationship, selectinload
 from starlette.applications import Starlette
 
 from sqladmin import Admin, ModelView
@@ -13,8 +13,10 @@ from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: Any
-session_maker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+Base = declarative_base()
+session_maker = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 app = Starlette()
 admin = Admin(app=app, engine=engine)
@@ -113,7 +115,7 @@ admin.add_view(AddressAdmin)
 admin.add_view(RoomAdmin)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -124,7 +126,7 @@ async def prepare_database() -> AsyncGenerator[None, None]:
 
 
 @pytest.fixture
-async def client(prepare_database: Any) -> AsyncGenerator[AsyncClient, None]:
+async def client() -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client

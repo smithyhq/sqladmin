@@ -20,7 +20,7 @@ actions = \
 	publish
 
 # ARGS used for `test`. `PY_ARGS` used for `lint` and `format`
-PY_ARGS := $(or $(filter %.py,$(ARGS)),sqladmin)
+PY_ARGS := $(or $(filter %.py,$(ARGS)),sqladmin tests)
 
 setup:
 	uv sync --all-groups

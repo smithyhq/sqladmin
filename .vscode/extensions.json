@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+        "shardulm94.trailing-spaces",
+        "charliermarsh.ruff",
+    ]
+}

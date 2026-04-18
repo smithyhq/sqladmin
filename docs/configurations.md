@@ -483,7 +483,7 @@ To add custom action on models to the Admin, you can use the `action` decorator.
 !!! example
 
     ```python
-    from sqladmin import BaseView, action
+    from sqladmin import BaseView, action, Flash
     from starlette.responses import RedirectResponse
 
     class UserAdmin(ModelView, model=User):
@@ -502,6 +502,7 @@ To add custom action on models to the Admin, you can use the `action` decorator.
                     ...
 
             referer = request.headers.get("Referer")
+            Flash.success(request, "Users approved successfully")
             if referer:
                 return RedirectResponse(referer)
             else:
@@ -517,3 +518,52 @@ The available options for `action` are:
 - `add_in_list`: A boolean indicating if this action should be available in list page.
 - `add_in_detail`: A boolean indicating if this action should be available in detail page.
 - `confirmation_message`: A string message that if defined, will open a modal to ask for confirmation before calling the action method.
+
+You can use `Flash` utility class to notify results to the custom action. 
+
+#### Flash Utility Class
+All methods are class methods and require the request object to access the user session.
+
+1. **Primary Method**: `Flash.flash()`
+
+The general-purpose method for adding any message with an explicitly defined `FlashLevel`.
+
+| Parameter | Type         | Default           | Description                              |
+|-----------|--------------|-------------------|------------------------------------------|
+| `request` | `Request`    |                   | The current incoming request object.     |
+| `message` | `str`        |                   | The main text content of the message.    |
+| `level`   | `FlashLevel` | `FlashLevel.info` | The severity level.                      |
+| `title`   | `str`        | `""`              | An optional title for the flash message. |
+
+!!! example
+
+    ```python
+    from sqladmin import Flash, FlashLevel
+    
+    # Explicitly setting the level
+    Flash.flash(request, "A crucial server process has started.", FlashLevel.warning, "System Alert")
+    ```
+
+2. **Convenience Methods (Shortcuts)**
+
+These methods simplify message creation by automatically setting the appropriate `FlashLevel`. 
+They accept the same `request`, `message`, and optional `title` parameters.
+
+| Method                                      | Level Set            | Description                                      |
+|---------------------------------------------|----------------------|--------------------------------------------------|
+| `Flash.info(request, message, title="")`    | `FlashLevel.info`    | Adds a general information message.              |
+| `Flash.error(request, message, title="")`   | `FlashLevel.error`   | Adds a high-severity error message.              |
+| `Flash.warning(request, message, title="")` | `FlashLevel.warning` | Adds a cautionary message.                       |
+| `Flash.success(request, message, title="")` | `FlashLevel.success` | Adds a message confirming successful completion. |
+
+!!! example
+
+    ```python
+    from sqladmin import Flash, FlashLevel
+    
+    # Using the success shortcut
+    Flash.success(request, "Your profile was updated successfully.", "Update Complete")
+    
+    # Using the error shortcut
+    Flash.error(request, "Access denied. Invalid credentials provided.")
+    ```

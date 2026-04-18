@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import csv
 import enum
+import inspect
+import json
 import os
 import re
 import unicodedata
@@ -13,16 +15,18 @@ from typing import (
     Callable,
     Generator,
     TypeVar,
+    get_args,
+    get_origin,
 )
 
-from sqlalchemy import Column, inspect
+from sqlalchemy import Column
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import RelationshipProperty, sessionmaker
+from sqlalchemy.orm import RelationshipProperty
 
-from sqladmin._types import MODEL_PROPERTY
+from sqladmin._types import MODEL_PROPERTY, SESSION_MAKER
 
 T = TypeVar("T")
-
 
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
@@ -179,7 +183,7 @@ def stream_to_csv(
 
 
 def get_primary_keys(model: Any) -> tuple[Column, ...]:
-    return tuple(inspect(model).mapper.primary_key)
+    return tuple(sa_inspect(model).mapper.primary_key)
 
 
 def get_object_identifier(obj: Any) -> Any:
@@ -231,9 +235,9 @@ def object_identifier_values(id_string: str, model: Any) -> tuple:
     for pk, part in zip(pks, _object_identifier_parts(id_string, model)):
         type_ = get_column_python_type(pk)
         value: Any
-        if issubclass(type_, (date, datetime, time)):
+        if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
             value = type_.fromisoformat(part)
-        elif issubclass(type_, bool):
+        elif inspect.isclass(type_) and issubclass(type_, bool):
             value = False if part == "False" else type_(part)
         else:
             value = type_(part)  # type: ignore [call-arg]
@@ -253,14 +257,21 @@ def get_direction(prop: MODEL_PROPERTY) -> str:
 
 def get_column_python_type(column: Column) -> type:
     try:
-        return column.type.python_type
+        python_type = column.type.python_type
     except NotImplementedError:
         if hasattr(column.type, "impl"):
             try:
-                return column.type.impl.python_type
+                python_type = column.type.impl.python_type
             except NotImplementedError:
-                ...
-        return str
+                return str
+        else:
+            return str
+
+    if get_origin(python_type) is not None:
+        args = get_args(python_type)
+        python_type = args[0] if args else str
+
+    return python_type
 
 
 def is_relationship(prop: MODEL_PROPERTY) -> bool:
@@ -320,5 +331,20 @@ def choice_type_coerce_factory(type_: Any) -> Callable[[Any], Any]:
     return choice_coerce
 
 
-def is_async_session_maker(session_maker: sessionmaker) -> bool:
+def is_async_session_maker(session_maker: SESSION_MAKER) -> bool:
     return AsyncSession in session_maker.class_.__mro__
+
+
+def default_encoder(obj: Any) -> Any:
+    if hasattr(obj, "isoformat"):  # datetime-like
+        return obj.isoformat()
+    from decimal import Decimal
+
+    if isinstance(obj, Decimal):
+        return float(obj)
+
+    try:
+        json.dumps(obj)
+        return obj
+    except TypeError:
+        return str(obj)  # last resort

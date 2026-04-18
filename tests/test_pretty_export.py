@@ -1,5 +1,8 @@
 import csv
+import datetime
 import io
+import json
+from decimal import Decimal
 from typing import Any, Optional
 
 import pytest
@@ -13,7 +16,7 @@ from tests.common import sync_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: ignore
+Base = declarative_base()
 session_maker = sessionmaker(bind=engine)
 
 
@@ -346,3 +349,62 @@ class TestPrettyExport:
             "test_export_with_special_chars.csv" in content_disposition
             or "test_export_with_special_chars_.csv" in content_disposition
         )
+
+    async def test_export_json_serialization_types_and_fallback(self):
+        class NonSerializable:
+            def __str__(self) -> str:
+                return "non-serializable"
+
+        class UserAdmin(ModelView, model=User):
+            column_export_list = ["created_at", "balance", "meta"]
+            session_maker = session_maker
+            is_async = False
+
+            async def get_prop_value(self, obj: Any, prop: str) -> Any:
+                values = {
+                    "created_at": datetime.datetime(2024, 1, 2, 3, 4, 5),
+                    "balance": Decimal("10.50"),
+                    "meta": NonSerializable(),
+                }
+                return values[prop]
+
+        model_view = UserAdmin()
+        response = await model_view._export_json([User(id=1)])
+
+        assert isinstance(response, StreamingResponse)
+        assert response.media_type == "application/json"
+
+        content = await self._get_csv_content(response)
+        payload = json.loads(content)
+
+        assert payload == [
+            {
+                "created_at": "2024-01-02T03:04:05",
+                "balance": 10.5,
+                "meta": "non-serializable",
+            }
+        ]
+
+    async def test_export_json_empty_data_and_filename(self):
+        class UserAdmin(ModelView, model=User):
+            column_export_list = ["id"]
+            session_maker = session_maker
+            is_async = False
+
+            def get_export_name(self, export_type: str) -> str:
+                return f"test_export_with_special_chars!@#.{export_type}"
+
+        model_view = UserAdmin()
+        response = await model_view._export_json([])
+
+        assert isinstance(response, StreamingResponse)
+        assert response.media_type == "application/json"
+
+        content_disposition = response.headers["Content-Disposition"]
+        assert (
+            "test_export_with_special_chars.json" in content_disposition
+            or "test_export_with_special_chars_.json" in content_disposition
+        )
+
+        content = await self._get_csv_content(response)
+        assert content == "[]"

@@ -15,6 +15,9 @@ requires-python = ">=3.9"
 license = "BSD-3-Clause"
 keywords = ["sqlalchemy", "fastapi", "starlette", "admin"]
 authors = [{ name = "Amin Alaee", email = "mohammadamin.alaee@gmail.com" }]
+maintainers = [
+  { name = "Miradil Zeynalli", email = "miradil.zeynalli@gmail.com" },
+]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -31,8 +34,8 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "starlette~=0.49.3; python_version == '3.9'",
-  "starlette>=0.50; python_version >= '3.10'",
+  "starlette==0.49.3,<0.50.0; python_version == '3.9'",
+  "starlette>=0.50,<2.0.0; python_version >= '3.10'",
   "wtforms >=3.1, <3.2",
   "jinja2",
   "python-multipart",

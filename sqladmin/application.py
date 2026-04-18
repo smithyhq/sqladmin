@@ -5,7 +5,6 @@ import io
 import logging
 from types import MethodType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -15,9 +14,9 @@ from typing import (
 )
 from urllib.parse import parse_qsl, urljoin
 
-from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader
+from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
 from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import URL, FormData, MultiDict, UploadFile
@@ -34,9 +33,10 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 from sqladmin._menu import CategoryMenu, Menu, ViewMenu
-from sqladmin._types import ENGINE_TYPE
+from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
     get_object_identifier,
@@ -45,9 +45,6 @@ from sqladmin.helpers import (
 )
 from sqladmin.models import BaseView, ModelView
 from sqladmin.templating import Jinja2Templates
-
-if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import async_sessionmaker  # type: ignore[attr-defined]
 
 __all__ = [
     "Admin",
@@ -69,7 +66,7 @@ class BaseAdmin:
         self,
         app: Starlette,
         engine: ENGINE_TYPE | None = None,
-        session_maker: sessionmaker | None = None,
+        session_maker: SESSION_MAKER | None = None,
         base_url: str = "/admin",
         title: str = "Admin",
         logo_url: str | None = None,
@@ -91,8 +88,8 @@ class BaseAdmin:
         elif isinstance(self.engine, Engine):
             self.session_maker = sessionmaker(bind=self.engine, class_=Session)
         else:
-            self.session_maker = sessionmaker(
-                bind=self.engine,  # type: ignore[arg-type]
+            self.session_maker = async_sessionmaker(
+                bind=self.engine,
                 class_=AsyncSession,
             )
 
@@ -113,6 +110,9 @@ class BaseAdmin:
         templates = Jinja2Templates("templates")
         loaders = [
             FileSystemLoader(self.templates_dir),
+            PrefixLoader(
+                {"sqladmin_original": PackageLoader("sqladmin", "templates/sqladmin")}
+            ),
             PackageLoader("sqladmin", "templates"),
         ]
 
@@ -122,6 +122,7 @@ class BaseAdmin:
         templates.env.globals["admin"] = self
         templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
+        templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
         return templates
 
@@ -152,8 +153,8 @@ class BaseAdmin:
         else:
             self.add_base_view(view)
 
+    @staticmethod
     def _find_decorated_funcs(
-        self,
         view: type[BaseView | ModelView],
         view_instance: BaseView | ModelView,
         handle_fn: Callable[
@@ -163,7 +164,11 @@ class BaseAdmin:
     ) -> None:
         funcs = inspect.getmembers(view_instance, predicate=inspect.ismethod)
 
-        for _, func in funcs[::-1]:
+        for _, func in sorted(
+            funcs,
+            key=lambda x: inspect.getsourcelines(x[1])[1],
+            reverse=True,
+        ):
             handle_fn(func, view, view_instance)
 
     def _handle_action_decorated_func(
@@ -312,15 +317,54 @@ class BaseAdminView(BaseAdmin):
         if not model_view.can_view_details or not model_view.is_accessible(request):
             raise HTTPException(status_code=403)
 
+        if hasattr(model_view, "check_can_view_details"):
+            pk = request.path_params.get("pk")
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
+            model = await model_view.get_object_for_details(request)
+            can_view_details_row = await model_view.check_can_view_details(
+                request, model
+            )
+            if can_view_details_row is not True:
+                raise HTTPException(status_code=403)
+
     async def _delete(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
+
         if not model_view.can_delete or not model_view.is_accessible(request):
             raise HTTPException(status_code=403)
+
+        if hasattr(model_view, "check_can_delete"):
+            pks = request.query_params.get("pks")
+            if pks is None or not isinstance(pks, str):
+                raise ValueError(
+                    f'pks not found in request.query_params "{request.query_params}"'
+                )
+
+            for pk in pks.split(","):
+                request.path_params["pk"] = pk
+                model = await model_view.get_object_for_details(request)
+                can_delete_row = await model_view.check_can_delete(request, model)
+                if can_delete_row is not True:
+                    raise HTTPException(status_code=403)
 
     async def _edit(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.can_edit or not model_view.is_accessible(request):
             raise HTTPException(status_code=403)
+
+        if hasattr(model_view, "check_can_edit"):
+            pk = request.path_params.get("pk")
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
+            model = await model_view.get_object_for_details(request)
+            can_edit_row = await model_view.check_can_edit(request, model)
+            if can_edit_row is not True:
+                raise HTTPException(status_code=403)
 
     async def _export(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
@@ -357,7 +401,7 @@ class Admin(BaseAdminView):
         self,
         app: Starlette,
         engine: ENGINE_TYPE | None = None,
-        session_maker: sessionmaker | "async_sessionmaker" | None = None,
+        session_maker: SESSION_MAKER | None = None,
         base_url: str = "/admin",
         title: str = "Admin",
         logo_url: str | None = None,
@@ -473,6 +517,10 @@ class Admin(BaseAdminView):
             )
 
         context = {"model_view": model_view, "pagination": pagination}
+
+        if request.query_params.get("error"):
+            context["error"] = request.query_params["error"]
+
         return await self.templates.TemplateResponse(
             request, model_view.list_template, context
         )
@@ -509,15 +557,21 @@ class Admin(BaseAdminView):
 
         params = request.query_params.get("pks", "")
         pks = params.split(",") if params else []
-        for pk in pks:
-            model = await model_view.get_object_for_delete(pk)
-            if not model:
-                raise HTTPException(status_code=404)
-
-            await model_view.delete_model(request, pk)
 
         referer_url = URL(request.headers.get("referer", ""))
         referer_params = MultiDict(parse_qsl(referer_url.query))
+
+        try:
+            for pk in pks:
+                model = await model_view.get_object_for_delete(pk)
+                if not model:
+                    raise HTTPException(status_code=404, detail="Object not found")
+
+                await model_view.delete_model(request, pk)
+        except Exception as e:
+            logger.exception(e)
+            referer_params["error"] = str(e)
+
         url = URL(str(request.url_for("admin:list", identity=identity)))
         url = url.include_query_params(**referer_params)
         return PlainTextResponse(content=str(url))
@@ -693,8 +747,9 @@ class Admin(BaseAdminView):
         data = [loader.format(m) for m in await loader.get_list(term)]
         return JSONResponse({"results": data})
 
+    @staticmethod
     def get_save_redirect_url(
-        self, request: Request, form: FormData, model_view: ModelView, obj: Any
+        request: Request, form: FormData, model_view: ModelView, obj: Any
     ) -> str | URL:
         """
         Get the redirect URL after a save action
@@ -714,7 +769,8 @@ class Admin(BaseAdminView):
 
         return request.url_for("admin:create", identity=identity)
 
-    async def _handle_form_data(self, request: Request, obj: Any = None) -> FormData:
+    @staticmethod
+    async def _handle_form_data(request: Request, obj: Any = None) -> FormData:
         """
         Handle form data and modify in case of UploadFile.
         This is needed since in edit page
@@ -740,21 +796,23 @@ class Admin(BaseAdminView):
                 form_data.append((key, value))
         return FormData(form_data)
 
-    def _normalize_wtform_data(self, obj: Any) -> dict:
+    @staticmethod
+    def _normalize_wtform_data(obj: Any) -> dict:
         form_data = {}
         for field_name in WTFORMS_ATTRS:
             if value := getattr(obj, field_name, None):
                 form_data[field_name + "_"] = value
         return form_data
 
-    def _denormalize_wtform_data(self, form_data: dict, obj: Any) -> dict:
+    @staticmethod
+    def _denormalize_wtform_data(form_data: dict, obj: Any) -> dict:
         data = form_data.copy()
         for field_name in WTFORMS_ATTRS_REVERSED:
             reserved_field_name = field_name[:-1]
             if (
                 field_name in data
-                and not getattr(obj, field_name, None)
-                and getattr(obj, reserved_field_name, None)
+                and not hasattr(obj, field_name)
+                and hasattr(obj, reserved_field_name)
             ):
                 data[reserved_field_name] = data.pop(field_name)
         return data

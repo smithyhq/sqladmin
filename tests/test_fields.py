@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 from typing import Generator
+from uuid import UUID
 
 import pytest
 from sqlalchemy import Column, Integer, String
@@ -15,6 +16,7 @@ from sqladmin.fields import (
     QuerySelectMultipleField,
     Select2TagsField,
     SelectField,
+    UuidField,
 )
 from tests.common import DummyData
 from tests.common import sync_engine as engine
@@ -186,3 +188,17 @@ def test_interval_field() -> None:
 
     form = F(DummyData(interval=[]))
     assert form.validate() is True
+
+
+def test_uuid_field() -> None:
+    class F(Form):
+        uuid = UuidField()
+
+    form = F()
+    assert 'type="text"' in form.uuid()
+
+    form = F(DummyData(uuid=["00000000-0000-0000-0000-000000000001"]))
+    assert form.uuid.data == UUID("00000000-0000-0000-0000-000000000001")
+
+    form = F(DummyData(uuid=["00000000-0000-000000000001"]))
+    assert form.validate() is False

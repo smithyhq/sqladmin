@@ -4,8 +4,9 @@ from typing import Annotated, Any
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
-from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Time, Uuid
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Time
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.sql.type_api import TypeDecorator
 
 from sqladmin.helpers import (
     get_column_python_type,
@@ -152,17 +153,31 @@ def test_catch_malformed_id():
     test_case("Johnson;7;A;Extra")
 
 
-class UUIDPKModel(Base):
-    __tablename__ = "uuid_pk_model"
-    id = Column(Uuid, primary_key=True)
+#########################################################################
+##################### get_column_python_type() tests ####################
+#########################################################################
+class IntBackedType(TypeDecorator):
+    """TypeDecorator where python_type raises but impl (Integer) returns int."""
+
+    impl = Integer
+    cache_ok = True
+
+    @property
+    def python_type(self):
+        raise NotImplementedError
+
+
+class IntBackedPKModel(Base):
+    __tablename__ = "int_backed_pk_model"
+    id = Column(IntBackedType, primary_key=True)
 
 
 def test_get_column_python_type_with_uuid_pk():
     """Regression #981: must not raise TypeError when python_type
     returns a type annotation instead of a plain class."""
-    pk = UUIDPKModel.__table__.c["id"]
+    pk = IntBackedPKModel.__table__.c["id"]
     result = get_column_python_type(pk)
-    assert callable(result)
+    assert result is int
 
 
 def test_get_column_python_type_annotated_type_no_typeerror():
@@ -192,3 +207,37 @@ def test_get_column_python_type_not_implemented_no_impl():
     type(t).python_type = PropertyMock(side_effect=NotImplementedError)
     mock_col.type = t
     assert get_column_python_type(mock_col) is str
+
+
+def test_get_column_python_type_impl_fallback():
+    """Falls back to impl.python_type when python_type raises NotImplementedError."""
+    mock_col = MagicMock()
+    type(mock_col.type).python_type = PropertyMock(side_effect=NotImplementedError)
+    mock_col.type.impl.python_type = str
+    result = get_column_python_type(mock_col)
+    assert result is str
+
+
+def test_get_column_python_type_impl_also_raises():
+    """Falls back to str when both python_type and impl.python_type raise."""
+    mock_col = MagicMock()
+    type(mock_col.type).python_type = PropertyMock(side_effect=NotImplementedError)
+    type(mock_col.type.impl).python_type = PropertyMock(side_effect=NotImplementedError)
+    result = get_column_python_type(mock_col)
+    assert result is str
+
+
+def test_get_column_python_type_impl_annotated():
+    """impl.python_type returning Annotated type should also be unwrapped."""
+    mock_col = MagicMock()
+    type(mock_col.type).python_type = PropertyMock(side_effect=NotImplementedError)
+    mock_col.type.impl.python_type = Annotated[uuid.UUID, "meta"]
+    result = get_column_python_type(mock_col)
+    assert result is uuid.UUID
+
+
+def test_get_column_python_type_plain_type_unchanged():
+    """Plain types like int should pass through without modification."""
+    mock_col = MagicMock()
+    mock_col.type.python_type = int
+    assert get_column_python_type(mock_col) is int

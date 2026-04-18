@@ -268,7 +268,8 @@ def get_column_python_type(column: Column) -> type:
             return str
 
     if get_origin(python_type) is not None:
-        python_type = get_args(python_type)[0]
+        args = get_args(python_type)
+        python_type = args[0] if args else str
 
     return python_type
 

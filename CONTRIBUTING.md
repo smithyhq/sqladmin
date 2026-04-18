@@ -49,16 +49,19 @@ If you are proposing a feature:
 Ready to contribute? Here's how to set up `sqladmin` for local development.
 
 1. Fork the `sqladmin` repo on GitHub.
-2. Clone your fork locally
+2. Clone your fork locally and add the upstream remote:
 
     ```
     $ git clone git@github.com:your_name_here/sqladmin.git
+    $ cd sqladmin
+    $ git remote add upstream git@github.com:smithyhq/sqladmin.git
     ```
 
-3. Install [`uv`](https://docs.astral.sh/uv/) for project management. Install dependencies
-   ```
-   $ make setup
-   ```
+3. Install [`uv`](https://docs.astral.sh/uv/) for project management. Install dependencies:
+
+    ```
+    $ make setup
+    ```
 
 4. Install [`pre-commit`](https://pre-commit.com/) and apply it:
 
@@ -67,10 +70,13 @@ Ready to contribute? Here's how to set up `sqladmin` for local development.
     $ pre-commit install
     ```
 
-5. Create a branch for local development:
+5. Always branch off `main`. Create a branch for local development following
+   the [branch naming conventions](#branch-naming-conventions) below:
 
     ```
-    $ git checkout -b name-of-your-bugfix-or-feature
+    $ git checkout main
+    $ git pull upstream main
+    $ git checkout -b fix/short-description-of-fix
     ```
 
     Now you can make your changes locally.
@@ -88,15 +94,80 @@ Ready to contribute? Here's how to set up `sqladmin` for local development.
     $ make test
     ```
 
-8. Commit your changes and push your branch to GitHub:
+    To run a specific test file or test case:
+
+    ```
+    $ uv run pytest tests/test_auth.py
+    $ uv run pytest tests/test_auth.py::test_ajax_lookup_requires_auth
+    ```
+
+    To run tests with coverage report:
+
+    ```
+    $ uv run pytest --cov=sqladmin --cov-report=term-missing
+    ```
+
+    Note: test coverage must not drop below 95%.
+
+8. Commit your changes following the [commit message conventions](#commit-message-conventions)
+   and push your branch to GitHub:
 
     ```
     $ git add .
-    $ git commit -m "Your detailed description of your changes."
-    $ git push origin name-of-your-bugfix-or-feature
+    $ git commit -m "fix: short description of your change"
+    $ git push origin fix/short-description-of-fix
     ```
 
-9.  Submit a pull request through the GitHub website.
+9. Submit a pull request through the GitHub website.
+
+## Branch Naming Conventions
+
+Always create branches from the latest `main`. Use one of the following
+prefixes depending on the nature of your change:
+
+| Prefix | When to use | Example |
+|--------|-------------|---------|
+| `fix/` | Bug fixes | `fix/uuid-primary-key-error` |
+| `feat/` | New features | `feat/add-json-editor` |
+| `docs/` | Documentation only changes | `docs/add-contributing-page` |
+| `test/` | Adding or fixing tests only | `test/model-view-export-coverage` |
+| `refactor/` | Code refactoring without behavior change | `refactor/simplify-model-converter` |
+| `chore/` | Dependency bumps, CI, tooling | `chore/bump-starlette-to-0-50` |
+
+Keep branch names lowercase and use hyphens, not underscores.
+Each branch should address a single concern — do not mix a bug fix
+and a new feature in the same branch.
+
+## Commit Message Conventions
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/).
+The format is:
+
+```
+<type>: <short summary in present tense>
+```
+
+Common types:
+
+| Type | When to use |
+|------|-------------|
+| `fix` | A bug fix |
+| `feat` | A new feature |
+| `docs` | Documentation changes |
+| `test` | Adding or updating tests |
+| `refactor` | Refactoring without behavior change |
+| `chore` | Tooling, dependencies, CI |
+
+If your commit closes a GitHub issue, reference it in the commit body:
+
+```
+feat: add json editor for json column fields
+
+JSON column fields now render an interactive editor
+instead of a plain textarea input.
+
+Closes #1025
+```
 
 ## Pull Request Guidelines
 
@@ -109,3 +180,33 @@ Before you submit a pull request, check that it meets these guidelines:
 3. The pull request should work from Python 3.9 till 3.14. Check
    https://github.com/smithyhq/sqladmin/actions
    and make sure that the tests pass for all supported Python versions.
+4. One pull request should address one concern. If you have multiple
+   independent changes, open separate pull requests for each.
+5. Link the related issue in your pull request description using
+   `Closes #<issue-number>` or `Fixes #<issue-number>`.
+
+## Project Structure
+
+```
+sqladmin/
+├── sqladmin/              # source code
+│   ├── application.py     # Admin class, route handlers
+│   ├── models.py          # ModelView base class
+│   ├── authentication.py  # AuthenticationBackend, login_required
+│   ├── ajax.py            # AJAX lookup logic
+│   └── ...
+├── tests/                 # test suite
+├── docs/                  # MkDocs documentation source
+├── mkdocs.yml             # documentation site config
+└── pyproject.toml         # project metadata and dependencies
+```
+
+## Keeping Your Fork Up to Date
+
+Before starting any new work, sync your fork with upstream:
+
+```
+$ git checkout main
+$ git pull upstream main
+$ git push origin main
+```

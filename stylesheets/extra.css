@@ -1,0 +1,4 @@
+/* Let some code block headings have usual code backgrounds */
+.md-typeset :is(h3,h4,h5,h6) code {
+    background-color: var(--md-code-bg-color);
+}

@@ -10,6 +10,7 @@
         {% endfor %}: {{ get_object_identifier(model) }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
+      {% block details_table %}
       <div class="table-responsive">
         <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
           <thead>
@@ -28,11 +29,11 @@
               {% if is_list( value ) %}
               <td>
                 {% for elem, formatted_elem in zip(value, formatted_value) %}
-                  {% if model_view.show_compact_lists %}
-                    <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
-                  {% else %}
-                    <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br/>
-                  {% endif %}
+                {% if model_view.show_compact_lists %}
+                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
+                {% else %}
+                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br />
+                {% endif %}
                 {% endfor %}
               </td>
               {% else %}
@@ -47,6 +48,7 @@
           </tbody>
         </table>
       </div>
+      {% endblock %}
       <div class="card-footer container">
         <div class="row row-gap-2">
           <div class="col-auto">
@@ -54,7 +56,7 @@
               Go Back
             </a>
           </div>
-          {% if model_view.can_delete %}
+          {% if model_view.check_can_delete(request, model) %}
           <div class="col-auto">
             <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(model) }}"
               data-url="{{ model_view._url_for_delete(request, model) }}" data-bs-toggle="modal"
@@ -63,7 +65,7 @@
             </a>
           </div>
           {% endif %}
-          {% if model_view.can_edit %}
+          {% if model_view.check_can_edit(request, model) %}
           <div class="col-auto">
             <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
               Edit
@@ -90,6 +92,7 @@
     </div>
   </div>
 </div>
+{% block action_buttons_bottom %}
 {% if model_view.can_delete %}
 {% include 'sqladmin/modals/delete.html' %}
 {% endif %}
@@ -102,5 +105,5 @@ url=model_view._url_for_action(request, custom_action) + '?pks=' + (get_object_i
 {% endwith %}
 {% endif %}
 {% endfor %}
-
+{% endblock %}
 {% endblock %}

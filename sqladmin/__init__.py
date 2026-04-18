@@ -1,4 +1,5 @@
 from sqladmin.application import Admin, action, expose
+from sqladmin.flash import Flash
 from sqladmin.models import BaseView, ModelView
 
 __all__ = [
@@ -7,4 +8,5 @@ __all__ = [
     "action",
     "BaseView",
     "ModelView",
+    "Flash",
 ]

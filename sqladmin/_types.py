@@ -25,6 +25,7 @@ class SimpleColumnFilter(Protocol):
 
     title: str
     parameter_name: str
+    template: str
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]
@@ -42,6 +43,7 @@ class OperationColumnFilter(Protocol):
     title: str
     parameter_name: str
     has_operator: bool
+    template: str
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]

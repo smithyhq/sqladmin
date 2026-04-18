@@ -162,6 +162,11 @@ def test_denormalize_wtform_fields() -> None:
         "data": "abcdef"
     }
 
+    datamodel_empty = DataModel(id=1, data="")
+    assert admin._denormalize_wtform_data({"data_": "abcdef"}, datamodel_empty) == {
+        "data": "abcdef"
+    }
+
 
 def test_validate_page_and_page_size():
     app = Starlette()

@@ -47,6 +47,9 @@
       <div class="container-fluid">
         <div class="row row-deck row-cards">
           {% block content %} {% endblock %}
+	      {% block flash %}
+		  {% include 'sqladmin/flash.html' %}
+		  {% endblock %}
         </div>
       </div>
     </div>

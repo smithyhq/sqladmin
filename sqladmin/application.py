@@ -15,7 +15,7 @@ from typing import (
 )
 from urllib.parse import parse_qsl, urljoin
 
-from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader
+from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, sessionmaker
@@ -37,6 +37,7 @@ from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
     get_object_identifier,
@@ -114,6 +115,9 @@ class BaseAdmin:
         templates = Jinja2Templates("templates")
         loaders = [
             FileSystemLoader(self.templates_dir),
+            PrefixLoader(
+                {"sqladmin_original": PackageLoader("sqladmin", "templates/sqladmin")}
+            ),
             PackageLoader("sqladmin", "templates"),
         ]
 
@@ -123,6 +127,7 @@ class BaseAdmin:
         templates.env.globals["admin"] = self
         templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
+        templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
         return templates
 
@@ -313,15 +318,54 @@ class BaseAdminView(BaseAdmin):
         if not model_view.can_view_details or not model_view.is_accessible(request):
             raise HTTPException(status_code=403)
 
+        if hasattr(model_view, "check_can_view_details"):
+            pk = request.path_params.get("pk")
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
+            model = await model_view.get_object_for_details(request)
+            can_view_details_row = await model_view.check_can_view_details(
+                request, model
+            )
+            if can_view_details_row is not True:
+                raise HTTPException(status_code=403)
+
     async def _delete(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
+
         if not model_view.can_delete or not model_view.is_accessible(request):
             raise HTTPException(status_code=403)
+
+        if hasattr(model_view, "check_can_delete"):
+            pks = request.query_params.get("pks")
+            if pks is None or not isinstance(pks, str):
+                raise ValueError(
+                    f'pks not found in request.query_params "{request.query_params}"'
+                )
+
+            for pk in pks.split(","):
+                request.path_params["pk"] = pk
+                model = await model_view.get_object_for_details(request)
+                can_delete_row = await model_view.check_can_delete(request, model)
+                if can_delete_row is not True:
+                    raise HTTPException(status_code=403)
 
     async def _edit(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.can_edit or not model_view.is_accessible(request):
             raise HTTPException(status_code=403)
+
+        if hasattr(model_view, "check_can_edit"):
+            pk = request.path_params.get("pk")
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
+            model = await model_view.get_object_for_details(request)
+            can_edit_row = await model_view.check_can_edit(request, model)
+            if can_edit_row is not True:
+                raise HTTPException(status_code=403)
 
     async def _export(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
@@ -764,8 +808,8 @@ class Admin(BaseAdminView):
             reserved_field_name = field_name[:-1]
             if (
                 field_name in data
-                and not getattr(obj, field_name, None)
-                and getattr(obj, reserved_field_name, None)
+                and not hasattr(obj, field_name)
+                and hasattr(obj, reserved_field_name)
             ):
                 data[reserved_field_name] = data.pop(field_name)
         return data

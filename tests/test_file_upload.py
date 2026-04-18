@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Generator
+from typing import Generator
 
 import pytest
 from fastapi_storages import FileSystemStorage, StorageFile
@@ -27,7 +27,7 @@ class User(Base):
     optional_file = Column(FileType(FileSystemStorage(".uploads")), nullable=True)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
     yield
@@ -35,7 +35,7 @@ def prepare_database() -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def client(prepare_database: Any) -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient, None, None]:
     with TestClient(app=app, base_url="http://testserver") as c:
         yield c
 

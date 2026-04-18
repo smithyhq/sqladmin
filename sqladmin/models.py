@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     Union,
@@ -23,7 +24,7 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, asc, cast, desc, func, inspect, or_
+from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.orm import selectinload, sessionmaker
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -49,6 +50,7 @@ from sqladmin.formatters import BASE_FORMATTERS
 from sqladmin.forms import ModelConverter, ModelConverterBase, get_model_form
 from sqladmin.helpers import (
     Writer,
+    default_encoder,
     get_object_identifier,
     get_primary_keys,
     object_identifier_values,
@@ -1107,6 +1109,24 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         By default do nothing.
         """
 
+    async def check_can_view_details(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before view details.
+        """
+        return self.can_view_details
+
+    async def check_can_edit(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before edit.
+        """
+        return self.can_edit
+
+    async def check_can_delete(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before delete.
+        """
+        return self.can_delete
+
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
         if self.form is not None:
             return self.form
@@ -1148,6 +1168,38 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
         return ", ".join(field_names)
 
+    def _join_relationship_paths(
+        self,
+        stmt: Select,
+        field_path: str,
+        joined_paths: Set[str],
+    ) -> Tuple[Select, Any]:
+        """Join relationship paths and return the statement and target model.
+
+        Navigates through a dotted relationship path (e.g. ``user.profile.role``)
+        and joins each segment via its relationship attribute, which lets
+        SQLAlchemy pick the correct foreign key when a model has multiple
+        relationships to the same target. Paths are tracked to avoid duplicate
+        joins within a single call; SQLAlchemy itself dedupes joins on the same
+        relationship attribute across calls.
+        """
+        model = self.model
+        parts = field_path.split(".")
+
+        current_path = ""
+        for part in parts[:-1]:
+            current_path = f"{current_path}.{part}" if current_path else part
+            relationship_attr = getattr(model, part)
+            next_model = relationship_attr.mapper.class_
+
+            if current_path not in joined_paths:
+                stmt = stmt.join(relationship_attr)
+                joined_paths.add(current_path)
+
+            model = next_model
+
+        return stmt, model
+
     def search_query(self, stmt: Select, term: str) -> Select:
         """Specify the search query given the SQLAlchemy statement
         and term to search for.
@@ -1159,17 +1211,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
         expressions = []
+        joined_paths: Set[str] = set()
+
         for field in self._search_fields:
-            model = self.model
+            stmt, model = self._join_relationship_paths(stmt, field, joined_paths)
             parts = field.split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+            field_attr = getattr(model, parts[-1])
+            expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
-            field = getattr(model, parts[-1])
-            expressions.append(cast(field, String).ilike(f"%{term}%"))
-
-        return stmt.filter(or_(*expressions))
+        return stmt.filter(or_(false(), *expressions))
 
     def list_query(self, request: Request) -> Select:
         """
@@ -1231,13 +1281,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         else:
             sort_fields = self._get_default_sort()
 
-        for sort_field, is_desc in sort_fields:
-            model = self.model
+        joined_paths: Set[str] = set()
 
-            parts = self._get_prop_name(sort_field).split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+        for sort_field, is_desc in sort_fields:
+            field_path = self._get_prop_name(sort_field)
+            stmt, model = self._join_relationship_paths(stmt, field_path, joined_paths)
+            parts = field_path.split(".")
 
             if is_desc:
                 stmt = stmt.order_by(desc(getattr(model, parts[-1])))
@@ -1297,6 +1346,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     async def _export_json(
         self,
         data: List[Any],
+        ensure_ascii: bool = False,
     ) -> StreamingResponse:
         async def generate() -> AsyncGenerator[str, None]:
             yield "["
@@ -1306,12 +1356,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
             for idx, row in enumerate(data):
                 row_dict = {
-                    name: str(await self.get_prop_value(row, name))
+                    name: await self.get_prop_value(row, name)
                     for name in self._export_prop_names
                 }
-                yield json.dumps(row_dict, ensure_ascii=False) + (
-                    separator if idx < last_idx else ""
-                )
+                yield json.dumps(
+                    row_dict,
+                    default=default_encoder,
+                    ensure_ascii=ensure_ascii,
+                ) + (separator if idx < last_idx else "")
 
             yield "]"
 

@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -113,7 +113,7 @@ admin.add_view(AddressAdmin)
 admin.add_view(RoomAdmin)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -124,7 +124,7 @@ async def prepare_database() -> AsyncGenerator[None, None]:
 
 
 @pytest.fixture
-async def client(prepare_database: Any) -> AsyncGenerator[AsyncClient, None]:
+async def client() -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client

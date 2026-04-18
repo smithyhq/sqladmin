@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Union
 
 import pytest
 from sqlalchemy import Column, Integer
@@ -39,7 +39,7 @@ class CustomBackend(AuthenticationBackend):
         request.session.clear()
         return True
 
-    async def authenticate(self, request: Request) -> bool:
+    async def authenticate(self, request: Request) -> Union[bool, RedirectResponse]:
         if "token" not in request.session:
             return RedirectResponse(request.url_for("admin:login"), status_code=302)
         return True
@@ -118,3 +118,60 @@ def test_action_access_login_required_views(client: TestClient) -> None:
 
     response = client.get("/admin/movie/action/test")
     assert {"status": "ok"} == response.json()
+
+
+def test_custom_session_cookie_name_is_set() -> None:
+    backend = CustomBackend(
+        secret_key="test",
+        session_cookie="my_cookie",
+    )
+    middleware = backend.middlewares[0]
+    assert middleware.kwargs["session_cookie"] == "my_cookie"
+
+
+def test_login_with_custom_session_cookie() -> None:
+    app = Starlette()
+    backend = CustomBackend(
+        secret_key="test",
+        session_cookie="my_cookie",
+    )
+    Admin(app=app, engine=engine, authentication_backend=backend)
+
+    with TestClient(app=app, base_url="http://testserver") as c:
+        response = c.post("/admin/login", data={"username": "a", "password": "b"})
+        assert response.status_code == 200
+        assert "my_cookie" in c.cookies
+        assert "session" not in c.cookies
+
+
+def test_authenticated_request_with_custom_session_cookie() -> None:
+    app = Starlette()
+    backend = CustomBackend(
+        secret_key="test",
+        session_cookie="my_cookie",
+    )
+    Admin(app=app, engine=engine, authentication_backend=backend)
+
+    with TestClient(app=app, base_url="http://testserver") as c:
+        c.post("/admin/login", data={"username": "a", "password": "b"})
+        response = c.get("/admin/")
+        assert response.status_code == 200
+
+
+def test_default_session_cookie_unchanged() -> None:
+    backend = CustomBackend(secret_key="test")
+    middleware = backend.middlewares[0]
+    assert "session_cookie" not in middleware.kwargs
+
+
+def test_extra_session_kwargs_passed_to_middleware() -> None:
+    backend = CustomBackend(
+        secret_key="test",
+        session_cookie="my_cookie",
+        max_age=3600,
+        https_only=True,
+    )
+    middleware = backend.middlewares[0]
+    assert middleware.kwargs["session_cookie"] == "my_cookie"
+    assert middleware.kwargs["max_age"] == 3600
+    assert middleware.kwargs["https_only"] is True

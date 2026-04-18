@@ -15,11 +15,11 @@ class AuthenticationBackend:
     `login`, `logout` and `authenticate`.
     """
 
-    def __init__(self, secret_key: str) -> None:
+    def __init__(self, secret_key: str, **session_kwargs: Any) -> None:
         from starlette.middleware.sessions import SessionMiddleware
 
         self.middlewares = [
-            Middleware(SessionMiddleware, secret_key=secret_key),
+            Middleware(SessionMiddleware, secret_key=secret_key, **session_kwargs),
         ]
 
     async def login(self, request: Request) -> bool:

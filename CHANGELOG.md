@@ -4,6 +4,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Verion 0.25.0 - 2026-04-18
+
+## Added
+* Move to org by @aminalaee in https://github.com/smithyhq/sqladmin/pull/1018
+* extra blocks for templates allowing customization by @birddevelper in https://github.com/smithyhq/sqladmin/pull/952
+* Add template hooks to all filters for customizable UIs (dropdowns, sliders, etc.) by @fd-oncodna in https://github.com/smithyhq/sqladmin/pull/970
+* Support MappedAsDataclass by @Goradii in https://github.com/smithyhq/sqladmin/pull/857
+* save values types as is if possible while JSON export by @DenisDudnik in https://github.com/smithyhq/sqladmin/pull/865
+* Add toast to notify results for custom actions by @rusanpas in https://github.com/smithyhq/sqladmin/pull/971
+* Showing exceptions happened during delete in list page as per #898 by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1022
+* Quality of Life updates by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1026
+* [Feature] Check the available primary actions (edit, delete, view details) for each row on listing page. by @maxim-f1 in https://github.com/smithyhq/sqladmin/pull/874
+
+## Fixed
+* Fix #841: Cannot update value of attribute with reserved name when it starts empty/null by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1028
+* Fix TypeError with UUID primary keys in issubclass check by @S3wnkin in https://github.com/smithyhq/sqladmin/pull/992
+* core: fix ambiguous column error when searching or sorting by @nurikk in https://github.com/smithyhq/sqladmin/pull/983
+* Handling SQLAlchemy UUID fields correctly by introducing new UuidField. by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1023
+* Fixes #915: Sorting exposed functions by their coded order not alphabetical by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1024
+* fix: add RootPathMiddleware for proper static file routing with root_… by @JartanFTW in https://github.com/smithyhq/sqladmin/pull/996
+
+## New Contributors
+* @S3wnkin made their first contribution in https://github.com/smithyhq/sqladmin/pull/992
+* @fd-oncodna made their first contribution in https://github.com/smithyhq/sqladmin/pull/970
+* @Goradii made their first contribution in https://github.com/smithyhq/sqladmin/pull/857
+* @nurikk made their first contribution in https://github.com/smithyhq/sqladmin/pull/983
+* @DenisDudnik made their first contribution in https://github.com/smithyhq/sqladmin/pull/865
+* @rusanpas made their first contribution in https://github.com/smithyhq/sqladmin/pull/971
+* @JartanFTW made their first contribution in https://github.com/smithyhq/sqladmin/pull/996
+
+**Full Changelog**: https://github.com/smithyhq/sqladmin/compare/0.24.0...0.25.0
+
+## Version 0.24.0 - 2026-03-30
+
+### Added
+* Improve logout button and `logo_url` by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/995
+* Support filtering Date and Datetime fields with "less than" and "greater than" operations. by @caarmen in https://github.com/aminalaee/sqladmin/pull/1010
+* Added switch style for checkbox and fixed related bug. by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/975
+* Add ModelView.search_auto_submit option for list search by @Airumian in https://github.com/aminalaee/sqladmin/pull/1003
+* Add select_from to count query in models.py by @estyrke in https://github.com/aminalaee/sqladmin/pull/969
+
+### Fixed
+* [Bug] Improved error display in the `delete` modal window by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/994
+* [Bug] Authorization vulnerability for expose and action by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/993
+
+## New Contributors
+* @caarmen made their first contribution in https://github.com/aminalaee/sqladmin/pull/1010
+* @Airumian made their first contribution in https://github.com/aminalaee/sqladmin/pull/1003
+* @estyrke made their first contribution in https://github.com/aminalaee/sqladmin/pull/969
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.23.0...0.24.0
+
+## Version 0.23.0 - 2026-02-04
+
+### Added
+* Highlight applied filters with background and clear option by @danmysak in https://github.com/aminalaee/sqladmin/pull/964
+* Implemented optional pretty CSV export by @TimofeiN in https://github.com/aminalaee/sqladmin/pull/938
+
+### Fixed
+* fix: use children.extend in Menu.add by @wasinski in https://github.com/aminalaee/sqladmin/pull/892
+* fix: Support set-based relationships in list/detail views by @msukmanowsky in https://github.com/aminalaee/sqladmin/pull/982
+* Fixing an SQLAlchemy warning by @lorg in https://github.com/aminalaee/sqladmin/pull/980
+* Fix buttons width on details page by @MaximDementyev in https://github.com/aminalaee/sqladmin/pull/978
+* Migrate from hatchling to uv by @mmzeynalli in https://github.com/aminalaee/sqladmin/pull/974
+* Change PK column name to title in list/detail page by @wnowicki in https://github.com/aminalaee/sqladmin/pull/977
+
+## New Contributors
+* @danmysak made their first contribution in https://github.com/aminalaee/sqladmin/pull/964
+* @TimofeiN made their first contribution in https://github.com/aminalaee/sqladmin/pull/938
+* @wasinski made their first contribution in https://github.com/aminalaee/sqladmin/pull/892
+* @msukmanowsky made their first contribution in https://github.com/aminalaee/sqladmin/pull/982
+* @MaximDementyev made their first contribution in https://github.com/aminalaee/sqladmin/pull/978
+* @mmzeynalli made their first contribution in https://github.com/aminalaee/sqladmin/pull/974
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.22.0...0.23.0
+
 ## Version 0.22.0 - 2025-11-24
 
 ### Added

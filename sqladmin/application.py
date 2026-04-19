@@ -614,6 +614,16 @@ class Admin(BaseAdminView):
                 request, model_view.create_template, context, status_code=400
             )
 
+        after_response = getattr(request.state, "_sqladmin_after_change_response", None)
+        if isinstance(after_response, Response):
+            return after_response
+        if isinstance(after_response, dict):
+            context["obj"] = obj
+            context.update(after_response)
+            return await self.templates.TemplateResponse(
+                request, model_view.create_template, context
+            )
+
         url = self.get_save_redirect_url(
             request=request,
             form=form_data,
@@ -668,6 +678,16 @@ class Admin(BaseAdminView):
             context["error"] = str(e)
             return await self.templates.TemplateResponse(
                 request, model_view.edit_template, context, status_code=400
+            )
+
+        after_response = getattr(request.state, "_sqladmin_after_change_response", None)
+        if isinstance(after_response, Response):
+            return after_response
+        if isinstance(after_response, dict):
+            context["obj"] = obj
+            context.update(after_response)
+            return await self.templates.TemplateResponse(
+                request, model_view.edit_template, context
             )
 
         url = self.get_save_redirect_url(

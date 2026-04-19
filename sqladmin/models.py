@@ -33,7 +33,7 @@ from sqlalchemy.sql.expression import Select, select
 from starlette.datastructures import URL
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response, StreamingResponse
 from wtforms import Field, Form
 from wtforms.fields.core import UnboundField
 
@@ -461,7 +461,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Template configuration
     show_compact_lists: ClassVar[bool] = True
-    """Show compact lists. Default is `True`. 
+    """Show compact lists. Default is `True`.
     If False, when showing lists of objects, each object will be \
     displayed in a separate line."""
 
@@ -502,7 +502,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
     Enable export of CSV files using column labels and column formatters.
 
-    If set to True, the export will apply column labels and formatting logic 
+    If set to True, the export will apply column labels and formatting logic
     used in the list template.
     Otherwise, raw database values and field names will be used.
 
@@ -1069,10 +1069,17 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> None:
+    ) -> Response | dict | None:
         """Perform some actions after a model was created
         or updated and committed to the database.
-        By default does nothing.
+
+        The return value controls the HTTP response:
+
+        * ``None`` (default) -- redirect as usual.
+        * ``dict`` -- re-render the create/edit template with the dict merged
+          into the template context.  The created/updated ``obj`` is also
+          added to the context automatically.
+        * ``Response`` -- return a custom Starlette ``Response`` directly.
         """
 
     def _build_column_pairs(

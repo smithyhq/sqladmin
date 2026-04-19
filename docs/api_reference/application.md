@@ -15,3 +15,22 @@
 
 ::: sqladmin.application.action
     handler: python
+
+::: sqladmin.flash.FlashLevel
+    handler: python
+
+::: sqladmin.flash.Flash
+    handler: python
+    options:
+      members:
+        - flash
+        - info
+        - success
+        - warning
+        - error
+
+::: sqladmin.flash.flash
+    handler: python
+
+::: sqladmin.flash.get_flashed_messages
+    handler: python

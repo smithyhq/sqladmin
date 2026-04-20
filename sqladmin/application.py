@@ -704,12 +704,15 @@ class Admin(BaseAdminView):
         if request.method == "GET":
             return await self.templates.TemplateResponse(request, "sqladmin/login.html")
 
-        ok = await self.authentication_backend.login(request)
-        if not ok:
+        response = await self.authentication_backend.login(request)
+        if not response:
             context["error"] = "Invalid credentials."
             return await self.templates.TemplateResponse(
                 request, "sqladmin/login.html", context, status_code=400
             )
+
+        if isinstance(response, Response):
+            return response
 
         return RedirectResponse(request.url_for("admin:index"), status_code=302)
 

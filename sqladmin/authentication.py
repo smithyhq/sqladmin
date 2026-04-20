@@ -22,7 +22,7 @@ class AuthenticationBackend:
             Middleware(SessionMiddleware, secret_key=secret_key),
         ]
 
-    async def login(self, request: Request) -> bool:
+    async def login(self, request: Request) -> Response | bool:
         """Implement login logic here.
         You can access the login form data `await request.form()`
         andvalidate the credentials.

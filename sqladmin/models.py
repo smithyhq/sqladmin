@@ -100,7 +100,7 @@ class ModelViewMeta(type):
             ) from exc
 
         cls.pk_columns = get_primary_keys(model)
-        cls.identity = slugify_class_name(model.__name__)
+        cls.identity = slugify_class_name(attrs.get("identity", model.__name__))
         cls.model = model
 
         cls.name = attrs.get("name", prettify_class_name(cls.model.__name__))
@@ -791,9 +791,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     def _url_for_delete(self, request: Request, obj: Any) -> str:
         pk = get_object_identifier(obj)
         query_params = urlencode({"pks": pk})
-        url = request.url_for(
-            "admin:delete", identity=slugify_class_name(obj.__class__.__name__)
-        )
+        url = request.url_for("admin:delete", identity=self.identity)
         return str(url) + "?" + query_params
 
     def _url_for_details_with_prop(self, request: Request, obj: Any, prop: str) -> URL:
@@ -808,7 +806,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     def _build_url_for(self, name: str, request: Request, obj: Any) -> URL:
         return request.url_for(
             name,
-            identity=slugify_class_name(obj.__class__.__name__),
+            identity=self.identity,
             pk=get_object_identifier(obj),
         )
 

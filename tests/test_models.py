@@ -416,6 +416,46 @@ def test_export_excluded_columns_by_model_column() -> None:
     ]
 
 
+def test_import_columns_by_model_columns() -> None:
+    class UserAdmin(ModelView, model=User):
+        column_import_list = [User.id, User.name]
+
+    assert UserAdmin().get_import_columns() == ["id", "name"]
+
+
+def test_import_columns_by_str_name() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_import_list = ["id", "user_id"]
+
+    assert AddressAdmin().get_import_columns() == ["id", "user_id"]
+
+
+def test_import_columns_both_include_and_exclude() -> None:
+    with pytest.raises(AssertionError) as exc:
+
+        class InvalidAdmin(ModelView, model=User):
+            column_import_list = ["id"]
+            column_import_exclude_list = ["name"]
+
+    assert exc.match(
+        "Cannot use column_import_list and column_import_exclude_list together."
+    )
+
+
+def test_import_excluded_columns_by_str_name() -> None:
+    class UserAdmin(ModelView, model=User):
+        column_import_exclude_list = ["id", "groups"]
+
+    assert UserAdmin().get_import_columns() == ["addresses", "profile", "name"]
+
+
+def test_import_excluded_columns_by_model_column() -> None:
+    class UserAdmin(ModelView, model=User):
+        column_import_exclude_list = [User.id, User.groups]
+
+    assert UserAdmin().get_import_columns() == ["addresses", "profile", "name"]
+
+
 @pytest.mark.skipif(engine.name != "postgresql", reason="PostgreSQL only")
 def test_get_python_type_postgresql() -> None:
     class PostgresModel(Base):

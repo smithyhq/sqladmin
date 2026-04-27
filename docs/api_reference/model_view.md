@@ -37,6 +37,9 @@
         - column_export_exclude_list
         - export_types
         - export_max_rows
+        - can_import
+        - column_import_list
+        - column_import_exclude_list
         - form
         - form_args
         - form_columns

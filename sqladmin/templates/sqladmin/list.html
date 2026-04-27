@@ -33,6 +33,13 @@
                   </a>
                 </div>
                 {% endif %}
+                {% if model_view.can_import %}
+                <div class="ms-3 d-inline-block">
+                  <a class="btn btn-primary" id="action-import" href="#" data-name="{{ model_view.name }}"
+                  data-url="{{ url_for('admin:import', identity=model_view.identity) }}" data-bs-toggle="modal"
+                  data-bs-target="#modal-import">Import CSV</a>
+                </div>
+                {% endif %}
                 {% endif %}
                 {% if model_view.can_create %}
                 <div class="ms-3 d-inline-block">
@@ -256,6 +263,9 @@
   </div>
   {% if model_view.can_delete %}
   {% include 'sqladmin/modals/delete.html' %}
+  {% endif %}
+  {% if model_view.can_import %}
+  {% include 'sqladmin/modals/import.html' %}
   {% endif %}
 
   {% for custom_action in model_view._custom_actions_in_list %}

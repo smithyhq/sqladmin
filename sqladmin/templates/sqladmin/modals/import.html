@@ -1,0 +1,51 @@
+<div
+  class="modal modal-blur fade"
+  id="modal-import"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="modal"
+        aria-label="Close"
+      ></button>
+      <form
+        id="modal-import-form"
+        action="import"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        <div class="modal-body text-center py-4">
+          <h3>Import CSV</h3>
+          <input id="csvfile" name="csvfile" type="file" accept="text/csv" />
+        </div>
+        <div id="modal-import-text" style="white-space: pre-line;" class="d-none" role="alert"></div>
+        <div class="modal-footer">
+          <div class="w-100">
+            <div class="row">
+              <div class="col">
+                <a href="#" class="btn w-100" data-bs-dismiss="modal">
+                  Cancel
+                </a>
+              </div>
+              <div class="col">
+                <button
+                  id="modal-import-button"
+                  type="submit"
+                  data-url=""
+                  class="btn btn-green w-100"
+                >
+                  Import
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

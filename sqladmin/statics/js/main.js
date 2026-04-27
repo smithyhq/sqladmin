@@ -33,6 +33,36 @@ $(document).on('click', '#modal-delete-button', function () {
   });
 });
 
+// Handle import modal
+$(document).on('shown.bs.modal', '#modal-import', function () {
+  const frm = $('#modal-import-form');
+
+  frm.submit(function (e) {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append('csvfile', $('#csvfile')[0].files[0]);
+
+    $.ajax({
+      type: frm.attr('method'),
+      url: frm.attr('action'),
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function (data, textStatus, jqXHR) {
+        console.log('Import CSV was successful.');
+        window.location.href = 'list';
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        console.log('An error occurred.');
+        console.log(jqXHR.responseText);
+        $('#modal-import-text').text(jqXHR.responseText);
+        $('#modal-import-text').attr('class', 'alert alert-danger');;
+      },
+    });
+  })
+});
+
 // Search
 $(document).on('click', '#search-button', function () {
   var searchTerm = encodeURIComponent($("#search-input").val());

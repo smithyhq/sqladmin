@@ -149,6 +149,7 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.name, User.id]
     column_sortable_list = [User.id]
     column_export_list = [User.name, User.status]
+    column_import_list = [User.name, User.status]
     column_formatters = {
         User.addresses_formattable: lambda m, a: [
             f"Formatted {a}" for a in m.addresses_formattable
@@ -164,6 +165,7 @@ class UserAdmin(ModelView, model=User):
     save_as = True
     form_create_rules = ["name", "email", "addresses", "profile", "birthdate", "status"]
     form_edit_rules = ["name", "email", "addresses", "profile", "birthdate"]
+    can_import = True
 
 
 class AddressAdmin(ModelView, model=Address):
@@ -955,3 +957,61 @@ def test_sort_and_search_together_no_ambigious_column_error(
 
     response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
     assert response.status_code == 200
+
+
+def test_import_csv_file(client: TestClient) -> None:
+    client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nUSER_1,ACTIVE\r\nUSER_2,DEACTIVE\r\n",
+                "text/csv",
+            )
+        },
+    )
+    with session_maker() as s:
+        users = list(s.execute(select(User).order_by(User.id)).scalars())
+    assert users[0].name == "USER_1"
+    assert users[0].id == 1
+    assert users[0].status == Status.ACTIVE
+    assert users[1].name == "USER_2"
+    assert users[1].id == 2
+    assert users[1].status == Status.DEACTIVE
+
+
+def test_import_csv_button(client: TestClient) -> None:
+    response = client.get("/admin/user/list")
+    assert response.status_code == 200
+    assert (
+        '<input id="csvfile" name="csvfile" type="file" accept="text/csv" />'
+        in response.text
+    )
+
+
+def test_import_csv_bad_type_is_404(client: TestClient) -> None:
+    response = client.post(
+        "/admin/notfound/import",
+        files={
+            "csvfile": (
+                "notfound.csv",
+                b"id\r\n1\r\n2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_import_csv_permission(client: TestClient) -> None:
+    response = client.post(
+        "/admin/movie/import",
+        files={
+            "csvfile": (
+                "movie.csv",
+                b"id\r\n1\r\n2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    assert response.status_code == 403

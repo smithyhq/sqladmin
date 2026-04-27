@@ -71,6 +71,7 @@ The following options are available:
 - `can_delete`: If the model instances can be deleted via SQLAdmin. Default value is `True`.
 - `can_view_details`: If the model instance details can be viewed via SQLAdmin. Default value is `True`.
 - `can_export`: If the model data can be exported in the list page. Default value is `True`.
+- `can_import`: If the model data can be imported from a CSV file in the list page. Default value is `False`.
 
 !!! example
 
@@ -423,6 +424,28 @@ class ExamResultAdmin(ModelView, model=ExamResult):
 
 
 
+## Import options
+
+SQLAdmin supports importing data from a CSV file in the list page.
+The import options can be set per model and includes the following options:
+
+* `can_import`: If the model can be imported. Default value is `False`.
+* `column_import_list`: List of columns to include in the import data. Default is all model columns.
+* `column_import_exclude_list`: List of columns to exclude in the import data.
+
+!!! example
+
+    ```python
+    class User(Base):
+        __tablename__ = "users"
+        id = Column(Integer, primary_key=True)
+        name = Column(String)
+        address = Column(String)
+    
+    class UserAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.address]
+    ```
 
 ## Templates
 

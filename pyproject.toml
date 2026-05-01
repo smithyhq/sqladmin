@@ -77,7 +77,7 @@ dev = [
   "bandit",
 ]
 
-lint = ["mypy==1.19.1", "ruff==0.15.4", "types-wtforms>=3.2.1.20250809"]
+lint = ["mypy==1.19.1", "ruff==0.15.12", "types-wtforms>=3.2.1.20250809"]
 
 docs = [
   "mkdocs-material==9.7.1",

@@ -154,8 +154,20 @@ class SongAuthAdmin(ModelView, model=SongAuth):
     }
 
 
+class RestrictedModel(Base):
+    __tablename__ = "restricted_model_auth"
+
+    id = Column(Integer, primary_key=True)
+
+
+class RestrictedModelAdmin(ModelView, model=RestrictedModel):
+    def is_accessible(self, request: Request) -> bool:
+        return False
+
+
 admin.add_view(ArtistAdmin)
 admin.add_view(SongAuthAdmin)
+admin.add_view(RestrictedModelAdmin)
 
 
 @pytest.fixture(autouse=False)

@@ -1229,7 +1229,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         customized. By default it will select all objects without any filters.
         """
 
-        return self.form_edit_query(request)
+        return self.form_details_query(request)
+
+    def form_details_query(self, request: Request) -> Select:
+        """
+        The SQLAlchemy select expression used for the details page which can be
+        customized. By default it will select the object by primary key(s) without any
+        additional filters.
+        """
+        stmt = self._stmt_by_identifier(request.path_params["pk"])
+        for relation in self._details_relations:
+            stmt = stmt.options(selectinload(relation))
+        return stmt
 
     def edit_form_query(self, request: Request) -> Select:
         msg = (

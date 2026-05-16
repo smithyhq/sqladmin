@@ -171,6 +171,7 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.name, User.status]
     column_sortable_list = [User.id, User.name]
     column_export_list = [User.name, User.status]
+    column_import_list = [User.name, User.status]
     column_formatters = {
         User.addresses_formattable: lambda m, a: [
             f"Formatted {a}" for a in m.addresses_formattable
@@ -184,6 +185,7 @@ class UserAdmin(ModelView, model=User):
         User.profile_formattable: lambda m, a: f"Formatted {m.profile_formattable}",
     }
     save_as = True
+    can_import = True
 
 
 class AddressAdmin(ModelView, model=Address):
@@ -1036,4 +1038,63 @@ async def test_export_permission_csv(client: AsyncClient) -> None:
 
 async def test_export_permission_json(client: AsyncClient) -> None:
     response = await client.get("/admin/movie/export/json")
+    assert response.status_code == 403
+
+
+async def test_import_csv_file(client: AsyncClient) -> None:
+    await client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nUSER_1,ACTIVE\r\nUSER_2,DEACTIVE\r\n",
+                "text/csv",
+            )
+        },
+    )
+    async with session_maker() as s:
+        result = await s.execute(select(User).order_by(User.id))
+        users = list(result.scalars())
+    assert users[0].name == "USER_1"
+    assert users[0].id == 1
+    assert users[0].status == Status.ACTIVE
+    assert users[1].name == "USER_2"
+    assert users[1].id == 2
+    assert users[1].status == Status.DEACTIVE
+
+
+async def test_import_csv_button(client: AsyncClient) -> None:
+    response = await client.get("/admin/user/list")
+    assert response.status_code == 200
+    assert (
+        '<input id="csvfile" name="csvfile" type="file" accept="text/csv" />'
+        in response.text
+    )
+
+
+async def test_import_csv_bad_type_is_404(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/notfound/import",
+        files={
+            "csvfile": (
+                "notfound.csv",
+                b"id\r\n1\r\n2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    assert response.status_code == 404
+
+
+async def test_import_csv_permission(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/movie/import",
+        files={
+            "csvfile": (
+                "movie.csv",
+                b"id\r\n1\r\n2\r\n",
+                "text/csv",
+            )
+        },
+    )
     assert response.status_code == 403

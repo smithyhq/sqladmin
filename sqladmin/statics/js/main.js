@@ -98,28 +98,44 @@ $(':input[data-role="datetimepicker"]:not([readonly])').each(function () {
 
 // Ajax Refs
 $(':input[data-role="select2-ajax"]').each(function () {
-  $(this).select2({
+  var placeholderText = $(this).attr("placeholder") || "Search";
+
+  var $select = $(this);
+  var originalName = $select.attr("name");
+  var $hiddenInput = $('<input type="hidden">').attr("name", originalName);
+  $select.after($hiddenInput);
+  $select.removeAttr("name");
+
+  $select.select2({
     minimumInputLength: 1,
+    placeholder: placeholderText,
+    allowClear: true,
     ajax: {
-      url: $(this).data("url"),
+      url: $select.data("url"),
       dataType: 'json',
       data: function (params) {
-        var query = {
-          name: $(this).attr("name"),
+        return {
+          name: originalName,
           term: params.term,
-        }
-        return query;
+        };
       }
     }
   });
 
-  existing_data = $(this).data("json") || [];
-  for (var i = 0; i < existing_data.length; i++) {
-    data = existing_data[i];
+  $select.on('change', function () {
+    var val = $select.val();
+    $hiddenInput.val(val ? val.join(',') : '');
+  });
+
+  var existing_data = $select.data("json") || [];
+  existing_data.forEach(function (data) {
     var option = new Option(data.text, data.id, true, true);
-    $(this).append(option).trigger('change');
-  }
+    $select.append(option);
+  });
+
+  $select.trigger('change');
 });
+
 
 // Checkbox select
 $("#select-all").click(function () {

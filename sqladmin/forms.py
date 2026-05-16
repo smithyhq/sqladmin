@@ -311,6 +311,9 @@ class ModelConverterBase:
             if not issubclass(override, Field):
                 raise TypeError("Expected Field, got %s" % type(override))
 
+            if loader:
+                kwargs.setdefault("loader", loader)
+
             return override(**kwargs)
 
         multiple = (

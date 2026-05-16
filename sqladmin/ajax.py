@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import String, cast, inspect, or_, select
+from sqlalchemy import String, and_, cast, inspect, or_, select
 
 from sqladmin.helpers import get_object_identifier, get_primary_keys
 
@@ -60,6 +60,28 @@ class QueryAjaxModelLoader:
             return {}
 
         return {"id": str(get_object_identifier(model)), "text": str(model)}
+
+    async def format_by_pk(self, pk: Any) -> dict[str, Any]:
+        stmt = select(self.model)
+
+        filters = [field == pk for field in inspect(self.model).primary_key]
+
+        stmt = stmt.filter(and_(*filters))
+
+        if self.order_by:
+            if isinstance(self.order_by, list):
+                for o in self.order_by:
+                    stmt = stmt.order_by(o)
+            else:
+                stmt = stmt.order_by(self.order_by)
+
+        stmt = stmt.limit(1)
+
+        result = await self.model_admin._run_query(stmt)
+        if len(result) < 1:
+            return {}
+
+        return {"id": str(get_object_identifier(result[0])), "text": str(result[0])}
 
     async def get_list(self, term: str) -> list[Any]:
         stmt = select(self.model)

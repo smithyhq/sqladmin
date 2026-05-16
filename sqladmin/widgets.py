@@ -43,7 +43,7 @@ class AjaxSelect2Widget(widgets.Select):
         self.multiple = multiple
         self.lookup_url = ""
 
-    def __call__(self, field: "AjaxSelectField", **kwargs: Any) -> Markup:
+    async def __call__(self, field: "AjaxSelectField", **kwargs: Any) -> Markup:
         kwargs.setdefault("data-role", "select2-ajax")
         kwargs.setdefault("data-url", field.loader.model_admin.ajax_lookup_url)
 
@@ -55,14 +55,37 @@ class AjaxSelect2Widget(widgets.Select):
         kwargs.setdefault("type", "hidden")
 
         if self.multiple:
-            result = [field.loader.format(value) for value in field.data]
+            result = []
+            for value in field.data:
+                try:
+                    result.append(field.loader.format(value))
+                    continue
+                except Exception:  # nosec B110
+                    pass
+
+                try:
+                    result_value = await field.loader.format_by_pk(value)
+                    if result_value == {}:
+                        continue
+                    else:
+                        result.append(result_value)
+                except Exception:  # nosec B110
+                    pass
+
             kwargs["data-json"] = json.dumps(result)
             kwargs["multiple"] = "1"
+
         else:
             try:
                 data = field.loader.format(field.data)
             except Exception:
-                data = None
+                try:
+                    data = await field.loader.format_by_pk(field.data)
+                    if data == {}:
+                        data = None
+                except Exception:
+                    data = None
+
             if data:
                 kwargs["data-json"] = json.dumps([data])
 

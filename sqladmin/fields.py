@@ -299,7 +299,7 @@ class QuerySelectMultipleField(QuerySelectField):
 
 
 class AjaxSelectField(fields.SelectFieldBase):
-    widget = sqladmin_widgets.AjaxSelect2Widget()
+    widget = sqladmin_widgets.AjaxSelect2Widget()  # type: ignore[assignment]
     separator = ","
 
     def __init__(

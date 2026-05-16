@@ -29,6 +29,7 @@ nav:
       - Multiple databases: "cookbook/multiple_databases.md"
       - Using rich text editor: "cookbook/using_wysiwyg.md"
       - Working with Passwords: "cookbook/working_with_passwords.md"
+      - Displaying one-time secrets: "cookbook/displaying_one_time_secrets.md"
   - API Reference:
       - Application: "api_reference/application.md"
       - ModelView: "api_reference/model_view.md"

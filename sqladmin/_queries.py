@@ -146,9 +146,11 @@ class Query:
             )
             obj = self._set_attributes_sync(session, obj, data)
             session.commit()
-            anyio.from_thread.run(
+            result = anyio.from_thread.run(
                 self.model_view.after_model_change, data, obj, False, request
             )
+            if result is not None:
+                request.state._sqladmin_after_change_response = result
             return obj
 
     async def _update_async(
@@ -165,7 +167,9 @@ class Query:
             await self.model_view.on_model_change(data, obj, False, request)
             obj = await self._set_attributes_async(session, obj, data)
             await session.commit()
-            await self.model_view.after_model_change(data, obj, False, request)
+            result = await self.model_view.after_model_change(data, obj, False, request)
+            if result is not None:
+                request.state._sqladmin_after_change_response = result
             return obj
 
     def _get_delete_stmt(self, pk: str) -> Select:
@@ -214,9 +218,11 @@ class Query:
             obj = self._set_attributes_sync(session, obj, data)
             session.add(obj)
             session.commit()
-            anyio.from_thread.run(
+            result = anyio.from_thread.run(
                 self.model_view.after_model_change, data, obj, True, request
             )
+            if result is not None:
+                request.state._sqladmin_after_change_response = result
             return obj
 
     async def _insert_async(self, data: dict[str, Any], request: Request) -> Any:
@@ -227,7 +233,9 @@ class Query:
             obj = await self._set_attributes_async(session, obj, data)
             session.add(obj)
             await session.commit()
-            await self.model_view.after_model_change(data, obj, True, request)
+            result = await self.model_view.after_model_change(data, obj, True, request)
+            if result is not None:
+                request.state._sqladmin_after_change_response = result
             return obj
 
     async def delete(self, obj: Any, request: Request) -> None:

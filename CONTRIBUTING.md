@@ -106,6 +106,6 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
-3. The pull request should work from Python 3.9 till 3.14. Check
+3. The pull request should work from Python 3.10 till 3.14. Check
    https://github.com/smithyhq/sqladmin/actions
    and make sure that the tests pass for all supported Python versions.

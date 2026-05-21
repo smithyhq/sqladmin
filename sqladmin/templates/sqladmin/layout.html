@@ -7,7 +7,7 @@
       <h1 class="navbar-brand navbar-brand-autodark">
         <a href="{{ url_for('admin:index') }}">
           {% if admin.logo_url %}
-          <img src="{{ admin.logo_url }}" width="64" height="64" alt="{{ admin.title }}" />
+          <img src="{{ admin.logo_url }}" width="{{ admin.logo_width }}" height="{{ admin.logo_height }}" alt="{{ admin.title }}" style="object-fit: contain;" />
           {% else %}
           <h3>{{ admin.title }}</h3>
           {% endif %}

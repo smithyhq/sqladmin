@@ -69,6 +69,27 @@ def test_application_logo() -> None:
     )
 
 
+def test_application_logo_custom_dimensions() -> None:
+    app = Starlette()
+    Admin(
+        app=app,
+        engine=engine,
+        logo_url="https://example.com/logo.svg",
+        logo_width=128,
+        logo_height=96,
+        base_url="/dashboard",
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert (
+        '<img src="https://example.com/logo.svg" width="128" height="96"'
+        in response.text
+    )
+
+
 def test_middlewares() -> None:
     class CorrelationIdMiddleware:
         def __init__(self, app: ASGIApp) -> None:

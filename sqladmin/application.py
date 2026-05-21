@@ -70,6 +70,8 @@ class BaseAdmin:
         base_url: str = "/admin",
         title: str = "Admin",
         logo_url: str | None = None,
+        logo_width: int = 64,
+        logo_height: int = 64,
         favicon_url: str | None = None,
         templates_dir: str = "templates",
         middlewares: Sequence[Middleware] | None = None,
@@ -81,6 +83,8 @@ class BaseAdmin:
         self.templates_dir = templates_dir
         self.title = title
         self.logo_url = logo_url
+        self.logo_width = logo_width
+        self.logo_height = logo_height
         self.favicon_url = favicon_url
 
         if session_maker:
@@ -405,6 +409,8 @@ class Admin(BaseAdminView):
         base_url: str = "/admin",
         title: str = "Admin",
         logo_url: str | None = None,
+        logo_width: int = 64,
+        logo_height: int = 64,
         favicon_url: str | None = None,
         middlewares: Sequence[Middleware] | None = None,
         debug: bool = False,
@@ -419,6 +425,8 @@ class Admin(BaseAdminView):
             base_url: Base URL for Admin interface.
             title: Admin title.
             logo_url: URL of logo to be displayed instead of title.
+            logo_width: Width of the logo image in pixels. Defaults to 64.
+            logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
         """
 
@@ -429,6 +437,8 @@ class Admin(BaseAdminView):
             base_url=base_url,
             title=title,
             logo_url=logo_url,
+            logo_width=logo_width,
+            logo_height=logo_height,
             favicon_url=favicon_url,
             templates_dir=templates_dir,
             middlewares=middlewares,

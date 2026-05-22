@@ -759,11 +759,13 @@ class Admin(BaseAdminView):
 
         return RedirectResponse(request.url_for("admin:index"), status_code=302)
 
+    @login_required
     async def download_file(self, request: Request) -> Response:
         """Download file endpoint."""
         request_path = await self._get_file(request)
         return FileResponse(request_path, filename=request_path.name)
 
+    @login_required
     async def reed_file(self, request: Request) -> Response:
         """Read file endpoint."""
         request_path = await self._get_file(request)

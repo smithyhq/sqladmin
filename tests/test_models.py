@@ -210,23 +210,7 @@ def test_column_exclude_list_by_model_column() -> None:
     assert UserAdmin().get_list_columns() == ["addresses", "profile", "groups", "name"]
 
 
-@pytest.fixture
-def mock_request() -> Request:
-    return Request(
-        {
-            "type": "http",
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/admin/user/list",
-            "raw_path": b"/admin/user/list",
-            "headers": [],
-            "query_string": b"",
-            "path_params": {"identity": "user"},
-        }
-    )
-
-
-async def test_column_list_formatters(mock_request: Request) -> None:
+async def test_column_list_formatters() -> None:
     class UserAdmin(ModelView, model=User):
         column_formatters = {
             "id": lambda *args: 2,
@@ -235,14 +219,11 @@ async def test_column_list_formatters(mock_request: Request) -> None:
 
     user = User(id=1, name="Long Name")
 
-    assert await UserAdmin().get_list_value(user, "id", mock_request) == (1, 2)
-    assert await UserAdmin().get_list_value(user, "name", mock_request) == (
-        "Long Name",
-        "L",
-    )
+    assert await UserAdmin().get_list_value(user, "id") == (1, 2)
+    assert await UserAdmin().get_list_value(user, "name") == ("Long Name", "L")
 
 
-async def test_column_formatters_detail(mock_request: Request) -> None:
+async def test_column_formatters_detail() -> None:
     class UserAdmin(ModelView, model=User):
         column_formatters_detail = {
             "id": lambda *args: 2,
@@ -251,26 +232,21 @@ async def test_column_formatters_detail(mock_request: Request) -> None:
 
     user = User(id=1, name="Long Name")
 
-    assert await UserAdmin().get_detail_value(user, "id", mock_request) == (1, 2)
-    assert await UserAdmin().get_detail_value(user, "name", mock_request) == (
-        "Long Name",
-        "L",
-    )
+    assert await UserAdmin().get_detail_value(user, "id") == (1, 2)
+    assert await UserAdmin().get_detail_value(user, "name") == ("Long Name", "L")
 
 
-async def test_column_formatters_default(mock_request: Request) -> None:
+async def test_column_formatters_default() -> None:
     class ProfileAdmin(ModelView, model=Profile): ...
 
     user = User(id=1, name="Long Name")
     profile = Profile(user=user, is_active=True)
 
-    assert await ProfileAdmin().get_list_value(profile, "is_active", mock_request) == (
+    assert await ProfileAdmin().get_list_value(profile, "is_active") == (
         True,
         Markup("<i class='fa fa-check text-success'></i>"),
     )
-    assert await ProfileAdmin().get_detail_value(
-        profile, "is_active", mock_request
-    ) == (
+    assert await ProfileAdmin().get_detail_value(profile, "is_active") == (
         True,
         Markup("<i class='fa fa-check text-success'></i>"),
     )

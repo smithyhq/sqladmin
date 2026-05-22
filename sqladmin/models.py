@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect as py_inspect
 import json
 import time
 import warnings
@@ -839,7 +840,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         formatter: Callable[..., Any],
         obj: Any,
         prop: str,
+        request: Optional[Request] = None,
     ) -> Any:
+        if "request" in py_inspect.signature(formatter).parameters:
+            return formatter(obj, prop, request)  # type: ignore[arg-type]
         return formatter(obj, prop)
 
     def validate_page_number(self, number: Union[str, None], default: int) -> int:
@@ -985,16 +989,21 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 return await anyio.to_thread.run_sync(lambda: getattr(obj, prop))
 
     async def get_list_value(
-        self, obj: Any, prop: str
+        self, obj: Any, prop: str, request: Optional[Request] = None
     ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the list view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._list_formatters.get(prop)
-        if formatter:
+        if formatter and (
+            request is not None
+            or "request" not in py_inspect.signature(formatter).parameters
+        ):
             formatted_value = self._invoke_column_formatter(
-                formatter, obj, prop
+                formatter, obj, prop, request
             )
+        elif formatter:
+            formatted_value = self._default_formatter(value)
         else:
             formatted_value = self._default_formatter(value)
         return value, formatted_value
@@ -1008,7 +1017,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         formatter = self._detail_formatters.get(prop)
         if formatter:
             formatted_value = self._invoke_column_formatter(
-                formatter, obj, prop
+                formatter, obj, prop, request
             )
         else:
             formatted_value = self._default_formatter(value)

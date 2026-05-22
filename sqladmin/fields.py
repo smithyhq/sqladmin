@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Any, Callable, Generator
 from uuid import UUID
 
-from wtforms import Form, ValidationError, fields, validators, widgets
+from wtforms import Form, ValidationError, fields, widgets
 
 from sqladmin import widgets as sqladmin_widgets
 from sqladmin.ajax import QueryAjaxModelLoader

@@ -16,15 +16,17 @@ from sqlalchemy import (
     Text,
     Time,
     TypeDecorator,
+    func,
+    select,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INET, MACADDR, UUID
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import (
     ColumnProperty,
+    column_property,
     composite,
     declarative_base,
     relationship,
-    sessionmaker,
 )
 from wtforms import BooleanField, Field, Form, IntegerField, StringField, TimeField
 from wtforms.fields.core import UnboundField
@@ -36,8 +38,8 @@ from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: ignore
-session_maker = sessionmaker(bind=engine, class_=AsyncSession)
+Base = declarative_base()
+session_maker = async_sessionmaker(bind=engine, class_=AsyncSession)
 
 
 class Status(enum.Enum):
@@ -108,7 +110,6 @@ async def prepare_database() -> AsyncGenerator[None, None]:
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-
     await engine.dispose()
 
 
@@ -150,11 +151,12 @@ async def test_model_form_exclude() -> None:
 
 
 async def test_model_form_form_args() -> None:
-    form_args = {"name": {"label": "User Name"}}
+    form_args = {"name": {"label": "User Name"}, "number": {"default": 100}}
     Form = await get_model_form(
         model=User, session_maker=session_maker, form_args=form_args
     )
     assert Form()._fields["name"].label.text == "User Name"
+    assert Form()._fields["number"].default == 100
 
 
 async def test_model_form_column_label() -> None:
@@ -332,3 +334,16 @@ async def test_model_field_clashing_with_wtforms_reserved_attribute() -> None:
     assert inspect.isfunction(Form.process)
     assert inspect.isfunction(Form.validate)
     assert inspect.isfunction(Form.populate_obj)
+
+
+async def test_column_property_is_ignored_in_form() -> None:
+    class Model(Base):
+        __tablename__ = "model_column_property"
+
+        id = Column(Integer, primary_key=True)
+        number = Column(Integer)
+        count = column_property(select(func.count("Model")).scalar_subquery())
+
+    Form = await get_model_form(model=Model, session_maker=session_maker)
+
+    assert "count" not in Form()._fields

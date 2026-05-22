@@ -15,8 +15,7 @@ class User(Base):
     name = Column(String)
 
 
-class UserAdmin(ModelView, model=User):
-    ...
+class UserAdmin(ModelView, model=User): ...
 
 
 request = Request({"type": "http"})
@@ -40,6 +39,32 @@ def test_category_menu():
 
     assert item_menu.is_active(request) is False
     assert item_menu.type_ == "Category"
+
+
+def test_category_menu_is_active_when_child_is_active():
+    request = Request(
+        {
+            "type": "http",
+            "path_params": {"identity": "user"},
+        }
+    )
+    user_menu = ViewMenu(view=UserAdmin(), name="user")
+
+    category_menu = CategoryMenu(name="Models")
+    category_menu.add_child(user_menu)
+
+    assert user_menu.is_active(request) is True
+    assert category_menu.is_active(request) is True
+
+
+def test_category_menu_is_not_active_when_no_child_is_active():
+    user_menu = ViewMenu(view=UserAdmin(), name="user")
+
+    category_menu = CategoryMenu(name="Models")
+    category_menu.add_child(user_menu)
+
+    assert user_menu.is_active(request) is False
+    assert category_menu.is_active(request) is False
 
 
 def test_view_menu():

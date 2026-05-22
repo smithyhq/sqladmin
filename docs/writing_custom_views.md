@@ -32,6 +32,26 @@ admin = Admin(templates_dir="my_templates", ...)
 
 Now visiting `/admin/report` you can render your `report.html` file.
 
+It is also possible to use the expose decorator to add extra endpoints to a ModelView. 
+The `path` is in this case prepended with the view's identity, in this case `/admin/user/profile/{pk}`.
+
+!!! example
+
+    ```python
+    from sqladmin import ModelView, expose
+
+    class UserView(ModelView):
+
+        @expose("/profile/{pk}", methods=["GET"])
+        async def profile(self, request):
+            user: User = await self.get_object_for_edit(request)
+            return await self.templates.TemplateResponse(
+                request, "user.html", {"user": user}
+            )
+
+    admin.add_view(UserView)
+    ```
+
 ### Database access
 
 The example above was very basic and you probably want to access database and SQLAlchemy models in your custom view. You can use `sessionmaker` the same way SQLAdmin is using it to do so:
@@ -89,7 +109,7 @@ Next we update the `report.html` file in the `templates` directory with the foll
 
 !!! example
     ```html
-    {% extends "layout.html" %}
+    {% extends "sqladmin/layout.html" %}
     {% block content %}
     <div class="col-12">
     <div class="card">

@@ -1,9 +1,11 @@
 import enum
-from typing import Any, Generator
+import json
+from typing import Generator
 
 import pytest
 from sqlalchemy import (
     JSON,
+    Boolean,
     Column,
     Date,
     Enum,
@@ -72,6 +74,7 @@ class Profile(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -109,7 +112,16 @@ class Movie(Base):
     id = Column(Integer, primary_key=True)
 
 
-@pytest.fixture
+class Product(Base):
+    __tablename__ = "product"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    price = Column(Integer)
+    is_sold = Column(Boolean, nullable=False)
+
+
+@pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
     yield
@@ -117,7 +129,7 @@ def prepare_database() -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def client(prepare_database: Any) -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient, None, None]:
     with TestClient(app=app, base_url="http://testserver") as c:
         yield c
 
@@ -134,7 +146,7 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
+    column_searchable_list = [User.name, User.id]
     column_sortable_list = [User.id]
     column_export_list = [User.name, User.status]
     column_formatters = {
@@ -150,10 +162,14 @@ class UserAdmin(ModelView, model=User):
         User.profile_formattable: lambda m, a: f"Formatted {m.profile_formattable}",
     }
     save_as = True
+    form_create_rules = ["name", "email", "addresses", "profile", "birthdate", "status"]
+    form_edit_rules = ["name", "email", "addresses", "profile", "birthdate"]
 
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
+    column_searchable_list = [Address.id]
+    search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
 
@@ -174,10 +190,15 @@ class MovieAdmin(ModelView, model=Movie):
         return False
 
 
+class ProductAdmin(ModelView, model=Product):
+    pass
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
+admin.add_view(ProductAdmin)
 
 
 def test_root_view(client: TestClient) -> None:
@@ -345,6 +366,7 @@ def test_detail_page(client: TestClient) -> None:
     assert response.status_code == 200
     assert '<th class="w-1">Column</th>' in response.text
     assert '<th class="w-1">Value</th>' in response.text
+    assert '<h3 class="card-title">\n        Id: 1' in response.text
     assert "<td>id</td>" in response.text
     assert "<td>1</td>" in response.text
     assert "<td>name</td>" in response.text
@@ -399,7 +421,8 @@ def test_delete_endpoint_unauthorized_response(client: TestClient) -> None:
 def test_delete_endpoint_not_found_response(client: TestClient) -> None:
     response = client.delete("/admin/user/delete?pks=1")
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert "error=404%3A+Object+not+found" in response.text
 
     with session_maker() as s:
         assert s.query(User).count() == 0
@@ -442,6 +465,66 @@ def test_create_endpoint_get_form(client: TestClient) -> None:
         '<input class="form-control" id="email" name="email" type="text" value="">'
         in response.text
     )
+    assert '<select class="form-control" id="status" name="status">' in response.text
+
+
+def test_create_endpoint_with_required_fields(client: TestClient) -> None:
+    response = client.get("/admin/product/create")
+
+    assert response.status_code == 200
+    assert (
+        '<label class="form-label col-sm-2 col-form-label required-label" for="name" '
+        'title="This is a required field">Name</label>' in response.text
+    )
+    assert (
+        '<label class="form-label col-sm-2 col-form-label" for="price">Price</label>'
+        in response.text
+    )
+
+
+def test_update_endpoint_with_checkbox_widget(client: TestClient) -> None:
+    with session_maker() as session:
+        session.add_all(
+            [
+                Product(
+                    id=1,
+                    name="RAM",
+                    price=99_999,
+                    is_sold=False,
+                ),
+                Product(
+                    id=2,
+                    name="RAM second",
+                    price=12421,
+                    is_sold=True,
+                ),
+            ]
+        )
+        session.commit()
+
+    stmt = select(func.count(Product.id))
+    with session_maker() as s:
+        result = s.execute(stmt)
+    assert result.scalar_one() == 2
+
+    response = client.get("/admin/product/edit/1")
+
+    assert response.status_code == 200
+
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+
+    response = client.get("/admin/product/edit/2")
+
+    assert response.status_code == 200
+
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+    assert "checked" in response.text
 
 
 def test_create_endpoint_post_form(client: TestClient) -> None:
@@ -591,6 +674,9 @@ def test_update_get_page(client: TestClient) -> None:
     assert (
         'id="name" maxlength="16" name="name" type="text" value="Joe">' in response.text
     )
+    assert (
+        '<select class="form-control" id="status" name="status">' not in response.text
+    )
 
     response = client.get("/admin/address/edit/1")
 
@@ -681,6 +767,28 @@ def test_update_submit_form(client: TestClient) -> None:
         assert address[0].user_id == 1
 
 
+def test_update_wtforms_reserved_filed_names(client: TestClient) -> None:
+    with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        session.commit()
+
+    data = {"data": "new_data"}
+    response = client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 200
+
+    stmt = select(Profile).limit(1)
+    with session_maker() as s:
+        profile = s.execute(stmt).scalar_one()
+
+    assert profile.data == "new_data"
+
+
 def test_searchable_list(client: TestClient) -> None:
     with session_maker() as session:
         user = User(name="Ross")
@@ -691,7 +799,11 @@ def test_searchable_list(client: TestClient) -> None:
 
     response = client.get("/admin/user/list")
     assert "Search: name" in response.text
+    assert 'data-search-auto-submit="true"' in response.text
     assert "/admin/user/details/1" in response.text
+
+    response = client.get("/admin/address/list")
+    assert 'data-search-auto-submit="false"' in response.text
 
     response = client.get("/admin/user/list?search=ro")
     assert "/admin/user/details/1" in response.text
@@ -725,6 +837,71 @@ def test_export_csv(client: TestClient) -> None:
     assert response.text == "name,status\r\nDaniel,ACTIVE\r\n"
 
 
+def test_export_csv_utf8(client: TestClient) -> None:
+    with session_maker() as session:
+        user_1 = User(name="Daniel", status="ACTIVE")
+        user_2 = User(name="دانيال", status="ACTIVE")
+        user_3 = User(name="積極的", status="ACTIVE")
+        user_4 = User(name="Даниэль", status="ACTIVE")
+        session.add(user_1)
+        session.add(user_2)
+        session.add(user_3)
+        session.add(user_4)
+        session.commit()
+
+    response = client.get("/admin/user/export/csv")
+    assert response.text == (
+        "name,status\r\nDaniel,ACTIVE\r\nدانيال,ACTIVE\r\n"
+        "積極的,ACTIVE\r\nДаниэль,ACTIVE\r\n"
+    )
+
+
+def test_export_json(client: TestClient) -> None:
+    with session_maker() as session:
+        user = User(name="Daniel", status="ACTIVE")
+        session.add(user)
+        session.commit()
+
+    response = client.get("/admin/user/export/json")
+    assert response.text == '[{"name": "Daniel", "status": "ACTIVE"}]'
+
+
+def test_export_json_utf8(client: TestClient) -> None:
+    with session_maker() as session:
+        user_1 = User(name="Daniel", status="ACTIVE")
+        user_2 = User(name="دانيال", status="ACTIVE")
+        user_3 = User(name="積極的", status="ACTIVE")
+        user_4 = User(name="Даниэль", status="ACTIVE")
+        session.add(user_1)
+        session.add(user_2)
+        session.add(user_3)
+        session.add(user_4)
+        session.commit()
+
+    response = client.get("/admin/user/export/json")
+    assert response.text == (
+        '[{"name": "Daniel", "status": "ACTIVE"},'
+        '{"name": "دانيال", "status": "ACTIVE"},'
+        '{"name": "積極的", "status": "ACTIVE"},'
+        '{"name": "Даниэль", "status": "ACTIVE"}]'
+    )
+
+
+def test_export_json_complex_model(client: TestClient) -> None:
+    with session_maker() as session:
+        user = User(name="Daniel", status="ACTIVE")
+        session.add(user)
+        session.commit()
+        address = Address(user_id=user.id)
+        session.add(address)
+        session.commit()
+
+    response = client.get("/admin/address/export/json")
+    assert response.text == json.dumps(
+        [{"id": 1, "user_id": 1, "user": "User 1", "user.profile.id": None}]
+    )
+
+
 def test_export_csv_row_count(client: TestClient) -> None:
     def row_count(resp) -> int:
         return resp.text.count("\r\n") - 1
@@ -755,3 +932,26 @@ def test_export_bad_type_is_404(client: TestClient) -> None:
 def test_export_permission(client: TestClient) -> None:
     response = client.get("/admin/movie/export/csv")
     assert response.status_code == 403
+
+
+def test_sort_and_search_together_no_ambigious_column_error(
+    client: TestClient,
+) -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name", "user.email"]
+        column_sortable_list = [Address.id, "user.id", "user.name"]
+
+    admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user1 = User(name="Alice", email="alice@example.com")
+        user2 = User(name="Bob", email="bob@example.com")
+        user3 = User(name="Charlie", email="charlie@example.com")
+        address1 = Address(user=user1)
+        address2 = Address(user=user2)
+        address3 = Address(user=user3)
+        session.add_all([user1, user2, user3, address1, address2, address3])
+        session.commit()
+
+    response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
+    assert response.status_code == 200

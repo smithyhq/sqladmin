@@ -1,9 +1,12 @@
-from typing import TYPE_CHECKING, Any, Dict, List
+from __future__ import annotations
+
+import dataclasses
+from typing import TYPE_CHECKING, Any
 
 import anyio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql.expression import Select, and_, or_
 from starlette.requests import Request
 
@@ -24,7 +27,7 @@ class Query:
     def __init__(self, model_view: "ModelView") -> None:
         self.model_view = model_view
 
-    def _get_to_many_stmt(self, relation: MODEL_PROPERTY, values: List[Any]) -> Select:
+    def _get_to_many_stmt(self, relation: MODEL_PROPERTY, values: list[Any]) -> Select:
         target = relation.mapper.class_
 
         target_pks = get_primary_keys(target)
@@ -38,11 +41,13 @@ class Query:
         conditions = []
         for value in values:
             conditions.append(
-                and_(
-                    pk == value
-                    for pk, value in zip(
-                        target_pks,
-                        object_identifier_values(value, target),
+                and_(  # type: ignore[type-var]
+                    *(
+                        pk == value
+                        for pk, value in zip(
+                            target_pks,
+                            object_identifier_values(value, target),
+                        )
                     )
                 )
             )
@@ -63,10 +68,10 @@ class Query:
         # ``relation.local_remote_pairs`` is ordered by the foreign keys
         # but the values are ordered by the primary keys. This dict
         # ensures we write the correct value to the fk fields
-        pk_value = {pk: value for pk, value in zip(pks, values)}
+        pk_value = dict(zip(pks, values))
 
-        for fk, pk in relation.local_remote_pairs:
-            setattr(obj, fk.name, pk_value[pk])
+        for fk, pk in relation.local_remote_pairs or []:
+            setattr(obj, fk.name, pk_value[pk])  # type: ignore[index]
 
         return obj
 
@@ -131,7 +136,7 @@ class Query:
                 setattr(obj, key, value)
         return obj
 
-    def _update_sync(self, pk: Any, data: Dict[str, Any], request: Request) -> Any:
+    def _update_sync(self, pk: Any, data: dict[str, Any], request: Request) -> Any:
         stmt = self.model_view._stmt_by_identifier(pk)
 
         with self.model_view.session_maker(expire_on_commit=False) as session:
@@ -147,12 +152,12 @@ class Query:
             return obj
 
     async def _update_async(
-        self, pk: Any, data: Dict[str, Any], request: Request
+        self, pk: Any, data: dict[str, Any], request: Request
     ) -> Any:
         stmt = self.model_view._stmt_by_identifier(pk)
 
         for relation in self.model_view._form_relations:
-            stmt = stmt.options(joinedload(relation))
+            stmt = stmt.options(selectinload(relation))
 
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             result = await session.execute(stmt)
@@ -187,8 +192,20 @@ class Query:
             await session.commit()
             await self.model_view.after_model_delete(obj, request)
 
-    def _insert_sync(self, data: Dict[str, Any], request: Request) -> Any:
-        obj = self.model_view.model()
+    def _get_model_object(self, data: dict[str, Any]) -> Any:
+        if dataclasses.is_dataclass(self.model_view.model):
+            init_fields = {
+                f.name for f in dataclasses.fields(self.model_view.model) if f.init
+            }
+            data = {k: v for k, v in data.items() if k in init_fields}
+
+        else:
+            data = {}
+
+        return self.model_view.model(**data)
+
+    def _insert_sync(self, data: dict[str, Any], request: Request) -> Any:
+        obj = self._get_model_object(data)
 
         with self.model_view.session_maker(expire_on_commit=False) as session:
             anyio.from_thread.run(
@@ -202,8 +219,8 @@ class Query:
             )
             return obj
 
-    async def _insert_async(self, data: Dict[str, Any], request: Request) -> Any:
-        obj = self.model_view.model()
+    async def _insert_async(self, data: dict[str, Any], request: Request) -> Any:
+        obj = self._get_model_object(data)
 
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             await self.model_view.on_model_change(data, obj, True, request)
@@ -215,18 +232,24 @@ class Query:
 
     async def delete(self, obj: Any, request: Request) -> None:
         if self.model_view.is_async:
-            await self._delete_async(obj, request)
+            coro = self._delete_async(obj, request)
         else:
-            await anyio.to_thread.run_sync(self._delete_sync, obj, request)
+            coro = anyio.to_thread.run_sync(self._delete_sync, obj, request)
+
+        return await coro
 
     async def insert(self, data: dict, request: Request) -> Any:
         if self.model_view.is_async:
-            return await self._insert_async(data, request)
+            coro = self._insert_async(data, request)
         else:
-            return await anyio.to_thread.run_sync(self._insert_sync, data, request)
+            coro = anyio.to_thread.run_sync(self._insert_sync, data, request)
+
+        return await coro
 
     async def update(self, pk: Any, data: dict, request: Request) -> Any:
         if self.model_view.is_async:
-            return await self._update_async(pk, data, request)
+            coro = self._update_async(pk, data, request)
         else:
-            return await anyio.to_thread.run_sync(self._update_sync, pk, data, request)
+            coro = anyio.to_thread.run_sync(self._update_sync, pk, data, request)
+
+        return await coro

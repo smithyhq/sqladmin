@@ -1,3 +1,6 @@
+from typing import Generator
+
+import pytest
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
 from starlette.applications import Starlette
@@ -5,6 +8,7 @@ from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.routing import Route
 from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -25,6 +29,13 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), default="SQLAdmin")
+
+
+@pytest.fixture(autouse=True)
+def prepare_database() -> Generator[None, None, None]:
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)
 
 
 def test_application_title() -> None:
@@ -87,20 +98,23 @@ def test_middlewares() -> None:
 
 
 def test_get_save_redirect_url():
-    app = Starlette()
+    async def index(request: Request):
+        obj = User(id=1)
+        form_data = await request.form()
+        url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
+        return Response(str(url))
+
+    app = Starlette(
+        routes=[
+            Route("/{identity}", index, methods=["POST"]),
+        ]
+    )
     admin = Admin(app=app, engine=engine)
 
     class UserAdmin(ModelView, model=User):
         save_as = True
 
     admin.add_view(UserAdmin)
-
-    @app.route("/{identity}", methods=["POST"])
-    async def index(request: Request):
-        obj = User(id=1)
-        form_data = await request.form()
-        url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
-        return Response(str(url))
 
     client = TestClient(app)
 
@@ -133,8 +147,7 @@ def test_normalize_wtform_fields() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class DataModelAdmin(ModelView, model=DataModel):
-        ...
+    class DataModelAdmin(ModelView, model=DataModel): ...
 
     datamodel = DataModel(id=1, data="abcdef")
     admin.add_view(DataModelAdmin)
@@ -145,11 +158,52 @@ def test_denormalize_wtform_fields() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
-    class DataModelAdmin(ModelView, model=DataModel):
-        ...
+    class DataModelAdmin(ModelView, model=DataModel): ...
 
     datamodel = DataModel(id=1, data="abcdef")
     admin.add_view(DataModelAdmin)
     assert admin._denormalize_wtform_data({"data_": "abcdef"}, datamodel) == {
         "data": "abcdef"
     }
+
+    datamodel_empty = DataModel(id=1, data="")
+    assert admin._denormalize_wtform_data({"data_": "abcdef"}, datamodel_empty) == {
+        "data": "abcdef"
+    }
+
+
+def test_validate_page_and_page_size():
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User): ...
+
+    admin.add_view(UserAdmin)
+
+    client = TestClient(app)
+
+    response = client.get("/admin/user/list?page=10000")
+    assert response.status_code == 200
+
+    response = client.get("/admin/user/list?page=aaaa")
+    assert response.status_code == 400
+
+
+def test_is_list_template_global():
+    """Test that is_list correctly identifies list and set types."""
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    is_list = admin.templates.env.globals["is_list"]
+
+    # Should return True for list and set
+    assert is_list([1, 2, 3]) is True
+    assert is_list({1, 2, 3}) is True
+    assert is_list([]) is True
+    assert is_list(set()) is True
+
+    # Should return False for non-collection types
+    assert is_list("string") is False
+    assert is_list(123) is False
+    assert is_list(None) is False
+    assert is_list({"key": "value"}) is False

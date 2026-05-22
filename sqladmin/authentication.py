@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import functools
 import inspect
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 from starlette.middleware import Middleware
 from starlette.requests import Request
@@ -27,18 +29,22 @@ class AuthenticationBackend:
         """
         raise NotImplementedError()
 
-    async def logout(self, request: Request) -> bool:
+    async def logout(self, request: Request) -> Response | bool:
         """Implement logout logic here.
         This will usually clear the session with `request.session.clear()`.
+
+        If a `Response` or `RedirectResponse` is returned,
+        that response is returned to the user,
+        otherwise the user will be redirected to the index page.
         """
         raise NotImplementedError()
 
-    async def authenticate(self, request: Request) -> Union[Response, bool]:
+    async def authenticate(self, request: Request) -> Response | bool:
         """Implement authenticate logic here.
         This method will be called for each incoming request
         to validate the authentication.
 
-        If a 'Response' or `RedirectResponse` is returned,
+        If a `Response` or `RedirectResponse` is returned,
         that response is returned to the user,
         otherwise a True/False is expected.
         """

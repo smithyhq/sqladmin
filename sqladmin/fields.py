@@ -1,6 +1,12 @@
+# mypy: disable-error-code="override"
+
+from __future__ import annotations
+
 import json
 import operator
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from enum import Enum
+from typing import Any, Callable, Generator
+from uuid import UUID
 
 from wtforms import Form, ValidationError, fields, widgets
 
@@ -27,7 +33,7 @@ class DateField(fields.DateField):
     Add custom DatePickerWidget for data-format and data-date-format fields
     """
 
-    widget = sqladmin_widgets.DatePickerWidget()
+    widget = sqladmin_widgets.DatePickerWidget()  # type: ignore[assignment]
 
 
 class DateTimeField(fields.DateTimeField):
@@ -35,7 +41,7 @@ class DateTimeField(fields.DateTimeField):
     Allows modifying the datetime format of a DateTimeField using form_args.
     """
 
-    widget = sqladmin_widgets.DateTimePickerWidget()
+    widget = sqladmin_widgets.DateTimePickerWidget()  # type: ignore[assignment]
 
 
 class IntervalField(fields.StringField):
@@ -43,7 +49,7 @@ class IntervalField(fields.StringField):
     A text field which stores a `datetime.timedelta` object.
     """
 
-    def process_formdata(self, valuelist: List[str]) -> None:
+    def process_formdata(self, valuelist: list[str]) -> None:
         if not valuelist:
             return
 
@@ -51,25 +57,25 @@ class IntervalField(fields.StringField):
         if not interval:
             raise ValueError("Invalide timedelta format.")
 
-        self.data = interval
+        self.data = interval  # type: ignore[assignment]
 
 
 class SelectField(fields.SelectField):
     def __init__(
         self,
-        label: Optional[str] = None,
-        validators: Optional[list] = None,
+        label: str | None = None,
+        validators: list | None = None,
         coerce: type = str,
-        choices: Optional[Union[list, Callable]] = None,
+        choices: list | Callable | None = None,
         allow_blank: bool = False,
-        blank_text: Optional[str] = None,
+        blank_text: str | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(label, validators, coerce, choices, **kwargs)
         self.allow_blank = allow_blank
         self.blank_text = blank_text or " "
 
-    def iter_choices(self) -> Generator[Tuple[str, str, bool, Dict], None, None]:
+    def iter_choices(self) -> Generator[tuple[str, str, bool, dict], None, None]:
         choices = self.choices or []
 
         if self.allow_blank:
@@ -78,23 +84,27 @@ class SelectField(fields.SelectField):
         for choice in choices:
             if isinstance(choice, tuple):
                 yield (choice[0], choice[1], self.coerce(choice[0]) == self.data, {})
-            else:
+            elif isinstance(choice, Enum):
                 yield (
                     choice.value,
                     choice.name,
                     self.coerce(choice.value) == self.data,
                     {},
                 )
+            else:
+                yield (str(choice), str(choice), self.coerce(choice) == self.data, {})
 
-    def process_formdata(self, valuelist: List[str]) -> None:
+    def process_formdata(self, valuelist: list[str]) -> None:
         if valuelist:
             if valuelist[0] == "__None":
                 self.data = None
             else:
                 try:
                     self.data = self.coerce(valuelist[0])
-                except ValueError:
-                    raise ValueError(self.gettext("Invalid Choice: could not coerce"))
+                except ValueError as exc:
+                    raise ValueError(
+                        self.gettext("Invalid Choice: could not coerce")
+                    ) from exc
 
     def pre_validate(self, form: Form) -> None:
         if self.allow_blank and self.data is None:
@@ -107,12 +117,13 @@ class JSONField(fields.TextAreaField):
     def _value(self) -> str:
         if self.raw_data:
             return self.raw_data[0]
-        elif self.data:
-            return str(json.dumps(self.data, ensure_ascii=False))
-        else:
-            return "{}"
 
-    def process_formdata(self, valuelist: List[str]) -> None:
+        if self.data:
+            return str(json.dumps(self.data, ensure_ascii=False))
+
+        return "{}"
+
+    def process_formdata(self, valuelist: list[str]) -> None:
         if valuelist:
             value = valuelist[0]
 
@@ -123,8 +134,8 @@ class JSONField(fields.TextAreaField):
 
             try:
                 self.data = json.loads(valuelist[0])
-            except ValueError:
-                raise ValueError(self.gettext("Invalid JSON"))
+            except ValueError as exc:
+                raise ValueError(self.gettext("Invalid JSON")) from exc
 
 
 class QuerySelectField(fields.SelectFieldBase):
@@ -132,10 +143,10 @@ class QuerySelectField(fields.SelectFieldBase):
 
     def __init__(
         self,
-        data: Optional[list] = None,
-        label: Optional[str] = None,
-        validators: Optional[list] = None,
-        get_label: Optional[Union[Callable, str]] = None,
+        data: list | None = None,
+        label: str | None = None,
+        validators: list | None = None,
+        get_label: Callable | str | None = None,
         allow_blank: bool = False,
         blank_text: str = "",
         **kwargs: Any,
@@ -153,11 +164,11 @@ class QuerySelectField(fields.SelectFieldBase):
 
         self.allow_blank = allow_blank
         self.blank_text = blank_text
-        self._data: Optional[tuple]
-        self._formdata: Optional[Union[str, List[str]]]
+        self._data: tuple | None
+        self._formdata: str | list[str] | None
 
     @property
-    def data(self) -> Optional[tuple]:
+    def data(self) -> tuple | None:
         if self._formdata is not None:
             for pk, _ in self._select_data:
                 if pk == self._formdata:
@@ -166,11 +177,11 @@ class QuerySelectField(fields.SelectFieldBase):
         return self._data
 
     @data.setter
-    def data(self, data: tuple) -> None:
+    def data(self, data: tuple | None) -> None:
         self._data = data
         self._formdata = None
 
-    def iter_choices(self) -> Generator[Tuple[str, str, bool, Dict], None, None]:
+    def iter_choices(self) -> Generator[tuple[str, str, bool, dict], None, None]:
         if self.allow_blank:
             yield ("__None", self.blank_text, self.data is None, {})
 
@@ -186,7 +197,7 @@ class QuerySelectField(fields.SelectFieldBase):
         for pk, label in self._select_data:
             yield (pk, self.get_label(label), str(pk) == primary_key, {})
 
-    def process_formdata(self, valuelist: List[str]) -> None:
+    def process_formdata(self, valuelist: list[str]) -> None:
         if valuelist:
             if self.allow_blank and valuelist[0] == "__None":
                 self.data = None
@@ -220,9 +231,9 @@ class QuerySelectMultipleField(QuerySelectField):
 
     def __init__(
         self,
-        data: Optional[list] = None,
-        label: Optional[str] = None,
-        validators: Optional[list] = None,
+        data: list | None = None,
+        label: str | None = None,
+        validators: list | None = None,
         default: Any = None,
         **kwargs: Any,
     ) -> None:
@@ -238,18 +249,19 @@ class QuerySelectMultipleField(QuerySelectField):
                 "allow_blank=True does not do anything for QuerySelectMultipleField."
             )
         self._invalid_formdata = False
-        self._formdata: Optional[List[str]] = None
-        self._data: Optional[tuple] = None
+        self._formdata: list[str] | None = None
+        self._data: tuple | None = None
 
     @property
-    def data(self) -> Optional[tuple]:
+    def data(self) -> tuple | None:
         formdata = self._formdata
         if formdata is not None:
             data = []
             for pk, _ in self._select_data:
                 if not formdata:
                     break
-                elif pk in formdata:
+
+                if pk in formdata:
                     formdata.remove(pk)
                     data.append(pk)
             if formdata:
@@ -258,11 +270,11 @@ class QuerySelectMultipleField(QuerySelectField):
         return self._data
 
     @data.setter
-    def data(self, data: tuple) -> None:
+    def data(self, data: tuple | None) -> None:
         self._data = data
         self._formdata = None
 
-    def iter_choices(self) -> Generator[Tuple[str, Any, bool, Dict], None, None]:
+    def iter_choices(self) -> Generator[tuple[str, Any, bool, dict], None, None]:
         if self.data is not None:
             primary_keys = (
                 self.data
@@ -272,13 +284,14 @@ class QuerySelectMultipleField(QuerySelectField):
             for pk, label in self._select_data:
                 yield (pk, self.get_label(label), pk in primary_keys, {})
 
-    def process_formdata(self, valuelist: List[str]) -> None:
+    def process_formdata(self, valuelist: list[str]) -> None:
         self._formdata = list(set(valuelist))
 
     def pre_validate(self, form: Form) -> None:
         if self._invalid_formdata:
             raise ValidationError(self.gettext("Not a valid choice"))
-        elif self.data:
+
+        if self.data:
             pk_list = [x[0] for x in self._select_data]
             for v in self.data:
                 if v not in pk_list:  # pragma: no cover
@@ -292,8 +305,8 @@ class AjaxSelectField(fields.SelectFieldBase):
     def __init__(
         self,
         loader: QueryAjaxModelLoader,
-        label: Optional[str] = None,
-        validators: Optional[list] = None,
+        label: str | None = None,
+        validators: list | None = None,
         allow_blank: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -328,15 +341,15 @@ class AjaxSelectField(fields.SelectFieldBase):
 
 
 class AjaxSelectMultipleField(fields.SelectFieldBase):
-    widget = sqladmin_widgets.AjaxSelect2Widget(multiple=True)
+    widget = sqladmin_widgets.AjaxSelect2Widget(multiple=True)  # type: ignore[assignment]
     separator = ","
 
     def __init__(
         self,
         loader: QueryAjaxModelLoader,
-        label: Optional[str] = None,
-        validators: Optional[list] = None,
-        default: Optional[list] = None,
+        label: str | None = None,
+        validators: list | None = None,
+        default: list | None = None,
         allow_blank: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -344,7 +357,7 @@ class AjaxSelectMultipleField(fields.SelectFieldBase):
         self.loader = loader
         self.allow_blank = allow_blank
         default = default or []
-        self._formdata: Set[Any] = set()
+        self._formdata: set[Any] = set()
 
         super().__init__(label, validators, default=default, **kwargs)
 
@@ -369,15 +382,14 @@ class AjaxSelectMultipleField(fields.SelectFieldBase):
 
 
 class Select2TagsField(fields.SelectField):
-    widget = sqladmin_widgets.Select2TagsWidget()
+    widget = sqladmin_widgets.Select2TagsWidget()  # type: ignore[assignment]
 
-    def pre_validate(self, form: Form) -> None:
-        ...
+    def pre_validate(self, form: Form) -> None: ...
 
     def process_formdata(self, valuelist: list) -> None:
         self.data = valuelist
 
-    def process_data(self, value: Optional[list]) -> None:
+    def process_data(self, value: list | None) -> None:
         self.data = value or []
 
 
@@ -387,3 +399,43 @@ class FileField(fields.FileField):
     """
 
     widget = sqladmin_widgets.FileInputWidget()
+
+
+class BooleanField(fields.BooleanField):
+    """
+    Boolean checkbox field.
+    """
+
+    widget = sqladmin_widgets.BooleanInputWidget()
+
+
+class UuidField(fields.StringField):
+    def process_formdata(self, valuelist: list) -> None:
+        """Convert submitted string to UUID object."""
+        if valuelist:
+            value = valuelist[0]
+            if not value:  # Empty string
+                self.data = None
+                return
+
+            try:
+                self.data = UUID(value)  # type: ignore[assignment]
+            except (ValueError, AttributeError, TypeError) as e:
+                self.data = None
+                raise ValidationError(f"Invalid UUID format. {e}")
+        else:
+            self.data = None
+
+    def process_data(self, value: str | UUID | None) -> None:
+        """Handle initial data (from object or default)."""
+        if value is None:
+            self.data = None
+        elif isinstance(value, UUID):
+            self.data = value  # type: ignore[assignment]
+        elif isinstance(value, str):
+            try:
+                self.data = UUID(value)  # type: ignore[assignment]
+            except (ValueError, AttributeError, TypeError):
+                self.data = None
+        else:
+            self.data = None

@@ -60,3 +60,21 @@ which should be available in the form.
 class ParentAdmin(ModelView, model=Parent):
     form_excluded_columns = [Parent.children]
 ```
+
+### Using `form_edit_query` to customize the edit form data
+
+If you would like to fully customize the query to populate the edit object form, you may override
+the `form_edit_query` function with your own SQLAlchemy query. In the following example, overriding
+the default query will allow you to filter relationships to show only related children of the parent.
+
+```py
+class ParentAdmin(ModelView, model=Parent):
+    def form_edit_query(self, request: Request) -> Select:
+        parent_id = request.path_params["pk"]
+        return (
+            self._stmt_by_identifier(parent_id)
+            .join(Child)
+            .options(contains_eager(Parent.children))
+            .filter(Child.parent_id == parent_id)
+        )
+```

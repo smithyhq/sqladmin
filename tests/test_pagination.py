@@ -72,3 +72,14 @@ def test_multi_page_unequal_previous_and_next() -> None:
     ]
 
     assert pagination.page_controls == page_controls
+
+
+def test_resize_pagination() -> None:
+    pagination = Pagination(rows=[], page=3, page_size=5, count=20)
+    assert pagination.resize(100).page == 1
+
+    pagination = Pagination(rows=[], page=3, page_size=5, count=20)
+    assert pagination.resize(1).page == 11
+
+    pagination = Pagination(rows=[], page=3, page_size=5, count=20)
+    assert pagination.resize(8).page == 2

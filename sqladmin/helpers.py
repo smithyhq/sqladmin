@@ -1,30 +1,32 @@
+from __future__ import annotations
+
 import csv
 import enum
+import inspect
+import json
 import os
 import re
 import unicodedata
 from abc import ABC, abstractmethod
-from datetime import timedelta
+from datetime import date, datetime, time, timedelta
 from typing import (
     Any,
     AsyncGenerator,
     Callable,
-    Dict,
     Generator,
-    List,
-    Optional,
-    Tuple,
     TypeVar,
+    get_args,
+    get_origin,
 )
 
-from sqlalchemy import Column, inspect
+from sqlalchemy import Column
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import RelationshipProperty, sessionmaker
+from sqlalchemy.orm import RelationshipProperty
 
-from sqladmin._types import MODEL_PROPERTY
+from sqladmin._types import MODEL_PROPERTY, SESSION_MAKER
 
 T = TypeVar("T")
-
 
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
@@ -125,7 +127,11 @@ def secure_filename(filename: str) -> str:
     if (
         os.name == "nt"
         and filename
-        and filename.split(".")[0].upper() in _windows_device_files
+        and filename.split(
+            ".",
+            maxsplit=1,
+        )[0].upper()
+        in _windows_device_files
     ):
         filename = f"_{filename}"  # pragma: no cover
 
@@ -146,11 +152,11 @@ class Writer(ABC):
     """https://docs.python.org/3/library/csv.html#writer-objects"""
 
     @abstractmethod
-    def writerow(self, row: List[str]) -> None:
+    def writerow(self, row: list[str]) -> None:
         pass  # pragma: no cover
 
     @abstractmethod
-    def writerows(self, rows: List[List[str]]) -> None:
+    def writerows(self, rows: list[list[str]]) -> None:
         pass  # pragma: no cover
 
     @property
@@ -164,8 +170,10 @@ class _PseudoBuffer:
     interface.
     """
 
-    def write(self, value: T) -> T:
-        return value
+    encoding = "utf-8"
+
+    def write(self, value: T) -> bytes:
+        return str(value).encode(self.encoding)
 
 
 def stream_to_csv(
@@ -184,8 +192,8 @@ def stream_to_csv(
     return callback(writer)  # type: ignore
 
 
-def get_primary_keys(model: Any) -> Tuple[Column, ...]:
-    return tuple(inspect(model).mapper.primary_key)
+def get_primary_keys(model: Any) -> tuple[Column, ...]:
+    return tuple(sa_inspect(model).mapper.primary_key)
 
 
 def get_object_identifier(obj: Any) -> Any:
@@ -201,7 +209,7 @@ def get_object_identifier(obj: Any) -> Any:
     return ";".join(str(v).replace("\\", "\\\\").replace(";", r"\;") for v in values)
 
 
-def _object_identifier_parts(id_string: str, model: type) -> Tuple[str, ...]:
+def _object_identifier_parts(id_string: str, model: type) -> tuple[str, ...]:
     pks = get_primary_keys(model)
     if len(pks) == 1:
         # Only one primary key so no special processing
@@ -236,13 +244,21 @@ def object_identifier_values(id_string: str, model: Any) -> tuple:
     pks = get_primary_keys(model)
     for pk, part in zip(pks, _object_identifier_parts(id_string, model)):
         type_ = get_column_python_type(pk)
-        value = False if type_ is bool and part == "False" else type_(part)
+        value: Any
+        if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
+            value = type_.fromisoformat(part)
+        elif inspect.isclass(type_) and issubclass(type_, bool):
+            value = False if part == "False" else type_(part)
+        else:
+            value = type_(part)  # type: ignore [call-arg]
         values.append(value)
     return tuple(values)
 
 
 def get_direction(prop: MODEL_PROPERTY) -> str:
-    assert isinstance(prop, RelationshipProperty)
+    if not isinstance(prop, RelationshipProperty):
+        raise TypeError("Expected RelationshipProperty, got %s" % type(prop))
+
     name = prop.direction.name
     if name == "ONETOMANY" and not prop.uselist:
         return "ONETOONE"
@@ -251,18 +267,28 @@ def get_direction(prop: MODEL_PROPERTY) -> str:
 
 def get_column_python_type(column: Column) -> type:
     try:
-        if hasattr(column.type, "impl"):
-            return column.type.impl.python_type
-        return column.type.python_type
+        python_type = column.type.python_type
     except NotImplementedError:
-        return str
+        if hasattr(column.type, "impl"):
+            try:
+                python_type = column.type.impl.python_type
+            except NotImplementedError:
+                return str
+        else:
+            return str
+
+    if get_origin(python_type) is not None:
+        args = get_args(python_type)
+        python_type = args[0] if args else str
+
+    return python_type
 
 
 def is_relationship(prop: MODEL_PROPERTY) -> bool:
     return isinstance(prop, RelationshipProperty)
 
 
-def parse_interval(value: str) -> Optional[timedelta]:
+def parse_interval(value: str) -> timedelta | None:
     match = (
         standard_duration_re.match(value)
         or iso8601_duration_re.match(value)
@@ -272,7 +298,7 @@ def parse_interval(value: str) -> Optional[timedelta]:
     if not match:
         return None
 
-    kw: Dict[str, Any] = match.groupdict()
+    kw: dict[str, Any] = match.groupdict()
     sign = -1 if kw.pop("sign", "+") == "-" else 1
     if kw.get("microseconds"):
         kw["microseconds"] = kw["microseconds"].ljust(6, "0")
@@ -286,10 +312,11 @@ def parse_interval(value: str) -> Optional[timedelta]:
 def is_falsy_value(value: Any) -> bool:
     if value is None:
         return True
-    elif not value and isinstance(value, str):
+
+    if not value and isinstance(value, str):
         return True
-    else:
-        return False
+
+    return False
 
 
 def choice_type_coerce_factory(type_: Any) -> Callable[[Any], Any]:
@@ -314,5 +341,20 @@ def choice_type_coerce_factory(type_: Any) -> Callable[[Any], Any]:
     return choice_coerce
 
 
-def is_async_session_maker(session_maker: sessionmaker) -> bool:
+def is_async_session_maker(session_maker: SESSION_MAKER) -> bool:
     return AsyncSession in session_maker.class_.__mro__
+
+
+def default_encoder(obj: Any) -> Any:
+    if hasattr(obj, "isoformat"):  # datetime-like
+        return obj.isoformat()
+    from decimal import Decimal
+
+    if isinstance(obj, Decimal):
+        return float(obj)
+
+    try:
+        json.dumps(obj)
+        return obj
+    except TypeError:
+        return str(obj)  # last resort

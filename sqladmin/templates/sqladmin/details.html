@@ -1,15 +1,16 @@
-{% extends "layout.html" %}
+{% extends "sqladmin/layout.html" %}
 {% block content %}
 <div class="col-12">
   <div class="card">
     <div class="card-header">
       <h3 class="card-title">
         {% for pk in model_view.pk_columns -%}
-        {{ pk.name }}
+        {{ pk.name | title }}
         {%- if not loop.last %};{% endif -%}
         {% endfor %}: {{ get_object_identifier(model) }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
+      {% block details_table %}
       <div class="table-responsive">
         <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
           <thead>
@@ -28,7 +29,11 @@
               {% if is_list( value ) %}
               <td>
                 {% for elem, formatted_elem in zip(value, formatted_value) %}
+                {% if model_view.show_compact_lists %}
                 <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
+                {% else %}
+                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br />
+                {% endif %}
                 {% endfor %}
               </td>
               {% else %}
@@ -54,15 +59,16 @@
           </tbody>
         </table>
       </div>
+      {% endblock %}
       <div class="card-footer container">
-        <div class="row">
-          <div class="col-md-1">
+        <div class="row row-gap-2">
+          <div class="col-auto">
             <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
               Go Back
             </a>
           </div>
-          {% if model_view.can_delete %}
-          <div class="col-md-1">
+          {% if model_view.check_can_delete(request, model) %}
+          <div class="col-auto">
             <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(model) }}"
               data-url="{{ model_view._url_for_delete(request, model) }}" data-bs-toggle="modal"
               data-bs-target="#modal-delete" class="btn btn-danger">
@@ -70,15 +76,15 @@
             </a>
           </div>
           {% endif %}
-          {% if model_view.can_edit %}
-          <div class="col-md-1">
+          {% if model_view.check_can_edit(request, model) %}
+          <div class="col-auto">
             <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
               Edit
             </a>
           </div>
           {% endif %}
           {% for custom_action,label in model_view._custom_actions_in_detail.items() %}
-          <div class="col-md-1">
+          <div class="col-auto">
             {% if custom_action in model_view._custom_actions_confirmation %}
             <a href="#" class="btn btn-secondary" data-bs-toggle="modal"
               data-bs-target="#modal-confirmation-{{ custom_action }}">
@@ -97,17 +103,18 @@
     </div>
   </div>
 </div>
+{% block action_buttons_bottom %}
 {% if model_view.can_delete %}
-{% include 'modals/delete.html' %}
+{% include 'sqladmin/modals/delete.html' %}
 {% endif %}
 
 {% for custom_action in model_view._custom_actions_in_detail %}
 {% if custom_action in model_view._custom_actions_confirmation %}
 {% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
 url=model_view._url_for_action(request, custom_action) + '?pks=' + (get_object_identifier(model) | string) %}
-{% include 'modals/details_action_confirmation.html' %}
+{% include 'sqladmin/modals/details_action_confirmation.html' %}
 {% endwith %}
 {% endif %}
 {% endfor %}
-
+{% endblock %}
 {% endblock %}

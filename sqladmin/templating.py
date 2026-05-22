@@ -1,4 +1,6 @@
-from typing import Any, Dict, Mapping, Optional
+from __future__ import annotations
+
+from typing import Any, Mapping
 
 import jinja2
 from starlette.background import BackgroundTask
@@ -13,11 +15,11 @@ class _TemplateResponse(HTMLResponse):
         self,
         template: jinja2.Template,
         content: str,
-        context: Dict,
+        context: dict,
         status_code: int = 200,
-        headers: Optional[Mapping[str, str]] = None,
-        media_type: Optional[str] = None,
-        background: Optional[BackgroundTask] = None,
+        headers: Mapping[str, str] | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
     ):
         self.template = template
         self.context = context
@@ -42,8 +44,8 @@ class _TemplateResponse(HTMLResponse):
 class Jinja2Templates:
     def __init__(self, directory: str) -> None:
         @jinja2.pass_context
-        def url_for(context: Dict, __name: str, **path_params: Any) -> URL:
-            request = context["request"]
+        def url_for(context: dict, __name: str, **path_params: Any) -> URL:
+            request: Request = context["request"]
             return request.url_for(__name, **path_params)
 
         loader = jinja2.FileSystemLoader(directory)
@@ -54,7 +56,7 @@ class Jinja2Templates:
         self,
         request: Request,
         name: str,
-        context: Optional[Dict] = None,
+        context: dict | None = None,
         status_code: int = 200,
     ) -> _TemplateResponse:
         context = context or {}

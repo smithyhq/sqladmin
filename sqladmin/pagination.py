@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any
 
 from starlette.datastructures import URL
 
@@ -12,11 +14,11 @@ class PageControl:
 
 @dataclass
 class Pagination:
-    rows: List[Any]
+    rows: list[Any]
     page: int
     page_size: int
     count: int
-    page_controls: List[PageControl] = field(default_factory=list)
+    page_controls: list[PageControl] = field(default_factory=list)
     max_page_controls: int = 7
 
     @property
@@ -43,6 +45,15 @@ class Pagination:
                 return page_control
 
         raise RuntimeError("Next page not found.")
+
+    def __post_init__(self) -> None:
+        # Clamp page
+        self.page = min(self.page, max(1, self.count // self.page_size + 1))
+
+    def resize(self, page_size: int) -> Pagination:
+        self.page = (self.page - 1) * self.page_size // page_size + 1
+        self.page_size = page_size
+        return self
 
     def add_pagination_urls(self, base_url: URL) -> None:
         # Previous pages

@@ -4,6 +4,209 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Verion 0.25.1 - 2026-05-16
+
+### Fixed
+* fix: authenticate ajax lookup endpoint by @vahidzhe in https://github.com/smithyhq/sqladmin/pull/1035
+* fix: Authorization bypass on `ajax_lookup`
+
+## New Contributors
+* @vahidzhe made their first contribution in https://github.com/smithyhq/sqladmin/pull/1035
+
+**Full Changelog**: https://github.com/smithyhq/sqladmin/compare/0.25.0...0.25.1
+
+## Verion 0.25.0 - 2026-04-18
+
+### Added
+* Move to org by @aminalaee in https://github.com/smithyhq/sqladmin/pull/1018
+* extra blocks for templates allowing customization by @birddevelper in https://github.com/smithyhq/sqladmin/pull/952
+* Add template hooks to all filters for customizable UIs (dropdowns, sliders, etc.) by @fd-oncodna in https://github.com/smithyhq/sqladmin/pull/970
+* Support MappedAsDataclass by @Goradii in https://github.com/smithyhq/sqladmin/pull/857
+* save values types as is if possible while JSON export by @DenisDudnik in https://github.com/smithyhq/sqladmin/pull/865
+* Add toast to notify results for custom actions by @rusanpas in https://github.com/smithyhq/sqladmin/pull/971
+* Showing exceptions happened during delete in list page as per #898 by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1022
+* Quality of Life updates by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1026
+* [Feature] Check the available primary actions (edit, delete, view details) for each row on listing page. by @maxim-f1 in https://github.com/smithyhq/sqladmin/pull/874
+
+### Fixed
+* Fix #841: Cannot update value of attribute with reserved name when it starts empty/null by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1028
+* Fix TypeError with UUID primary keys in issubclass check by @S3wnkin in https://github.com/smithyhq/sqladmin/pull/992
+* core: fix ambiguous column error when searching or sorting by @nurikk in https://github.com/smithyhq/sqladmin/pull/983
+* Handling SQLAlchemy UUID fields correctly by introducing new UuidField. by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1023
+* Fixes #915: Sorting exposed functions by their coded order not alphabetical by @mmzeynalli in https://github.com/smithyhq/sqladmin/pull/1024
+* fix: add RootPathMiddleware for proper static file routing with root_… by @JartanFTW in https://github.com/smithyhq/sqladmin/pull/996
+
+## New Contributors
+* @S3wnkin made their first contribution in https://github.com/smithyhq/sqladmin/pull/992
+* @fd-oncodna made their first contribution in https://github.com/smithyhq/sqladmin/pull/970
+* @Goradii made their first contribution in https://github.com/smithyhq/sqladmin/pull/857
+* @nurikk made their first contribution in https://github.com/smithyhq/sqladmin/pull/983
+* @DenisDudnik made their first contribution in https://github.com/smithyhq/sqladmin/pull/865
+* @rusanpas made their first contribution in https://github.com/smithyhq/sqladmin/pull/971
+* @JartanFTW made their first contribution in https://github.com/smithyhq/sqladmin/pull/996
+
+**Full Changelog**: https://github.com/smithyhq/sqladmin/compare/0.24.0...0.25.0
+
+## Version 0.24.0 - 2026-03-30
+
+### Added
+* Improve logout button and `logo_url` by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/995
+* Support filtering Date and Datetime fields with "less than" and "greater than" operations. by @caarmen in https://github.com/aminalaee/sqladmin/pull/1010
+* Added switch style for checkbox and fixed related bug. by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/975
+* Add ModelView.search_auto_submit option for list search by @Airumian in https://github.com/aminalaee/sqladmin/pull/1003
+* Add select_from to count query in models.py by @estyrke in https://github.com/aminalaee/sqladmin/pull/969
+
+### Fixed
+* [Bug] Improved error display in the `delete` modal window by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/994
+* [Bug] Authorization vulnerability for expose and action by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/993
+
+## New Contributors
+* @caarmen made their first contribution in https://github.com/aminalaee/sqladmin/pull/1010
+* @Airumian made their first contribution in https://github.com/aminalaee/sqladmin/pull/1003
+* @estyrke made their first contribution in https://github.com/aminalaee/sqladmin/pull/969
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.23.0...0.24.0
+
+## Version 0.23.0 - 2026-02-04
+
+### Added
+* Highlight applied filters with background and clear option by @danmysak in https://github.com/aminalaee/sqladmin/pull/964
+* Implemented optional pretty CSV export by @TimofeiN in https://github.com/aminalaee/sqladmin/pull/938
+
+### Fixed
+* fix: use children.extend in Menu.add by @wasinski in https://github.com/aminalaee/sqladmin/pull/892
+* fix: Support set-based relationships in list/detail views by @msukmanowsky in https://github.com/aminalaee/sqladmin/pull/982
+* Fixing an SQLAlchemy warning by @lorg in https://github.com/aminalaee/sqladmin/pull/980
+* Fix buttons width on details page by @MaximDementyev in https://github.com/aminalaee/sqladmin/pull/978
+* Migrate from hatchling to uv by @mmzeynalli in https://github.com/aminalaee/sqladmin/pull/974
+* Change PK column name to title in list/detail page by @wnowicki in https://github.com/aminalaee/sqladmin/pull/977
+
+## New Contributors
+* @danmysak made their first contribution in https://github.com/aminalaee/sqladmin/pull/964
+* @TimofeiN made their first contribution in https://github.com/aminalaee/sqladmin/pull/938
+* @wasinski made their first contribution in https://github.com/aminalaee/sqladmin/pull/892
+* @msukmanowsky made their first contribution in https://github.com/aminalaee/sqladmin/pull/982
+* @MaximDementyev made their first contribution in https://github.com/aminalaee/sqladmin/pull/978
+* @mmzeynalli made their first contribution in https://github.com/aminalaee/sqladmin/pull/974
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.22.0...0.23.0
+
+## Version 0.22.0 - 2025-11-24
+
+### Added
+* Implement OperationColumnFilter to filter String, Numeric, and UUID Types by @chezou in https://github.com/aminalaee/sqladmin/pull/945
+* Support Python 3.14 by @aminalaee in https://github.com/aminalaee/sqladmin/pull/963
+
+### Fixed
+* Fix filters inccorect records count by @birddevelper in https://github.com/aminalaee/sqladmin/pull/954
+* docs - update the example ColumnFilter by @proby-actvo in https://github.com/aminalaee/sqladmin/pull/949
+* Documentation improvements by @wnowicki in https://github.com/aminalaee/sqladmin/pull/941
+* Fix date and time type handling when used as primary key by @twoodwark in https://github.com/aminalaee/sqladmin/pull/958
+
+* **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.21.0...0.22.0
+
+## Version 0.21.0 - 2025-07-02
+
+### Added
+* Add `category_icon` by @sheldygg in https://github.com/aminalaee/sqladmin/pull/848
+* Add model convertors docs by @Vasiliy566 in https://github.com/aminalaee/sqladmin/pull/883
+* Allow custom response in authentication logout by @joschnitzbauer in https://github.com/aminalaee/sqladmin/pull/914
+* ModelView @expose decorator support by @foarsitter in https://github.com/aminalaee/sqladmin/pull/881
+* Adding the ability to add filters to model views by @lorg in https://github.com/aminalaee/sqladmin/pull/906
+* Details page query by @wray27 in https://github.com/aminalaee/sqladmin/pull/929
+* export csv/json in `utf-8` by @alserious in https://github.com/aminalaee/sqladmin/pull/911
+* Indicate Required Fields with a Red Asterisk by @maxim-f1 in https://github.com/aminalaee/sqladmin/pull/880
+
+### Fixed
+* Update hatch command in CONTRIBUTING.md by @foarsitter in https://github.com/aminalaee/sqladmin/pull/882
+* fix: CategoryMenu is_active logic by @retromechs in https://github.com/aminalaee/sqladmin/pull/920
+* Doc update - Related model name by @wnowicki in https://github.com/aminalaee/sqladmin/pull/917
+* docs: Added model context, fixed syntax by @sreyemnayr in https://github.com/aminalaee/sqladmin/pull/930
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.20.1...0.21.0
+
+## Version 0.20.1 - 2024-10-28
+
+### Fixed
+
+* Fix export json related model by @Vasiliy566 in https://github.com/aminalaee/sqladmin/pull/837
+* Fix JSON export trailing comma by @jbrendel in https://github.com/aminalaee/sqladmin/pull/843
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.20.0...0.20.1
+
+## Version 0.20.0 - 2024-10-17
+
+### Added
+* add json export format. by @Vasiliy566 in https://github.com/aminalaee/sqladmin/pull/829
+
+### Fixed
+* clamp page if it exceeds the maximum page by @alex-lambdaloopers in https://github.com/aminalaee/sqladmin/pull/814
+
+## New Contributors
+* @Vasiliy566 made their first contribution in https://github.com/aminalaee/sqladmin/pull/829
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.19.0...0.20.0
+
+## Version 0.19.0 - 2024-09-06
+
+### Added
+* Add favicon by @sheldygg in https://github.com/aminalaee/sqladmin/pull/787
+* Add tabler icons by @r-m-n in https://github.com/aminalaee/sqladmin/pull/795
+* feat: use favicon_url instead of logo_url for favicon by @alex-lambdaloopers in https://github.com/aminalaee/sqladmin/pull/800
+* Allow multiple ajax sorts and changes to result size by @mfriedy in https://github.com/aminalaee/sqladmin/pull/805
+
+### Fixed
+* Fix column_property by @aminalaee in https://github.com/aminalaee/sqladmin/pull/791
+* Fix page number issue when changing page size by @numberbee7070 in https://github.com/aminalaee/sqladmin/pull/782
+* Document update to resolve DeprecationWarning from Starlette (#809) by @a4rcvv in https://github.com/aminalaee/sqladmin/pull/810
+* Bug fix: unhandled exception during AjaxSelect load by @diskream in https://github.com/aminalaee/sqladmin/pull/727
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.18.0...0.19.0
+
+## Version 0.18.0 - 2024-07-01
+
+### Added
+
+* Add `form_rules`, `form_create_rules`, `form_edit_rules` by @aminalaee in https://github.com/aminalaee/sqladmin/pull/779
+* Add more docs for overriding default tempates by @jonocodes in https://github.com/aminalaee/sqladmin/pull/769
+
+### Fixed
+* Fix edit_form_query documentation example by @lukeclimen in https://github.com/aminalaee/sqladmin/pull/777
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.17.0...0.18.0
+
+## Version 0.17.0 - 2024-05-13
+
+### Added
+
+* Add field description to Create/Edit templates by @ngaranko in https://github.com/aminalaee/sqladmin/pull/722
+* Add edit_form_query method by @lukeclimen in https://github.com/aminalaee/sqladmin/pull/745
+* Validate page and pageSize query parameters by @BhuwanPandey in https://github.com/aminalaee/sqladmin/pull/752
+
+### Fixed
+
+* Hide save and add another button from edit.html if can_create is False by @MaximZemskov in https://github.com/aminalaee/sqladmin/pull/742
+* Fix list page sort symbol by @aminalaee in https://github.com/aminalaee/sqladmin/pull/744
+* Move template files from `templates` to `templates/sqladmin` by @hasansezertasan in https://github.com/aminalaee/sqladmin/pull/748
+* Fix `form_args` default by @aminalaee in https://github.com/aminalaee/sqladmin/pull/756
+* Fix getting column python type by @aminalaee in https://github.com/aminalaee/sqladmin/pull/757
+* Fix File and Image fields checkbox and input by @aminalaee in https://github.com/aminalaee/sqladmin/pull/761
+* Switch relationship loading to selectionload by @aminalaee in https://github.com/aminalaee/sqladmin/pull/758
+* Fix DELETE call query params by @aminalaee in https://github.com/aminalaee/sqladmin/pull/763
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.16.1...0.17.0
+
+## Version 0.16.1 - 2024-02-20
+
+### Fixed
+
+* Re-add http_exception handler to Admin class in https://github.com/aminalaee/sqladmin/pull/694
+* Move non-field-specific errors to top of edit and create forms in https://github.com/aminalaee/sqladmin/pull/707
+* Fix sort by model attribute in https://github.com/aminalaee/sqladmin/pull/713
+* Fix Category not respecting is_visible and is_accessible in https://github.com/aminalaee/sqladmin/pull/698
+
+**Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.16.0...0.16.1
+
 ## Version 0.16.0 - 2023-11-14
 
 ### Added
@@ -29,10 +232,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Add customized sort query signature (#624) by @YarLikviD in https://github.com/aminalaee/sqladmin/pull/625
-
-## New Contributors
-* @Toshakins made their first contribution in https://github.com/aminalaee/sqladmin/pull/626
-* @YarLikviD made their first contribution in https://github.com/aminalaee/sqladmin/pull/625
 
 **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.15.0...0.15.1
 
@@ -317,10 +516,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix missing browser tab title by @cuamckuu in https://github.com/aminalaee/sqladmin/pull/229
 * Remove sourceMappingURL in JS files by @aminalaee in https://github.com/aminalaee/sqladmin/pull/231
 
-### New Contributors
-* @ischaojie made their first contribution in https://github.com/aminalaee/sqladmin/pull/214
-* @cuamckuu made their first contribution in https://github.com/aminalaee/sqladmin/pull/222
-
 **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.1.11...0.1.12
 
 ## Version 0.1.11 - 2022-06-23
@@ -354,10 +549,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix form fields order when specifying columns by @okapies in https://github.com/aminalaee/sqladmin/pull/184
 * Fix ModelConverter when `impl` is not callable by @aminalaee in https://github.com/aminalaee/sqladmin/pull/186
 
-### New Contributors
-* @pgrimaud made their first contribution in https://github.com/aminalaee/sqladmin/pull/161
-* @okapies made their first contribution in https://github.com/aminalaee/sqladmin/pull/183
-
 **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.1.9...0.1.10
 
 ## Version 0.1.9 - 2022-05-27
@@ -373,10 +564,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Function signature typing, and renames by @dwreeves in https://github.com/aminalaee/sqladmin/pull/116
 * Fix SQLModel UUID type by @aminalaee in https://github.com/aminalaee/sqladmin/pull/158
-
-### New Contributors
-* @skarrok made their first contribution in https://github.com/aminalaee/sqladmin/pull/140
-* @colin99d made their first contribution in https://github.com/aminalaee/sqladmin/pull/150
 
 **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.1.8...0.1.9
 
@@ -395,10 +582,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix get_model_attr with column labels by @aminalaee in https://github.com/aminalaee/sqladmin/pull/128
 * Delay call to `self.get_converter` to use `form_overrides` by @lovetoburnswhen in https://github.com/aminalaee/sqladmin/pull/129
 
-### New Contributors
-* @tr11 made their first contribution in https://github.com/aminalaee/sqladmin/pull/114
-* @lovetoburnswhen made their first contribution in https://github.com/aminalaee/sqladmin/pull/129
-
 **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.1.7...0.1.8
 
 ## Version 0.1.7 - 2022-03-22
@@ -415,10 +598,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix Boolean field checkbox UI by @aminalaee in https://github.com/aminalaee/sqladmin/pull/88
 * Fix PostgreSQL UUID PrimaryKey by @aminalaee in https://github.com/aminalaee/sqladmin/pull/92
 * Fix Source Code Link by @baurt in https://github.com/aminalaee/sqladmin/pull/95
-
-### New Contributors
-* @baurt made their first contribution in https://github.com/aminalaee/sqladmin/pull/95
-* @dwreeves made their first contribution in https://github.com/aminalaee/sqladmin/pull/97
 
 **Full Changelog**: https://github.com/aminalaee/sqladmin/compare/0.1.6...0.1.7
 

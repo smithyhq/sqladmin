@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Any, Dict, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import String, cast, inspect, or_, select
 
@@ -24,6 +26,7 @@ class QueryAjaxModelLoader:
         self.model_admin = model_admin
         self.fields = options.get("fields", {})
         self.order_by = options.get("order_by")
+        self.limit = options.get("limit", DEFAULT_PAGE_SIZE)
 
         pks = get_primary_keys(self.model)
         self.pk = pks[0] if len(pks) == 1 else None
@@ -52,13 +55,13 @@ class QueryAjaxModelLoader:
 
         return remote_fields
 
-    def format(self, model: type) -> Dict[str, Any]:
+    def format(self, model: type) -> dict[str, Any]:
         if not model:
             return {}
 
         return {"id": str(get_object_identifier(model)), "text": str(model)}
 
-    async def get_list(self, term: str, limit: int = DEFAULT_PAGE_SIZE) -> List[Any]:
+    async def get_list(self, term: str) -> list[Any]:
         stmt = select(self.model)
 
         # no type casting to string if a ColumnAssociationProxyInstance is given
@@ -69,9 +72,13 @@ class QueryAjaxModelLoader:
         stmt = stmt.filter(or_(*filters))
 
         if self.order_by:
-            stmt = stmt.order_by(self.order_by)
+            if isinstance(self.order_by, list):
+                for o in self.order_by:
+                    stmt = stmt.order_by(o)
+            else:
+                stmt = stmt.order_by(self.order_by)
 
-        stmt = stmt.limit(limit)
+        stmt = stmt.limit(self.limit)
         result = await self.model_admin._run_query(stmt)
         return result
 
@@ -86,8 +93,8 @@ def create_ajax_loader(
 
     try:
         attr = mapper.relationships[name]
-    except KeyError:
-        raise ValueError(f"{model_admin.model}.{name} is not a relation.")
+    except KeyError as exc:
+        raise ValueError(f"{model_admin.model}.{name} is not a relation.") from exc
 
     remote_model = attr.mapper.class_
     return QueryAjaxModelLoader(name, remote_model, model_admin, **options)

@@ -1,7 +1,6 @@
 from sqladmin.application import Admin, action, expose
+from sqladmin.flash import Flash
 from sqladmin.models import BaseView, ModelView
-
-__version__ = "0.16.0"
 
 __all__ = [
     "Admin",
@@ -9,4 +8,5 @@ __all__ = [
     "action",
     "BaseView",
     "ModelView",
+    "Flash",
 ]

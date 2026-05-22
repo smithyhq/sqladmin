@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, List, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from starlette.datastructures import URL
 from starlette.requests import Request
@@ -8,11 +10,11 @@ if TYPE_CHECKING:
 
 
 class ItemMenu:
-    def __init__(self, name: str, icon: Optional[str] = None) -> None:
+    def __init__(self, name: str, icon: str | None = None) -> None:
         self.name = name
         self.icon = icon
-        self.parent: Optional["ItemMenu"] = None
-        self.children: List["ItemMenu"] = []
+        self.parent: "ItemMenu" | None = None
+        self.children: list["ItemMenu"] = []
 
     def add_child(self, item: "ItemMenu") -> None:
         item.parent = self
@@ -27,7 +29,7 @@ class ItemMenu:
     def is_active(self, request: Request) -> bool:
         return False
 
-    def url(self, request: Request) -> Union[str, URL]:
+    def url(self, request: Request) -> str | URL:
         return "#"
 
     @property
@@ -53,9 +55,9 @@ class CategoryMenu(ItemMenu):
 class ViewMenu(ItemMenu):
     def __init__(
         self,
-        view: Union["BaseView", "ModelView"],
+        view: "BaseView" | "ModelView",
         name: str,
-        icon: Optional[str] = None,
+        icon: str | None = None,
     ) -> None:
         super().__init__(name=name, icon=icon)
         self.view = view
@@ -69,7 +71,7 @@ class ViewMenu(ItemMenu):
     def is_active(self, request: Request) -> bool:
         return self.view.identity == request.path_params.get("identity")
 
-    def url(self, request: Request) -> Union[str, URL]:
+    def url(self, request: Request) -> str | URL:
         if self.view.is_model:
             return request.url_for("admin:list", identity=self.view.identity)
         return request.url_for(f"admin:{self.view.identity}")
@@ -85,12 +87,12 @@ class ViewMenu(ItemMenu):
 
 class Menu:
     def __init__(self) -> None:
-        self.items: List[ItemMenu] = []
+        self.items: list[ItemMenu] = []
 
     def add(self, item: ItemMenu) -> None:
         # Only works for one-level menu
         for root in self.items:
             if root.name == item.name:
-                root.children.append(*item.children)
+                root.children.extend(item.children)
                 return
         self.items.append(item)

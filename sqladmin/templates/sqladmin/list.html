@@ -159,7 +159,7 @@
                       {% endif %}
                     </td>
                     {% for name in model_view._list_prop_names %}
-                    {% set value, formatted_value = model_view.get_list_value(row, name) %}
+                    {% set value, formatted_value = model_view.get_list_value(row, name, request) %}
                     {% if name in model_view._relation_names %}
                     {% if is_list( value ) %}
                     <td>
@@ -178,18 +178,7 @@
                         }}</a></td>
                     {% endif %}
                     {% else %}
-                    {% if value_is_filepath(value) %}
-                    <td>
-                      <a href="{{ model_view._get_file_link(request, row, get_object_identifier(row), name) }}">
-                        {{ get_filename_from_path(value) }}
-                      </a>
-                      <a href="{{ model_view._get_file_download_link(request, row, get_object_identifier(row), name) }}">
-                        <span class="me-1"><i class="fa-solid fa-download"></i></span>
-                      </a>
-                    </td>
-                    {% else %}
                     <td>{{ formatted_value }}</td>
-                    {% endif %}
                     {% endif %}
                     {% endfor %}
                   </tr>

@@ -41,11 +41,9 @@ from sqladmin.authentication import AuthenticationBackend, login_required
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
-    get_filename_from_path,
     get_object_identifier,
     is_async_session_maker,
     slugify_action_name,
-    value_is_filepath,
 )
 from sqladmin.models import BaseView, ModelView
 from sqladmin.templating import Jinja2Templates
@@ -126,8 +124,6 @@ class BaseAdmin:
         templates.env.globals["admin"] = self
         templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
-        templates.env.globals["value_is_filepath"] = value_is_filepath
-        templates.env.globals["get_filename_from_path"] = get_filename_from_path
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
 
         return templates

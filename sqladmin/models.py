@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect as py_inspect
 import json
 import time
 import warnings
@@ -740,6 +741,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._form_relations = [
             getattr(self.model, name) for name in self._form_relation_names
         ]
+        self._form_overrides = self._build_column_pairs(self.form_overrides)
 
         self._export_prop_names = self.get_export_columns()
 
@@ -832,6 +834,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             return formatter(value)
 
         return value
+
+    @staticmethod
+    def _invoke_column_formatter(
+        formatter: Callable[..., Any],
+        obj: Any,
+        prop: str,
+        request: Request,
+    ) -> Any:
+        parameters = py_inspect.signature(formatter).parameters
+        if "request" in parameters:
+            return formatter(obj, prop, request)
+        return formatter(obj, prop)
 
     def validate_page_number(self, number: Union[str, None], default: int) -> int:
         if not number:
@@ -932,31 +946,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         stmt = self._stmt_by_identifier(value)
         return await self._get_object_by_pk(stmt)
 
-    async def get_object_filepath(self, identifier: str, column_name: str) -> Any:
+    async def get_object_filepath(self, identifier: str, column_name: str) -> str:
         stmt = self._stmt_by_identifier(identifier)
         obj = await self._get_object_by_pk(stmt)
         column_value = getattr(obj, column_name)
-        return column_value
+        from sqladmin.helpers import is_http_url, resolve_storage_path
 
-    async def _get_file_download_link(
-        self, request: Request, obj: Any, pk: int, column_name: str
-    ) -> Any:
-        return request.url_for(
-            "admin:file_download",
-            identity=slugify_class_name(obj.__class__.__name__),
-            pk=pk,
-            column_name=column_name,
-        )
-
-    async def _get_file_link(
-        self, request: Request, obj: Any, pk: int, column_name: str
-    ) -> Any:
-        return request.url_for(
-            "admin:file_read",
-            identity=slugify_class_name(obj.__class__.__name__),
-            pk=pk,
-            column_name=column_name,
-        )
+        path = resolve_storage_path(column_value)
+        if path is None:
+            raise HTTPException(status_code=404)
+        if is_http_url(path):
+            raise HTTPException(status_code=400, detail="Remote URLs are not served.")
+        return path
 
     def _stmt_by_identifier(self, identifier: str) -> Select:
         stmt = select(self.model)
@@ -988,24 +989,34 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 session.add(obj)
                 return await anyio.to_thread.run_sync(lambda: getattr(obj, prop))
 
-    async def get_list_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
+    async def get_list_value(
+        self, obj: Any, prop: str, request: Request
+    ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the list view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._list_formatters.get(prop)
-        formatted_value = (
-            formatter(obj, prop) if formatter else self._default_formatter(value)
-        )
+        if formatter:
+            formatted_value = self._invoke_column_formatter(
+                formatter, obj, prop, request
+            )
+        else:
+            formatted_value = self._default_formatter(value)
         return value, formatted_value
 
-    async def get_detail_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
+    async def get_detail_value(
+        self, obj: Any, prop: str, request: Request
+    ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the detail view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._detail_formatters.get(prop)
-        formatted_value = (
-            formatter(obj, prop) if formatter else self._default_formatter(value)
-        )
+        if formatter:
+            formatted_value = self._invoke_column_formatter(
+                formatter, obj, prop, request
+            )
+        else:
+            formatted_value = self._default_formatter(value)
         return value, formatted_value
 
     def _build_column_list(
@@ -1159,7 +1170,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             form_args=self.form_args,
             form_widget_args=self.form_widget_args,
             form_class=self.form_base_class,
-            form_overrides=self.form_overrides,
+            form_overrides=self._form_overrides,
             form_ajax_refs=self._form_ajax_refs,
             form_include_pk=self.form_include_pk,
             form_converter=self.form_converter,

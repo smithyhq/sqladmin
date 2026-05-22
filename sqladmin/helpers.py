@@ -138,9 +138,38 @@ def secure_filename(filename: str) -> str:
     return filename
 
 
+def is_http_url(value: Any) -> bool:
+    """Return True if value is an http(s) URL."""
+    return isinstance(value, str) and value.startswith(("http://", "https://"))
+
+
 def value_is_filepath(value: Any) -> bool:
     """Check if a value is a filepath."""
     return isinstance(value, str) and os.path.isfile(value)
+
+
+def resolve_storage_path(value: Any) -> str | None:
+    """Return filesystem path for a stored file value."""
+    if value is None:
+        return None
+    if hasattr(value, "path"):
+        return str(value.path)
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
+def file_display_label(value: Any) -> str:
+    """Human-readable label for a file or URL value."""
+    if value is None:
+        return ""
+    if hasattr(value, "name") and value.name:
+        return str(value.name)
+    if is_http_url(value):
+        return value.rsplit("/", 1)[-1] or value
+    if isinstance(value, str):
+        return get_filename_from_path(value)
+    return str(value)
 
 
 def get_filename_from_path(path: str) -> str:

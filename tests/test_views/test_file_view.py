@@ -1,18 +1,20 @@
 import io
 import re
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import pytest
 from fastapi_storages import FileSystemStorage, StorageFile
 from fastapi_storages.integrations.sqlalchemy import FileType
-from httpx import AsyncClient
-from sqlalchemy import Column, Integer, select
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
 
 from sqladmin import Admin, ModelView
+from sqladmin.fields import FileField, file_display_formatter
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -33,6 +35,13 @@ class User(Base):
     file = Column(FileType(FileSystemStorage(".uploads")))
 
 
+class Asset(Base):
+    __tablename__ = "assets"
+
+    id = Column(Integer, primary_key=True)
+    url = Column(String, nullable=False)
+
+
 @pytest.fixture
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
@@ -46,15 +55,25 @@ async def prepare_database() -> AsyncGenerator[None, None]:
 
 @pytest.fixture
 async def client(prepare_database: Any) -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(app=app, base_url="http://testserver") as c:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as c:
         yield c
 
 
 class UserAdmin(ModelView, model=User):
     column_list = [User.id, User.file]
+    form_overrides = {User.file: FileField}
+    column_formatters = {User.file: file_display_formatter}
+    column_formatters_detail = {User.file: file_display_formatter}
+
+
+class AssetAdmin(ModelView, model=Asset):
+    column_list = [Asset.id, Asset.url]
+    column_formatters = {Asset.url: file_display_formatter}
 
 
 admin.add_view(UserAdmin)
+admin.add_view(AssetAdmin)
 
 
 async def _query_user() -> Any:
@@ -77,7 +96,7 @@ async def test_detail_view(client: AsyncClient) -> None:
     assert response.status_code == 200
     assert isinstance(user.file, StorageFile) is True
     assert user.file.name == "upload.txt"
-    assert user.file.path == ".uploads/upload.txt"
+    assert Path(user.file.path).as_posix() == ".uploads/upload.txt"
     assert user.file.open().read() == b"abc"
 
     assert (
@@ -102,7 +121,7 @@ async def test_list_view(client: AsyncClient) -> None:
     assert response.status_code == 200
     assert isinstance(user.file, StorageFile) is True
     assert user.file.name == "upload.txt"
-    assert user.file.path == ".uploads/upload.txt"
+    assert Path(user.file.path).as_posix() == ".uploads/upload.txt"
     assert user.file.open().read() == b"abc"
 
     pattern_span = re.compile(
@@ -137,6 +156,20 @@ async def test_file_download(client: AsyncClient) -> None:
         local_file.write(response.content)
 
     assert open(".uploads/download.txt", "rb").read() == b"abc"
+
+
+async def test_cdn_url_list(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        asset = Asset(url="https://cdn.example.com/image.png")
+        session.add(asset)
+        await session.commit()
+
+    response = await client.get("/admin/asset/list")
+
+    assert response.status_code == 200
+    assert 'href="https://cdn.example.com/image.png"' in response.text
+    assert 'target="_blank"' in response.text
+    assert "file/download" not in response.text
 
 
 async def test_file_read(client: AsyncClient) -> None:

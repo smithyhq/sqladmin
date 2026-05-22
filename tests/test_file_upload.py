@@ -10,6 +10,7 @@ from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
+from sqladmin.fields import FileField
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: Any
@@ -40,7 +41,8 @@ def client() -> Generator[TestClient, None, None]:
         yield c
 
 
-class UserAdmin(ModelView, model=User): ...
+class UserAdmin(ModelView, model=User):
+    form_overrides = {User.file: FileField, User.optional_file: FileField}
 
 
 admin.add_view(UserAdmin)

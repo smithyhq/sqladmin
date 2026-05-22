@@ -164,24 +164,10 @@ Usage in templates:
 {% endif %}
 ```
 
-# Adding globals
+# File and URL columns
 
-```python
-def value_is_filepath(value: Any) -> bool:
-    return isinstance(value, str) and os.path.isfile(value)
-
-admin.templates.env.globals["value_is_filepath"] = value_is_filepath
-```
-
-Usage in templates:
-
-```
-{% if value_is_filepath(value) %}
-    {{ value }} is file path
-{% else %}
-    {{ value }} is not file path
-{% endif %}
-```
+Use `sqladmin.fields.file_display_formatter` in `column_formatters` instead of
+custom template logic. See [Working with Files](working_with_files.md).
 
 # Template Blocks
 The SQLAdmin templates use blocks to allow easy customization and extension of the templates. Here is a list of the main blocks available SQLAdmin templates:

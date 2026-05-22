@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Any, Callable, Generator
 from uuid import UUID
 
+import wtforms
 from wtforms import Form, ValidationError, fields, widgets
 
 from sqladmin import widgets as sqladmin_widgets
@@ -434,8 +435,8 @@ class CDNURLField(fields.StringField):
         **kwargs: Any,
     ) -> None:
         kwargs.setdefault("validators", [])
-        kwargs["validators"].append(validators.Optional())
-        kwargs["validators"].append(validators.URL(require_tld=False))
+        kwargs["validators"].append(wtforms.validators.Optional())
+        kwargs["validators"].append(wtforms.validators.URL(require_tld=False))
         super().__init__(label, validators, **kwargs)
 
 

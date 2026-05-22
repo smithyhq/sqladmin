@@ -434,10 +434,10 @@ class CDNURLField(fields.StringField):
         validators: list | None = None,
         **kwargs: Any,
     ) -> None:
-        kwargs.setdefault("validators", [])
-        kwargs["validators"].append(wtforms.validators.Optional())
-        kwargs["validators"].append(wtforms.validators.URL(require_tld=False))
-        super().__init__(label, validators, **kwargs)
+        merged_validators = list(validators or kwargs.pop("validators", None) or [])
+        merged_validators.append(wtforms.validators.Optional())
+        merged_validators.append(wtforms.validators.URL(require_tld=False))
+        super().__init__(label, validators=merged_validators, **kwargs)
 
 
 def file_display_formatter(obj: Any, prop: str, request: Any) -> Any:

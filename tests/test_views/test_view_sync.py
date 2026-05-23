@@ -15,6 +15,7 @@ from sqlalchemy import (
     func,
     select,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -106,6 +107,33 @@ class ProfileFormattable(Base):
         return f"Profile {self.id}"
 
 
+class Person(Base):
+    __tablename__ = "person"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=16))
+    worker = relationship("Worker", back_populates="person")
+
+
+class Worker(Base):
+    __tablename__ = "worker"
+    id = Column(Integer, primary_key=True)
+    person_id = Column(Integer, ForeignKey("person.id"))
+    person = relationship(Person, back_populates="worker", lazy="immediate")
+
+    @hybrid_property
+    def person_name(self):
+        return self.person.name
+
+    @person_name.inplace.expression
+    def _person_name_expression(cls):
+        return (
+            select(Person.name).where(Person.id == cls.person_id).label("person_name")
+        )
+
+    def __str__(self):
+        return f"{self.person_name}"
+
+
 class Movie(Base):
     __tablename__ = "movies"
 
@@ -194,11 +222,16 @@ class ProductAdmin(ModelView, model=Product):
     pass
 
 
+class PersonAdmin(ModelView, model=Person):
+    form_columns = [Person.name]
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
 admin.add_view(ProductAdmin)
+admin.add_view(PersonAdmin)
 
 
 def test_root_view(client: TestClient) -> None:
@@ -954,4 +987,17 @@ def test_sort_and_search_together_no_ambigious_column_error(
         session.commit()
 
     response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
+    assert response.status_code == 200
+
+
+def test_hybrid_property(client: TestClient) -> None:
+    with session_maker() as session:
+        person = Person(name="Daniel")
+        session.add(person)
+        session.flush()
+        worker = Worker(person_id=person.id)
+        session.add(worker)
+        session.commit()
+
+    response = client.get("/admin/person/details/1")
     assert response.status_code == 200

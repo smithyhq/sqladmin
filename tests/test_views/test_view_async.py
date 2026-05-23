@@ -17,6 +17,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -109,6 +110,33 @@ class ProfileFormattable(Base):
 
     def __str__(self) -> str:
         return f"Profile {self.id}"
+
+
+class Person(Base):
+    __tablename__ = "person"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    worker = relationship("Worker", back_populates="person")
+
+
+class Worker(Base):
+    __tablename__ = "worker"
+    id = Column(Integer, primary_key=True)
+    person_id = Column(Integer, ForeignKey("person.id"))
+    person = relationship(Person, back_populates="worker", lazy="immediate")
+
+    @hybrid_property
+    def person_name(self):
+        return self.person.name
+
+    @person_name.inplace.expression
+    def _person_name_expression(cls):
+        return (
+            select(Person.name).where(Person.id == cls.person_id).label("person_name")
+        )
+
+    def __str__(self):
+        return f"{self.person_name}"
 
 
 class Movie(Base):
@@ -234,12 +262,17 @@ class ProductAdmin(ModelView, model=Product):
     pass
 
 
+class PersonAdmin(ModelView, model=Person):
+    form_columns = [Person.name]
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
 admin.add_view(EachRowActionAdmin)
 admin.add_view(ProductAdmin)
+admin.add_view(PersonAdmin)
 
 
 async def test_root_view(client: AsyncClient) -> None:
@@ -1037,3 +1070,16 @@ async def test_export_permission_csv(client: AsyncClient) -> None:
 async def test_export_permission_json(client: AsyncClient) -> None:
     response = await client.get("/admin/movie/export/json")
     assert response.status_code == 403
+
+
+async def test_hybrid_property(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        person = Person(name="Daniel")
+        session.add(person)
+        await session.flush()
+        worker = Worker(person_id=person.id)
+        session.add(worker)
+        await session.commit()
+
+    response = await client.get("/admin/person/details/1")
+    assert response.status_code == 200

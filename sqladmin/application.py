@@ -747,11 +747,15 @@ class Admin(BaseAdminView):
 
         return RedirectResponse(request.url_for("admin:index"), status_code=302)
 
+    @login_required
     async def ajax_lookup(self, request: Request) -> Response:
         """Ajax lookup route."""
 
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
+
+        if not model_view.is_accessible(request):
+            raise HTTPException(status_code=403)
 
         name = request.query_params.get("name")
         term = request.query_params.get("term")

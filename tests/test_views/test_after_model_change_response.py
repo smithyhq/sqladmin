@@ -35,16 +35,14 @@ class Token(Base):
 class TokenAdmin(ModelView, model=Token):
     """Behaviour driven by the token name prefix."""
 
-    create_template = "test_create_secret.html"
-
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> dict | PlainTextResponse | None:
-        if model.name.startswith("dict-") and is_created:
-            return {"secret": "s3cret-value"}
+    ) -> PlainTextResponse | None:
         if model.name.startswith("resp-"):
             action = "created" if is_created else "updated"
             return PlainTextResponse(f"custom-{action}-{model.name}")
+        if model.name.startswith("bad-"):
+            return "not a response"  # type: ignore[return-value]
         return None
 
 
@@ -95,21 +93,6 @@ async def test_edit_none_return_redirects(client: AsyncClient) -> None:
     assert response.status_code == 302
 
 
-async def test_create_dict_return_rerenders(client: AsyncClient) -> None:
-    response = await client.post(
-        "/admin/token/create",
-        data={"name": "dict-api-key"},
-        follow_redirects=False,
-    )
-    assert response.status_code == 200
-    assert "s3cret-value" in response.text
-
-    stmt = select(func.count(Token.id))
-    async with session_maker() as s:
-        result = await s.execute(stmt)
-    assert result.scalar_one() == 1
-
-
 async def test_create_response_return(client: AsyncClient) -> None:
     response = await client.post(
         "/admin/token/create",
@@ -137,3 +120,13 @@ async def test_edit_response_return(client: AsyncClient) -> None:
     )
     assert response.status_code == 200
     assert response.text == "custom-updated-resp-changed"
+
+
+async def test_invalid_return_type_raises(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/token/create",
+        data={"name": "bad-token"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "after_model_change must return" in response.text

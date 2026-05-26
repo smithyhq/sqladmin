@@ -36,7 +36,7 @@ from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
-from sqladmin.flash import get_flashed_messages
+from sqladmin.flash import get_flashed_messages, get_secret
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
     get_object_identifier,
@@ -123,6 +123,7 @@ class BaseAdmin:
         templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
+        templates.env.globals["get_secret"] = get_secret
 
         return templates
 
@@ -618,6 +619,12 @@ class Admin(BaseAdminView):
         if isinstance(after_response, Response):
             return after_response
 
+        if getattr(request.state, "sqladmin_secret", None):
+            context["obj"] = obj
+            return await self.templates.TemplateResponse(
+                request, model_view.create_template, context
+            )
+
         url = self.get_save_redirect_url(
             request=request,
             form=form_data,
@@ -677,6 +684,12 @@ class Admin(BaseAdminView):
         after_response = getattr(request.state, "_sqladmin_after_change_response", None)
         if isinstance(after_response, Response):
             return after_response
+
+        if getattr(request.state, "sqladmin_secret", None):
+            context["obj"] = obj
+            return await self.templates.TemplateResponse(
+                request, model_view.edit_template, context
+            )
 
         url = self.get_save_redirect_url(
             request=request,

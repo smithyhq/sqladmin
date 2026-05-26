@@ -1,4 +1,4 @@
-"""Tests for after_model_change returning dict or Response."""
+"""Tests for after_model_change response control and secret modal."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
-from sqladmin import Admin, ModelView
+from sqladmin import Admin, Flash, ModelView
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -43,6 +43,8 @@ class TokenAdmin(ModelView, model=Token):
             return PlainTextResponse(f"custom-{action}-{model.name}")
         if model.name.startswith("bad-"):
             return "not a response"  # type: ignore[return-value]
+        if model.name.startswith("secret-"):
+            Flash.secret(request, value=f"raw-{model.name}", title="Token created")
         return None
 
 
@@ -130,3 +132,35 @@ async def test_invalid_return_type_raises(client: AsyncClient) -> None:
     )
     assert response.status_code == 400
     assert "after_model_change must return" in response.text
+
+
+async def test_create_secret_rerenders_with_modal(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/token/create",
+        data={"name": "secret-api-key"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "modal-secret" in response.text
+    assert "raw-secret-api-key" in response.text
+    assert "Token created" in response.text
+
+    stmt = select(func.count(Token.id))
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    assert result.scalar_one() == 1
+
+
+async def test_edit_secret_rerenders_with_modal(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        session.add(Token(name="orig"))
+        await session.commit()
+
+    response = await client.post(
+        "/admin/token/edit/1",
+        data={"name": "secret-rotated"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "modal-secret" in response.text
+    assert "raw-secret-rotated" in response.text

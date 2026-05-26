@@ -621,6 +621,9 @@ class Admin(BaseAdminView):
 
         if getattr(request.state, "sqladmin_secret", None):
             context["obj"] = obj
+            context["secret_next_url"] = str(
+                request.url_for("admin:list", identity=identity)
+            )
             return await self.templates.TemplateResponse(
                 request, model_view.create_template, context
             )
@@ -687,6 +690,9 @@ class Admin(BaseAdminView):
 
         if getattr(request.state, "sqladmin_secret", None):
             context["obj"] = obj
+            context["secret_next_url"] = str(
+                request.url_for("admin:list", identity=identity)
+            )
             return await self.templates.TemplateResponse(
                 request, model_view.edit_template, context
             )

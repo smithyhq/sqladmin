@@ -1,85 +1,48 @@
 # Displaying one-time secrets
 
-A common pattern in admin panels is generating a secret (API key, tokens, etc.)
+A common pattern in admin panels is generating a secret (API key, token, etc.)
 that is shown **once** right after creation and never again.
-
-## The problem
-
-By default, `after_model_change` returns `None` and the create handler always
-issues a `302` redirect. There is no way to stay on the page and display
-extra information after a successful create.
 
 ## The solution
 
-Return a `dict` from `after_model_change` on create. The dict is merged into
-the template context and the create template is re-rendered with a `200`
-status instead of redirecting.
+Call `Flash.secret(request, value)` from `after_model_change`. SQLAdmin will
+skip the usual redirect, re-render the create/edit page, and display the value
+in a one-time modal rendered by `layout.html`.
 
-### 1. Override the ModelView
+The secret lives only on `request.state` - it is never written to the session
+or sent as a cookie, so it cannot leak across requests.
 
 ```python
 import secrets
-from sqladmin import ModelView
+from sqladmin import Flash, ModelView
+
 
 class ApiKeyAdmin(ModelView, model=ApiKey):
-    # Point to your custom template
-    create_template = "create_api_key.html"
-
-    async def after_model_change(self, data, model, is_created, request):
+    async def on_model_change(self, data, model, is_created, request):
         if is_created:
-            # Generate the raw secret, store only the hash in the DB
+            # Generate the raw value and store the hash on the model
+            # *before* the row is committed.
             raw_secret = secrets.token_urlsafe(32)
-            return {"secret": raw_secret}
-        # On edit, redirect as usual
-        return None
-```
+            model.secret_hash = hash_secret(raw_secret)
+            request.state._raw_secret = raw_secret
 
-### 2. Create a custom template
-
-Create `templates/create_api_key.html` (or wherever your `templates_dir`
-points):
-
-```html
-{% extends "sqladmin/create.html" %}
-
-{% block content %}
-  {% if secret %}
-    <div class="alert alert-success">
-      <h4>Your API key was created successfully!</h4>
-      <p>Copy your secret now — it will not be shown again:</p>
-      <div class="input-group mb-3">
-        <input type="text" class="form-control" value="{{ secret }}" readonly id="secret-value">
-        <button class="btn btn-outline-secondary" type="button"
-                onclick="navigator.clipboard.writeText(document.getElementById('secret-value').value)">
-          Copy
-        </button>
-      </div>
-    </div>
-  {% else %}
-    {{ super() }}
-  {% endif %}
-{% endblock %}
-```
-
-When `after_model_change` returns `None` (or the page is loaded via GET), the
-template falls through to `{{ super() }}` and renders the normal create form.
-
-When a `dict` is returned, the template has access to `secret` (and any other
-keys you include) plus the newly created `obj`.
-
-## Returning a custom Response
-
-If you need full control over the HTTP response, return a Starlette `Response`
-directly:
-
-```python
-from starlette.responses import HTMLResponse
-
-class ApiKeyAdmin(ModelView, model=ApiKey):
     async def after_model_change(self, data, model, is_created, request):
-        if is_created:
-            return HTMLResponse(f"<h1>Key created: {model.id}</h1>")
-        return None
+        raw_secret = getattr(request.state, "_raw_secret", None)
+        if raw_secret:
+            Flash.secret(
+                request,
+                value=raw_secret,
+                title="Your API key",
+                label="Copy this value now, it will not be shown again.",
+            )
 ```
 
-This bypasses template rendering entirely and returns your response as-is.
+`Flash.secret` is also usable from a `BaseView`. Set it before returning a
+`TemplateResponse` and the modal will render through `layout.html`.
+
+## Custom rendering
+
+If you need full control over the response (custom template, redirect to a
+wizard step, file download, etc.), return a Starlette `Response` from
+`after_model_change` instead - see
+[Controlling the response with `after_model_change`](../configurations.md#controlling-the-response-with-after_model_change).

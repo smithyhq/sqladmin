@@ -469,8 +469,6 @@ By default these methods do nothing.
 after a successful create or edit:
 
 - **`None`** (default) – the normal redirect happens.
-- **`dict`** – the create/edit template is re-rendered with the dict merged into
-  the template context. The created/updated object is also available as `obj`.
 - **`Response`** – a custom Starlette `Response` is returned directly.
 
 !!! example
@@ -489,8 +487,8 @@ after a successful create or edit:
 !!! tip
 
     See the [Displaying one-time secrets](cookbook/displaying_one_time_secrets.md)
-    cookbook for a practical example of using a `dict` return to show a secret
-    on the create page after generating a token.
+    cookbook for a practical example of returning a custom `Response` to show a
+    secret on the create page after generating a token.
 
 ## Custom Action
 

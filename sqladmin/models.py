@@ -1069,16 +1069,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> Response | dict | None:
+    ) -> Response | None:
         """Perform some actions after a model was created
         or updated and committed to the database.
 
         The return value controls the HTTP response:
 
         * ``None`` (default) -- redirect as usual.
-        * ``dict`` -- re-render the create/edit template with the dict merged
-          into the template context.  The created/updated ``obj`` is also
-          added to the context automatically.
         * ``Response`` -- return a custom Starlette ``Response`` directly.
         """
 

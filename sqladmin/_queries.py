@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql.expression import Select, and_, or_
 from starlette.requests import Request
+from starlette.responses import Response
 
 from sqladmin._types import MODEL_PROPERTY
 from sqladmin.helpers import (
@@ -136,6 +137,17 @@ class Query:
                 setattr(obj, key, value)
         return obj
 
+    @staticmethod
+    def _store_after_change_response(request: Request, result: Any) -> None:
+        if result is None:
+            return
+        if not isinstance(result, Response):
+            raise TypeError(
+                "after_model_change must return None or a starlette Response, "
+                f"got {type(result).__name__}"
+            )
+        request.state._sqladmin_after_change_response = result
+
     def _update_sync(self, pk: Any, data: dict[str, Any], request: Request) -> Any:
         stmt = self.model_view._stmt_by_identifier(pk)
 
@@ -146,11 +158,10 @@ class Query:
             )
             obj = self._set_attributes_sync(session, obj, data)
             session.commit()
-            result = anyio.from_thread.run(
+            after_result = anyio.from_thread.run(
                 self.model_view.after_model_change, data, obj, False, request
             )
-            if result is not None:
-                request.state._sqladmin_after_change_response = result
+            self._store_after_change_response(request, after_result)
             return obj
 
     async def _update_async(
@@ -167,9 +178,10 @@ class Query:
             await self.model_view.on_model_change(data, obj, False, request)
             obj = await self._set_attributes_async(session, obj, data)
             await session.commit()
-            result = await self.model_view.after_model_change(data, obj, False, request)
-            if result is not None:
-                request.state._sqladmin_after_change_response = result
+            after_result = await self.model_view.after_model_change(
+                data, obj, False, request
+            )
+            self._store_after_change_response(request, after_result)
             return obj
 
     def _get_delete_stmt(self, pk: str) -> Select:
@@ -218,11 +230,10 @@ class Query:
             obj = self._set_attributes_sync(session, obj, data)
             session.add(obj)
             session.commit()
-            result = anyio.from_thread.run(
+            after_result = anyio.from_thread.run(
                 self.model_view.after_model_change, data, obj, True, request
             )
-            if result is not None:
-                request.state._sqladmin_after_change_response = result
+            self._store_after_change_response(request, after_result)
             return obj
 
     async def _insert_async(self, data: dict[str, Any], request: Request) -> Any:
@@ -233,9 +244,10 @@ class Query:
             obj = await self._set_attributes_async(session, obj, data)
             session.add(obj)
             await session.commit()
-            result = await self.model_view.after_model_change(data, obj, True, request)
-            if result is not None:
-                request.state._sqladmin_after_change_response = result
+            after_result = await self.model_view.after_model_change(
+                data, obj, True, request
+            )
+            self._store_after_change_response(request, after_result)
             return obj
 
     async def delete(self, obj: Any, request: Request) -> None:

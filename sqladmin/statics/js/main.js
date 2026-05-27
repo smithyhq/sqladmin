@@ -33,6 +33,21 @@ $(document).on('click', '#modal-delete-button', function () {
   });
 });
 
+// One-time secret modal
+document.addEventListener('DOMContentLoaded', function () {
+  var modalEl = document.getElementById('modal-secret');
+  if (!modalEl) {
+    return;
+  }
+  document.getElementById('modal-secret-trigger').click();
+  var nextUrl = modalEl.dataset.nextUrl;
+  if (nextUrl) {
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      window.location.replace(nextUrl);
+    });
+  }
+});
+
 // Search
 $(document).on('click', '#search-button', function () {
   var searchTerm = encodeURIComponent($("#search-input").val());

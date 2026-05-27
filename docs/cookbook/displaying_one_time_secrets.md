@@ -5,16 +5,16 @@ that is shown **once** right after creation and never again.
 
 ## The solution
 
-Call `Flash.secret(request, value)` from `after_model_change`. SQLAdmin will
-skip the usual redirect, re-render the create/edit page, and display the value
-in a one-time modal rendered by `layout.html`.
+Call `Secret.reveal_once(request, value)` from `after_model_change`. SQLAdmin
+will skip the usual redirect, re-render the create/edit page, and display the
+value in a one-time modal rendered by `layout.html`.
 
 The secret lives only on `request.state` - it is never written to the session
 or sent as a cookie, so it cannot leak across requests.
 
 ```python
 import secrets
-from sqladmin import Flash, ModelView
+from sqladmin import ModelView, Secret
 
 
 class ApiKeyAdmin(ModelView, model=ApiKey):
@@ -29,7 +29,7 @@ class ApiKeyAdmin(ModelView, model=ApiKey):
     async def after_model_change(self, data, model, is_created, request):
         raw_secret = getattr(request.state, "_raw_secret", None)
         if raw_secret:
-            Flash.secret(
+            Secret.reveal_once(
                 request,
                 value=raw_secret,
                 title="Your API key",
@@ -37,8 +37,8 @@ class ApiKeyAdmin(ModelView, model=ApiKey):
             )
 ```
 
-`Flash.secret` is also usable from a `BaseView`. Set it before returning a
-`TemplateResponse` and the modal will render through `layout.html`.
+`Secret.reveal_once` is also usable from a `BaseView`. Set it before returning
+a `TemplateResponse` and the modal will render through `layout.html`.
 
 ## Custom rendering
 

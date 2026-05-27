@@ -36,7 +36,7 @@ from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
-from sqladmin.flash import get_flashed_messages, get_secret
+from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
     get_object_identifier,
@@ -44,6 +44,7 @@ from sqladmin.helpers import (
     slugify_action_name,
 )
 from sqladmin.models import BaseView, ModelView
+from sqladmin.secret import Secret
 from sqladmin.templating import Jinja2Templates
 
 __all__ = [
@@ -123,7 +124,7 @@ class BaseAdmin:
         templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
-        templates.env.globals["get_secret"] = get_secret
+        templates.env.globals["Secret"] = Secret
 
         return templates
 
@@ -592,7 +593,7 @@ class Admin(BaseAdminView):
         if isinstance(after_response, Response):
             return after_response
 
-        if getattr(request.state, "sqladmin_secret", None):
+        if Secret.get(request) is not None:
             context["obj"] = obj
             context["secret_next_url"] = str(
                 request.url_for("admin:list", identity=identity)

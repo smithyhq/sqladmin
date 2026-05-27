@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from starlette.requests import Request
 
@@ -114,28 +114,6 @@ class Flash:
             title,
         )
 
-    @classmethod
-    def secret(
-        cls,
-        request: Request,
-        value: str,
-        title: str = "Your secret",
-        label: str = "Copy this value now, it will not be shown again.",
-    ) -> None:
-        """Stash a one-time secret to render as a modal on the next response.
-
-        The value lives only on ``request.state`` (never in the session), so it
-        does not survive a redirect. Callers that want the modal to show on a
-        create/edit submission should call this from ``after_model_change``;
-        the create/edit handler will re-render instead of redirecting when a
-        secret is set.
-        """
-        request.state.sqladmin_secret = {
-            "value": value,
-            "title": title,
-            "label": label,
-        }
-
 
 def get_flashed_messages(request: Request) -> List[Dict[str, str]]:
     messages: List[Dict[str, str]] = []
@@ -146,11 +124,6 @@ def get_flashed_messages(request: Request) -> List[Dict[str, str]]:
         messages = request.session.pop("_messages")
 
     return messages
-
-
-def get_secret(request: Request) -> Optional[Dict[str, str]]:
-    """Return the one-time secret stashed via ``Flash.secret``, if any."""
-    return getattr(request.state, "sqladmin_secret", None)
 
 
 def flash(

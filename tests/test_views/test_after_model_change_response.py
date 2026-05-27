@@ -13,7 +13,7 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
-from sqladmin import Admin, Flash, ModelView
+from sqladmin import Admin, ModelView, Secret
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -44,7 +44,9 @@ class TokenAdmin(ModelView, model=Token):
         if model.name.startswith("bad-"):
             return "not a response"  # type: ignore[return-value]
         if model.name.startswith("secret-"):
-            Flash.secret(request, value=f"raw-{model.name}", title="Token created")
+            Secret.reveal_once(
+                request, value=f"raw-{model.name}", title="Token created"
+            )
         return None
 
 

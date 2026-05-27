@@ -577,6 +577,32 @@ class Admin(BaseAdminView):
         url = url.include_query_params(**referer_params)
         return PlainTextResponse(content=str(url))
 
+    async def _resolve_after_change_response(
+        self,
+        request: Request,
+        context: dict,
+        obj: Any,
+        template: str,
+        identity: str,
+    ) -> Response | None:
+        """Return an override response from ``after_model_change`` or the
+        one-time secret modal, if either is set on ``request.state``."""
+
+        after_response = getattr(request.state, "_sqladmin_after_change_response", None)
+        if isinstance(after_response, Response):
+            return after_response
+
+        if getattr(request.state, "sqladmin_secret", None):
+            context["obj"] = obj
+            context["secret_next_url"] = str(
+                request.url_for("admin:list", identity=identity)
+            )
+            response = await self.templates.TemplateResponse(request, template, context)
+            self._apply_no_store_headers(response)
+            return response
+
+        return None
+
     @login_required
     async def create(self, request: Request) -> Response:
         """Create model endpoint."""
@@ -615,20 +641,11 @@ class Admin(BaseAdminView):
                 request, model_view.create_template, context, status_code=400
             )
 
-        after_response = getattr(request.state, "_sqladmin_after_change_response", None)
-        if isinstance(after_response, Response):
-            return after_response
-
-        if getattr(request.state, "sqladmin_secret", None):
-            context["obj"] = obj
-            context["secret_next_url"] = str(
-                request.url_for("admin:list", identity=identity)
-            )
-            response = await self.templates.TemplateResponse(
-                request, model_view.create_template, context
-            )
-            self._apply_no_store_headers(response)
-            return response
+        override = await self._resolve_after_change_response(
+            request, context, obj, model_view.create_template, identity
+        )
+        if override is not None:
+            return override
 
         url = self.get_save_redirect_url(
             request=request,
@@ -686,20 +703,11 @@ class Admin(BaseAdminView):
                 request, model_view.edit_template, context, status_code=400
             )
 
-        after_response = getattr(request.state, "_sqladmin_after_change_response", None)
-        if isinstance(after_response, Response):
-            return after_response
-
-        if getattr(request.state, "sqladmin_secret", None):
-            context["obj"] = obj
-            context["secret_next_url"] = str(
-                request.url_for("admin:list", identity=identity)
-            )
-            response = await self.templates.TemplateResponse(
-                request, model_view.edit_template, context
-            )
-            self._apply_no_store_headers(response)
-            return response
+        override = await self._resolve_after_change_response(
+            request, context, obj, model_view.edit_template, identity
+        )
+        if override is not None:
+            return override
 
         url = self.get_save_redirect_url(
             request=request,

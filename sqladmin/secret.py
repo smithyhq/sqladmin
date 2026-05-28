@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 from starlette.requests import Request
+from starlette.responses import Response
 
 
 class Secret:
@@ -35,3 +36,12 @@ class Secret:
     def get(cls, request: Request) -> Optional[Dict[str, str]]:
         """Return the secret stashed via `reveal_once`, if any."""
         return getattr(request.state, cls.STATE_KEY, None)
+
+    @staticmethod
+    def apply_no_store_headers(response: Response) -> None:
+        """Stamp cache-busting headers on a response carrying a secret."""
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"

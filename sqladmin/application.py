@@ -599,7 +599,7 @@ class Admin(BaseAdminView):
                 request.url_for("admin:list", identity=identity)
             )
             response = await self.templates.TemplateResponse(request, template, context)
-            self._apply_no_store_headers(response)
+            Secret.apply_no_store_headers(response)
             return response
 
         return None
@@ -847,14 +847,6 @@ class Admin(BaseAdminView):
             if value := getattr(obj, field_name, None):
                 form_data[field_name + "_"] = value
         return form_data
-
-    @staticmethod
-    def _apply_no_store_headers(response: Response) -> None:
-        response.headers["Cache-Control"] = (
-            "no-store, no-cache, must-revalidate, max-age=0"
-        )
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
 
     @staticmethod
     def _denormalize_wtform_data(form_data: dict, obj: Any) -> dict:

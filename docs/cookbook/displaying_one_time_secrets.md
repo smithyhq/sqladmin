@@ -37,8 +37,16 @@ class ApiKeyAdmin(ModelView, model=ApiKey):
             )
 ```
 
-`Secret.reveal_once` is also usable from a `BaseView`. Set it before returning
-a `TemplateResponse` and the modal will render through `layout.html`.
+`Secret.reveal_once` is also usable from a `BaseView`. Call it before returning
+a `TemplateResponse` and the modal will render through `layout.html`. The
+built-in create/edit handlers stamp anti-cache headers on the response
+automatically; custom views must do so explicitly:
+
+```python
+response = await self.templates.TemplateResponse(request, "your_template.html", context)
+Secret.apply_no_store_headers(response)
+return response
+```
 
 ## Custom rendering
 

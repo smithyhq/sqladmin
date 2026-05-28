@@ -46,6 +46,15 @@ document.addEventListener('DOMContentLoaded', function () {
       window.location.replace(nextUrl);
     });
   }
+  var copyButton = document.getElementById('modal-secret-copy');
+  var secretValueInput = document.getElementById('modal-secret-value');
+  if (copyButton && secretValueInput) {
+    copyButton.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(secretValueInput.value);
+      }
+    });
+  }
 });
 
 // Search

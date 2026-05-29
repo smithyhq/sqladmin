@@ -43,6 +43,9 @@
         <loc>https://smithyhq.github.io/sqladmin/cookbook/working_with_passwords/</loc>
       </url>
       <url>
+        <loc>https://smithyhq.github.io/sqladmin/cookbook/displaying_one_time_secrets/</loc>
+      </url>
+      <url>
         <loc>https://smithyhq.github.io/sqladmin/api_reference/application/</loc>
       </url>
       <url>
@@ -53,5 +56,8 @@
       </url>
       <url>
         <loc>https://smithyhq.github.io/sqladmin/api_reference/authentication/</loc>
+      </url>
+      <url>
+        <loc>https://smithyhq.github.io/sqladmin/contributing/</loc>
       </url>
 </urlset>

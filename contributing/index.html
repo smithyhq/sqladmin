@@ -10,36 +10,34 @@
       
       
       
-        <link rel="canonical" href="https://smithyhq.github.io/sqladmin/cookbook/optimize_relationship_loading/">
+        <link rel="canonical" href="https://smithyhq.github.io/sqladmin/contributing/">
       
       
-        <link rel="prev" href="../deployment_with_https/">
+        <link rel="prev" href="../api_reference/authentication/">
       
-      
-        <link rel="next" href="../display_custom_attributes/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="zensical-0.0.42">
     
     
       
-        <title>Optimize relationship loading - SQLAlchemy Admin</title>
+        <title>Contributing - SQLAlchemy Admin</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.fba56155.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.fba56155.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
       
       
 
@@ -58,7 +56,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
   
@@ -93,7 +91,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-form_ajax_refs" class="md-skip">
+        <a href="#contributing" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +107,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SQLAlchemy Admin" class="md-header__button md-logo" aria-label="SQLAlchemy Admin" data-md-component="logo">
+    <a href="./.." title="SQLAlchemy Admin" class="md-header__button md-logo" aria-label="SQLAlchemy Admin" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
@@ -129,7 +127,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Optimize relationship loading
+              Contributing
             
           </span>
         </div>
@@ -218,7 +216,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SQLAlchemy Admin" class="md-nav__button md-logo" aria-label="SQLAlchemy Admin" data-md-component="logo">
+    <a href="./.." title="SQLAlchemy Admin" class="md-nav__button md-logo" aria-label="SQLAlchemy Admin" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
@@ -248,7 +246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="./.." class="md-nav__link">
         
   
   
@@ -274,7 +272,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configurations/" class="md-nav__link">
+      <a href="../configurations/" class="md-nav__link">
         
   
   
@@ -300,7 +298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../authentication/" class="md-nav__link">
+      <a href="../authentication/" class="md-nav__link">
         
   
   
@@ -326,7 +324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../working_with_templates/" class="md-nav__link">
+      <a href="../working_with_templates/" class="md-nav__link">
         
   
   
@@ -352,7 +350,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../writing_custom_views/" class="md-nav__link">
+      <a href="../writing_custom_views/" class="md-nav__link">
         
   
   
@@ -378,7 +376,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../working_with_files/" class="md-nav__link">
+      <a href="../working_with_files/" class="md-nav__link">
         
   
   
@@ -404,7 +402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../model_convertors/" class="md-nav__link">
+      <a href="../model_convertors/" class="md-nav__link">
         
   
   
@@ -427,20 +425,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -460,7 +456,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -477,7 +473,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment_with_https/" class="md-nav__link">
+      <a href="../cookbook/deployment_with_https/" class="md-nav__link">
         
   
   
@@ -501,34 +497,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Optimize relationship loading
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../cookbook/optimize_relationship_loading/" class="md-nav__link">
         
   
   
@@ -543,58 +515,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_ajax_refs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_ajax_refs</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_columns-or-form_excluded_columns" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_columns</code> or <code>form_excluded_columns</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_edit_query-to-customize-the-edit-form-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_edit_query</code> to customize the edit form data
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -607,7 +527,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../display_custom_attributes/" class="md-nav__link">
+      <a href="../cookbook/display_custom_attributes/" class="md-nav__link">
         
   
   
@@ -634,7 +554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using_request_object/" class="md-nav__link">
+      <a href="../cookbook/using_request_object/" class="md-nav__link">
         
   
   
@@ -661,7 +581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../multiple_databases/" class="md-nav__link">
+      <a href="../cookbook/multiple_databases/" class="md-nav__link">
         
   
   
@@ -688,7 +608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using_wysiwyg/" class="md-nav__link">
+      <a href="../cookbook/using_wysiwyg/" class="md-nav__link">
         
   
   
@@ -715,7 +635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../working_with_passwords/" class="md-nav__link">
+      <a href="../cookbook/working_with_passwords/" class="md-nav__link">
         
   
   
@@ -742,7 +662,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../displaying_one_time_secrets/" class="md-nav__link">
+      <a href="../cookbook/displaying_one_time_secrets/" class="md-nav__link">
         
   
   
@@ -821,7 +741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_reference/application/" class="md-nav__link">
+      <a href="../api_reference/application/" class="md-nav__link">
         
   
   
@@ -848,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_reference/model_view/" class="md-nav__link">
+      <a href="../api_reference/model_view/" class="md-nav__link">
         
   
   
@@ -875,7 +795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_reference/base_view/" class="md-nav__link">
+      <a href="../api_reference/base_view/" class="md-nav__link">
         
   
   
@@ -902,7 +822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_reference/authentication/" class="md-nav__link">
+      <a href="../api_reference/authentication/" class="md-nav__link">
         
   
   
@@ -933,10 +853,19 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -951,6 +880,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -969,11 +899,8 @@
                     
                     
                     
+                      
                     
-                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-                      <div class="md-sidebar-button__wrapper">
-                        <label class="md-sidebar-button" for="__toc"></label>
-                      </div>
                     
                   
                   <div class="md-sidebar__inner">
@@ -984,47 +911,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_ajax_refs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_ajax_refs</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_columns-or-form_excluded_columns" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_columns</code> or <code>form_excluded_columns</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_edit_query-to-customize-the-edit-form-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_edit_query</code> to customize the edit form data
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1042,67 +930,10 @@
   
 
 
-  <h1 id="__skip">Optimize relationship loading</h1>
-
-<p>When dealing with any kind of relationship in your models,
-be it One-To-Many, Many-To-One or Many-To-Many,
-<code>SQLAdmin</code> will load related models in your edit page.</p>
-<p>For example if we have the following model definition:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Parent</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;parent_table&quot;</span>
-
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">children</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Child&quot;</span><span class="p">,</span> <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;parent&quot;</span><span class="p">)</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;child_table&quot;</span>
-
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">parent_id</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;parent_table.id&quot;</span><span class="p">))</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Parent&quot;</span><span class="p">,</span> <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;children&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p>When we are editing a <code>Parent</code> object in the Admin,
-there will be an HTML <code>select</code> option which loads all possible <code>Child</code> objects to be selected.</p>
-<p>This is fine for small projects, but if you more than a few hundred records in your tables,
-it will be very slow and inefficient.
-Practically for each request to the Edit page, all records of <code>Child</code> table will be loaded.</p>
-<p>In order to solve this you can use Form options available in <a href=".././../configurations/#form-options">configuration</a>.</p>
-<p>You have a few options to improve this:</p>
-<h3 id="using-form_ajax_refs">Using <code>form_ajax_refs</code></h3>
-<p>Instead of loading all the <code>Child</code> objects when editing a <code>Parent</code> object,
-you can use <code>form_ajax_refs</code> to load <code>Child</code> objects with an AJAX call:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ParentAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">form_ajax_refs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,),</span>
-            <span class="s2">&quot;order_by&quot;</span><span class="p">:</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-</code></pre></div>
-<p>This will allow you to search <code>Child</code> objects using the <code>id</code> field while also ordering the results.</p>
-<h3 id="using-form_columns-or-form_excluded_columns">Using <code>form_columns</code> or <code>form_excluded_columns</code></h3>
-<p>Another option, which is not as useful as the previous one, is that you might not need
-the relationship <code>children</code> to be edited for your <code>Pranet</code> objects.</p>
-<p>In that case you can just exclude that or specifically include the columns
-which should be available in the form.</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ParentAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">form_excluded_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">Parent</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
-</code></pre></div>
-<h3 id="using-form_edit_query-to-customize-the-edit-form-data">Using <code>form_edit_query</code> to customize the edit form data</h3>
-<p>If you would like to fully customize the query to populate the edit object form, you may override
-the <code>form_edit_query</code> function with your own SQLAlchemy query. In the following example, overriding
-the default query will allow you to filter relationships to show only related children of the parent.</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ParentAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">form_edit_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
-        <span class="n">parent_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">path_params</span><span class="p">[</span><span class="s2">&quot;pk&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_stmt_by_identifier</span><span class="p">(</span><span class="n">parent_id</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Child</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">contains_eager</span><span class="p">(</span><span class="n">Parent</span><span class="o">.</span><span class="n">children</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Child</span><span class="o">.</span><span class="n">parent_id</span> <span class="o">==</span> <span class="n">parent_id</span><span class="p">)</span>
-        <span class="p">)</span>
-</code></pre></div>
+<h1 id="contributing">Contributing</h1>
+<p>Contributing guidelines are maintained in the repository root.</p>
+<p>Please read <a href="https://github.com/smithyhq/sqladmin/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>
+for the full guide.</p>
 
 
 
@@ -1183,10 +1014,10 @@ the default query will allow you to filter relationships to show only related ch
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":[],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.6e5f0216.min.js"></script>
+      <script src="../assets/javascripts/bundle.6e5f0216.min.js"></script>
       
     
   </body>

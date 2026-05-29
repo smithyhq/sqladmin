@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://smithyhq.github.io/sqladmin/cookbook/optimize_relationship_loading/">
+        <link rel="canonical" href="https://smithyhq.github.io/sqladmin/cookbook/displaying_one_time_secrets/">
       
       
-        <link rel="prev" href="../deployment_with_https/">
+        <link rel="prev" href="../working_with_passwords/">
       
       
-        <link rel="next" href="../display_custom_attributes/">
+        <link rel="next" href="../../api_reference/application/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Optimize relationship loading - SQLAlchemy Admin</title>
+        <title>Displaying one-time secrets - SQLAlchemy Admin</title>
       
     
     
@@ -93,7 +93,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-form_ajax_refs" class="md-skip">
+        <a href="#displaying-one-time-secrets" class="md-skip">
           Skip to content
         </a>
       
@@ -129,7 +129,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Optimize relationship loading
+              Displaying one-time secrets
             
           </span>
         </div>
@@ -501,34 +501,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Optimize relationship loading
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../optimize_relationship_loading/" class="md-nav__link">
         
   
   
@@ -543,58 +519,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_ajax_refs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_ajax_refs</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_columns-or-form_excluded_columns" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_columns</code> or <code>form_excluded_columns</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_edit_query-to-customize-the-edit-form-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_edit_query</code> to customize the edit form data
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -739,10 +663,36 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../displaying_one_time_secrets/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Displaying one-time secrets
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -757,6 +707,49 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The solution
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom rendering
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -969,6 +962,8 @@
                     
                     
                     
+                      
+                    
                     
                       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
                       <div class="md-sidebar-button__wrapper">
@@ -984,6 +979,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -992,10 +989,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-form_ajax_refs" class="md-nav__link">
+  <a href="#the-solution" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Using <code>form_ajax_refs</code>
+        The solution
       </span>
     </span>
   </a>
@@ -1003,21 +1000,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-form_columns-or-form_excluded_columns" class="md-nav__link">
+  <a href="#custom-rendering" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Using <code>form_columns</code> or <code>form_excluded_columns</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-form_edit_query-to-customize-the-edit-form-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Using <code>form_edit_query</code> to customize the edit form data
+        Custom rendering
       </span>
     </span>
   </a>
@@ -1042,67 +1028,51 @@
   
 
 
-  <h1 id="__skip">Optimize relationship loading</h1>
+<h1 id="displaying-one-time-secrets">Displaying one-time secrets</h1>
+<p>A common pattern in admin panels is generating a secret (API key, token, etc.)
+that is shown <strong>once</strong> right after creation and never again.</p>
+<h2 id="the-solution">The solution</h2>
+<p>Call <code>Secret.reveal_once(request, value)</code> from <code>after_model_change</code>. SQLAdmin
+will skip the usual redirect, re-render the create/edit page, and display the
+value in a one-time modal rendered by <code>layout.html</code>.</p>
+<p>The secret lives only on <code>request.state</code> - it is never written to the session
+or sent as a cookie, so it cannot leak across requests.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">secrets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelView</span><span class="p">,</span> <span class="n">Secret</span>
 
-<p>When dealing with any kind of relationship in your models,
-be it One-To-Many, Many-To-One or Many-To-Many,
-<code>SQLAdmin</code> will load related models in your edit page.</p>
-<p>For example if we have the following model definition:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Parent</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;parent_table&quot;</span>
 
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">children</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Child&quot;</span><span class="p">,</span> <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;parent&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ApiKeyAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">ApiKey</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_model_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">is_created</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_created</span><span class="p">:</span>
+            <span class="c1"># Generate the raw value and store the hash on the model</span>
+            <span class="c1"># *before* the row is committed.</span>
+            <span class="n">raw_secret</span> <span class="o">=</span> <span class="n">secrets</span><span class="o">.</span><span class="n">token_urlsafe</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">secret_hash</span> <span class="o">=</span> <span class="n">hash_secret</span><span class="p">(</span><span class="n">raw_secret</span><span class="p">)</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">_raw_secret</span> <span class="o">=</span> <span class="n">raw_secret</span>
 
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;child_table&quot;</span>
-
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">parent_id</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;parent_table.id&quot;</span><span class="p">))</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Parent&quot;</span><span class="p">,</span> <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;children&quot;</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">after_model_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">is_created</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">raw_secret</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="s2">&quot;_raw_secret&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw_secret</span><span class="p">:</span>
+            <span class="n">Secret</span><span class="o">.</span><span class="n">reveal_once</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="n">value</span><span class="o">=</span><span class="n">raw_secret</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Your API key&quot;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Copy this value now, it will not be shown again.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
 </code></pre></div>
-<p>When we are editing a <code>Parent</code> object in the Admin,
-there will be an HTML <code>select</code> option which loads all possible <code>Child</code> objects to be selected.</p>
-<p>This is fine for small projects, but if you more than a few hundred records in your tables,
-it will be very slow and inefficient.
-Practically for each request to the Edit page, all records of <code>Child</code> table will be loaded.</p>
-<p>In order to solve this you can use Form options available in <a href=".././../configurations/#form-options">configuration</a>.</p>
-<p>You have a few options to improve this:</p>
-<h3 id="using-form_ajax_refs">Using <code>form_ajax_refs</code></h3>
-<p>Instead of loading all the <code>Child</code> objects when editing a <code>Parent</code> object,
-you can use <code>form_ajax_refs</code> to load <code>Child</code> objects with an AJAX call:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ParentAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">form_ajax_refs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,),</span>
-            <span class="s2">&quot;order_by&quot;</span><span class="p">:</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
+<p><code>Secret.reveal_once</code> is also usable from a <code>BaseView</code>. Call it before returning
+a <code>TemplateResponse</code> and the modal will render through <code>layout.html</code>. The
+built-in create/edit handlers stamp anti-cache headers on the response
+automatically; custom views must do so explicitly:</p>
+<div class="highlight"><pre><span></span><code><span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">templates</span><span class="o">.</span><span class="n">TemplateResponse</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">&quot;your_template.html&quot;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+<span class="n">Secret</span><span class="o">.</span><span class="n">apply_no_store_headers</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+<span class="k">return</span> <span class="n">response</span>
 </code></pre></div>
-<p>This will allow you to search <code>Child</code> objects using the <code>id</code> field while also ordering the results.</p>
-<h3 id="using-form_columns-or-form_excluded_columns">Using <code>form_columns</code> or <code>form_excluded_columns</code></h3>
-<p>Another option, which is not as useful as the previous one, is that you might not need
-the relationship <code>children</code> to be edited for your <code>Pranet</code> objects.</p>
-<p>In that case you can just exclude that or specifically include the columns
-which should be available in the form.</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ParentAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">form_excluded_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">Parent</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
-</code></pre></div>
-<h3 id="using-form_edit_query-to-customize-the-edit-form-data">Using <code>form_edit_query</code> to customize the edit form data</h3>
-<p>If you would like to fully customize the query to populate the edit object form, you may override
-the <code>form_edit_query</code> function with your own SQLAlchemy query. In the following example, overriding
-the default query will allow you to filter relationships to show only related children of the parent.</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ParentAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">form_edit_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
-        <span class="n">parent_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">path_params</span><span class="p">[</span><span class="s2">&quot;pk&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_stmt_by_identifier</span><span class="p">(</span><span class="n">parent_id</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Child</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">contains_eager</span><span class="p">(</span><span class="n">Parent</span><span class="o">.</span><span class="n">children</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Child</span><span class="o">.</span><span class="n">parent_id</span> <span class="o">==</span> <span class="n">parent_id</span><span class="p">)</span>
-        <span class="p">)</span>
-</code></pre></div>
+<h2 id="custom-rendering">Custom rendering</h2>
+<p>If you need full control over the response (custom template, redirect to a
+wizard step, file download, etc.), return a Starlette <code>Response</code> from
+<code>after_model_change</code> instead - see
+<a href="../../configurations/#controlling-the-response-with-after_model_change">Controlling the response with <code>after_model_change</code></a>.</p>
 
 
 

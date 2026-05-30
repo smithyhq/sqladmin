@@ -143,7 +143,6 @@ class ModelConverterBase:
         kwargs.setdefault("label", label)
         kwargs.setdefault("validators", [])
         kwargs.setdefault("filters", [])
-        kwargs.setdefault("default", None)
         kwargs.setdefault("description", prop.doc)
         kwargs.setdefault("render_kw", widget_args)
 

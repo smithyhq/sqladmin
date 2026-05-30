@@ -624,6 +624,17 @@ class Admin(BaseAdminView):
         model_view = self._find_model_view(identity)
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
+
+        if request.method == "GET":
+            form = Form()
+            context = {
+                "model_view": model_view,
+                "form": form,
+            }
+            return await self.templates.TemplateResponse(
+                request, model_view.create_template, context
+            )
+
         form_data = await self._handle_form_data(request)
         form = Form(form_data)
 
@@ -631,11 +642,6 @@ class Admin(BaseAdminView):
             "model_view": model_view,
             "form": form,
         }
-
-        if request.method == "GET":
-            return await self.templates.TemplateResponse(
-                request, model_view.create_template, context
-            )
 
         if not form.validate():
             return await self.templates.TemplateResponse(

@@ -164,6 +164,15 @@ class EachRowAction(Base):
     can_delete = Column(Boolean, nullable=True, default=True)
 
 
+class WithDefaults(Base):
+    __tablename__ = "with_defaults"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, default="untitled")
+    priority = Column(Integer, default=5)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
 @pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
@@ -271,6 +280,10 @@ class PersonAdmin(ModelView, model=Person):
     form_columns = [Person.name]
 
 
+class WithDefaultsAdmin(ModelView, model=WithDefaults):
+    pass
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
@@ -278,6 +291,7 @@ admin.add_view(MovieAdmin)
 admin.add_view(EachRowActionAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(PersonAdmin)
+admin.add_view(WithDefaultsAdmin)
 
 
 async def test_root_view(client: AsyncClient) -> None:
@@ -569,6 +583,42 @@ async def test_create_endpoint_with_required_fields(client: AsyncClient) -> None
         '<label class="form-label col-sm-2 col-form-label" for="price">Price</label>'
         in response.text
     )
+
+
+async def test_create_endpoint_renders_column_defaults(client: AsyncClient) -> None:
+    response = await client.get("/admin/with-defaults/create")
+
+    assert response.status_code == 200
+    assert (
+        '<input class="form-control" id="name" name="name" type="text"'
+        ' value="untitled">' in response.text
+    )
+    assert (
+        '<input class="form-control" id="priority" name="priority" type="number"'
+        ' value="5">' in response.text
+    )
+    assert (
+        '<input checked class="form-check-input" id="is_active" name="is_active"'
+        ' type="checkbox" value="y">' in response.text
+    )
+
+
+async def test_create_endpoint_post_unchecked_overrides_default(
+    client: AsyncClient,
+) -> None:
+    data = {"name": "foo", "priority": "3"}
+    response = await client.post(
+        "/admin/with-defaults/create", data=data, follow_redirects=False
+    )
+
+    assert response.status_code == 302
+
+    async with session_maker() as session:
+        result = await session.execute(select(WithDefaults))
+        row = result.scalars().one()
+    assert row.is_active is False
+    assert row.name == "foo"
+    assert row.priority == 3
 
 
 async def test_check_can_view_details(client: AsyncClient) -> None:

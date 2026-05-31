@@ -814,7 +814,10 @@ class Admin(BaseAdminView):
         identifier = get_object_identifier(obj)
 
         if form.get("save") == "Save":
-            return request.url_for("admin:list", identity=identity)
+            url = URL(str(request.url_for("admin:list", identity=identity)))
+            if request.url.query:
+                url = url.replace(query=request.url.query)
+            return url
 
         if form.get("save") == "Save and continue editing" or (
             form.get("save") == "Save as new" and model_view.save_as_continue

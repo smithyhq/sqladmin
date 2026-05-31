@@ -151,6 +151,16 @@ def test_get_save_redirect_url():
     response = client.post("/user", data={"save": "Save and add another"})
     assert response.text == "http://testserver/admin/user/create"
 
+    # Issue #1055: the list query string (page, sorting, search) should be
+    # preserved on "Save" so the user returns to the page they came from.
+    response = client.post("/user?page=3", data={"save": "Save"})
+    assert response.text == "http://testserver/admin/user/list?page=3"
+
+    # The query string only matters for the list redirect; the other actions
+    # go to fixed edit/create pages and should ignore it.
+    response = client.post("/user?page=3", data={"save": "Save and continue editing"})
+    assert response.text == "http://testserver/admin/user/edit/1"
+
 
 def test_build_category_menu():
     app = Starlette()

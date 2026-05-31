@@ -40,35 +40,15 @@ class Post(Base):
         return f"Post {self.id}"
 
 
-class Label(Base):
-    __tablename__ = "labels"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(length=32))
-
-    def __str__(self) -> str:
-        return f"Label {self.id}"
-
-
-class Article(Base):
-    __tablename__ = "articles"
-    id = Column(Integer, primary_key=True)
-    label_id = Column(Integer, ForeignKey("labels.id"))
-    label = relationship("Label")
-
-    def __str__(self) -> str:
-        return f"Article {self.id}"
-
-
 class PostAdmin(ModelView, model=Post):
-    ajax_threshold = 2
-
-
-class ArticleAdmin(ModelView, model=Article):
-    ajax_threshold = 0
+    form_ajax_refs = {
+        "tag": {
+            "fields": ("name",),
+        }
+    }
 
 
 admin.add_view(PostAdmin)
-admin.add_view(ArticleAdmin)
 
 
 @pytest.fixture(autouse=True)
@@ -88,40 +68,7 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
         yield client
 
 
-async def test_auto_ajax_activated_when_above_threshold(client: AsyncClient) -> None:
-    async with session_maker() as s:
-        for i in range(3):
-            s.add(Tag(name=f"tag{i}"))
-        await s.commit()
-
-    response = await client.get("/admin/post/create")
-    assert response.status_code == 200
-    assert 'data-role="select2-ajax"' in response.text
-    assert 'data-url="http://testserver/admin/post/ajax/lookup"' in response.text
-
-
-async def test_auto_ajax_not_activated__below_threshold(client: AsyncClient) -> None:
-    async with session_maker() as s:
-        s.add(Tag(name="only-one"))
-        await s.commit()
-
-    response = await client.get("/admin/post/create")
-    assert response.status_code == 200
-    assert 'data-url="http://testserver/admin/post/ajax/lookup"' not in response.text
-
-
-async def test_auto_ajax_disabled_when_threshold_is_zero(client: AsyncClient) -> None:
-    async with session_maker() as s:
-        for i in range(100):
-            s.add(Label(name=f"label{i}"))
-        await s.commit()
-
-    response = await client.get("/admin/article/create")
-    assert response.status_code == 200
-    assert 'data-url="http://testserver/admin/article/ajax/lookup"' not in response.text
-
-
-async def test_form_submission_works__many_related_records(client: AsyncClient) -> None:
+async def test_edit_page_loads_without_selectinload(client: AsyncClient) -> None:
     async with session_maker() as s:
         for i in range(3):
             s.add(Tag(name=f"tag-{i}"))
@@ -135,5 +82,4 @@ async def test_form_submission_works__many_related_records(client: AsyncClient) 
     response = await client.get("/admin/post/edit/1")
     assert response.status_code == 200
     assert 'data-role="select2-ajax"' in response.text
-
     assert response.text.count("<option") < 10

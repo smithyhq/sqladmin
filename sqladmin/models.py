@@ -60,7 +60,6 @@ from sqladmin.helpers import (
     get_direction,
     get_object_identifier,
     get_primary_keys,
-    get_str_columns,
     object_identifier_values,
     prettify_class_name,
     secure_filename,
@@ -966,13 +965,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 direction = get_direction(relation)
                 if direction in ("ONETOMANY", "MANYTOMANY"):
                     whereclause = parent_stmt.whereclause
-                    whereclause = parent_stmt.whereclause
                     if whereclause is None:
                         continue
                     stmt = (
                         select(target)
                         .join(getattr(self.model, name))
                         .where(whereclause)
+                        .distinct()
                     )
                     result[name] = await self._run_query(stmt)
                 else:
@@ -1189,27 +1188,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         if self.form is not None:
             return self.form
         form_ajax_refs = dict(self._form_ajax_refs)
-        if self.ajax_threshold > 0:
-            mapper = inspect(self.model)
-            for rel in mapper.relationships:
-                if rel.key in form_ajax_refs:
-                    continue
-                related_model = rel.mapper.class_
-                str_fields = get_str_columns(related_model)
-                if not str_fields:
-                    continue
-                count_stmt = select(func.count()).select_from(related_model)
-                try:
-                    count = await self._run_count(count_stmt)
-                    if count >= self.ajax_threshold:
-                        form_ajax_refs[rel.key] = create_ajax_loader(
-                            model_admin=self,
-                            name=rel.key,
-                            options={"fields": str_fields},
-                        )
-                except Exception:  # nosec B110
-                    pass
-
         self._ajax_relation_names = set(form_ajax_refs.keys())
 
         form = await get_model_form(

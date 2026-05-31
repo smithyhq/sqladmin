@@ -155,6 +155,10 @@ class ModelConverterBase:
                 prop=prop, session_maker=session_maker, kwargs=kwargs, loader=loader
             )
 
+        # Fallback so kwargs always has "default"; column defaults set above win.
+        if kwargs is not None:
+            kwargs.setdefault("default", None)
+
         return kwargs
 
     def _prepare_column(

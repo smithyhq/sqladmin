@@ -220,7 +220,7 @@ class BaseAdmin:
             else:
                 view.identity = getattr(func, "_identity")
                 path = getattr(func, "_path")
-                name = getattr(func, "_identity")
+                name = f"view-{view.identity}"
 
             self.admin.add_route(
                 route=func,

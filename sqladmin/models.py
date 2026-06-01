@@ -639,11 +639,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
-    ajax_threshold: ClassVar[int] = 500
-    """Auto-switch to AJAX select when related table exceeds this row count.
-    Set to 0 to disable automatic AJAX switching.
-    """
-
     form_converter: ClassVar[Type[ModelConverterBase]] = ModelConverter
     """Custom form converter class.
     Useful if you want to add custom form conversion in addition to the defaults.
@@ -774,19 +769,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._custom_actions_in_list: Dict[str, str] = {}
         self._custom_actions_in_detail: Dict[str, str] = {}
         self._custom_actions_confirmation: Dict[str, str] = {}
-
-    def _run_count_sync(self, stmt: ClauseElement) -> int:
-        with self.session_maker(expire_on_commit=False) as session:
-            result = session.execute(stmt)
-            return result.scalar() or 0
-
-    async def _run_count(self, stmt: ClauseElement) -> int:
-        if self.is_async:
-            async with self.session_maker(expire_on_commit=False) as session:
-                result = await session.execute(stmt)
-                return result.scalar() or 0
-        else:
-            return await anyio.to_thread.run_sync(lambda: self._run_count_sync(stmt))
 
     def _run_arbitrary_query_sync(self, stmt: ClauseElement) -> Any:
         with self.session_maker(expire_on_commit=False) as session:

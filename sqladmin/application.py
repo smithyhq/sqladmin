@@ -591,9 +591,7 @@ class Admin(BaseAdminView):
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
         try:
-            form_data = await self._handle_form_data(
-                request, max_fields=self.form_max_fields
-            )
+            form_data = await self._handle_form_data(request)
         except MultiPartException as e:
             return Response(content=str(e), status_code=400)
         form = Form(form_data)
@@ -658,9 +656,7 @@ class Admin(BaseAdminView):
             )
 
         try:
-            form_data = await self._handle_form_data(
-                request, model, max_fields=self.form_max_fields
-            )
+            form_data = await self._handle_form_data(request)
         except MultiPartException as e:
             return Response(content=str(e), status_code=400)
         form = Form(form_data)
@@ -789,18 +785,18 @@ class Admin(BaseAdminView):
 
         return request.url_for("admin:create", identity=identity)
 
-    @staticmethod
     async def _handle_form_data(
+        self,
         request: Request,
         obj: Any = None,
-        max_fields: int = 5000,
+        max_fields: int | None = None,
     ) -> FormData:
         """
         Handle form data and modify in case of UploadFile.
         This is needed since in edit page
         there's no way to show current file of object.
         """
-
+        max_fields = max_fields or self.form_max_fields
         form = await request.form(max_fields=max_fields)
         form_data: list[tuple[str, str | UploadFile]] = []
         for key, value in form.multi_items():

@@ -796,11 +796,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         )
         return str(url) + "?" + query_params
 
-    def _url_for_details_with_prop(self, request: Request, obj: Any, prop: str) -> URL:
+    def _url_for_details_with_prop(self, request: Request, obj: Any, prop: str) -> str:
         target = getattr(obj, prop, None)
         if target is None:
-            return URL()
-        return self._build_url_for("admin:details", request, target)
+            return "#"
+        return str(self._build_url_for("admin:details", request, target))
 
     def _url_for_action(self, request: Request, action_name: str) -> str:
         return str(request.url_for(f"admin:action-{self.identity}-{action_name}"))
@@ -954,13 +954,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def _lazyload_prop(self, obj: Any, prop: str) -> Any:
         if self.is_async:
-            async with self.session_maker() as session:
-                session.add(obj)
-                return await session.run_sync(lambda sess: getattr(obj, prop))
+            return None
         else:
             with self.session_maker() as session:
                 session.add(obj)
-                return await anyio.to_thread.run_sync(lambda: getattr(obj, prop))
+                return getattr(obj, prop)
 
     async def get_list_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the list view."""

@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from starlette.applications import Starlette
+from litestar import Litestar
 
 from sqladmin import Admin, ModelView
 from sqladmin.filters import (
@@ -42,7 +42,7 @@ session_maker = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
 )
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine, templates_dir="tests/templates")
 
 

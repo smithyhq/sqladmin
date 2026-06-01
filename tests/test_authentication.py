@@ -1,13 +1,12 @@
 from typing import Generator, Union
 
 import pytest
+from litestar import Litestar, MediaType, Request
+from litestar.response import Redirect, Response
+from litestar.testing import TestClient
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, relationship
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse
-from starlette.testclient import TestClient
 
 from sqladmin import Admin, BaseView, action, expose
 from sqladmin.authentication import AuthenticationBackend
@@ -39,25 +38,25 @@ class CustomBackend(AuthenticationBackend):
         request.session.clear()
         return True
 
-    async def authenticate(self, request: Request) -> Union[bool, RedirectResponse]:
+    async def authenticate(self, request: Request) -> Union[bool, Redirect]:
         if "token" not in request.session:
-            return RedirectResponse(request.url_for("admin:login"), status_code=302)
+            return Redirect(path=request.url_for("admin:login"), status_code=302)
         return True
 
 
 class CustomAdmin(BaseView):
     @expose("/custom", methods=["GET"])
-    async def custom(self, request: Request):
-        return JSONResponse({"status": "ok"})
+    async def custom(self, request: Request) -> Response:
+        return Response(content={"status": "ok"}, media_type=MediaType.JSON)
 
 
 class MovieAdmin(ModelView, model=Movie):
     @action(name="test")
-    async def test_page(self, request: Request):
-        return JSONResponse({"status": "ok"})
+    async def test_page(self, request: Request) -> Response:
+        return Response(content={"status": "ok"}, media_type=MediaType.JSON)
 
 
-app = Starlette()
+app = Litestar()
 authentication_backend = CustomBackend(secret_key="sqladmin")
 admin = Admin(app=app, engine=engine, authentication_backend=authentication_backend)
 admin.add_base_view(CustomAdmin)
@@ -72,17 +71,17 @@ def client() -> Generator[TestClient, None, None]:
 
 def test_access_login_required_views(client: TestClient) -> None:
     response = client.get("/admin/")
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
     response = client.get("/admin/users/list")
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
 
 def test_login_failure(client: TestClient) -> None:
     response = client.post("/admin/login", data={"username": "x", "password": "b"})
 
     assert response.status_code == 400
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
 
 def test_login(client: TestClient) -> None:
@@ -97,12 +96,12 @@ def test_logout(client: TestClient) -> None:
 
     assert len(client.cookies) == 0
     assert response.status_code == 200
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
 
 def test_expose_access_login_required_views(client: TestClient) -> None:
     response = client.get("/admin/custom")
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
     response = client.post("/admin/login", data={"username": "a", "password": "b"})
 
@@ -112,7 +111,7 @@ def test_expose_access_login_required_views(client: TestClient) -> None:
 
 def test_action_access_login_required_views(client: TestClient) -> None:
     response = client.get("/admin/movie/action/test")
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
     response = client.post("/admin/login", data={"username": "a", "password": "b"})
 
@@ -181,7 +180,7 @@ def test_ajax_lookup_unauthenticated_redirects_to_login(
     client: TestClient,
 ) -> None:
     response = client.get("/admin/song-auth/ajax/lookup?name=artist&term=test")
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
 
 def test_ajax_lookup_authenticated_returns_200(
@@ -208,23 +207,24 @@ def test_ajax_lookup_after_logout_redirects_to_login(
     client.get("/admin/logout")
 
     response = client.get("/admin/song-auth/ajax/lookup?name=artist&term=test")
-    assert response.url == "http://testserver/admin/login"
+    assert str(response.url) == "http://testserver/admin/login"
 
 
 def test_custom_session_cookie_name_is_set() -> None:
     backend = CustomBackend(
         secret_key="test",
-        session_cookie="my_cookie",
+        key="my_cookie",
     )
     middleware = backend.middlewares[0]
-    assert middleware.kwargs["session_cookie"] == "my_cookie"
+    config = middleware.kwargs["backend"].config
+    assert config.key == "my_cookie"
 
 
 def test_login_with_custom_session_cookie() -> None:
-    app = Starlette()
+    app = Litestar()
     backend = CustomBackend(
         secret_key="test",
-        session_cookie="my_cookie",
+        key="my_cookie",
     )
     Admin(app=app, engine=engine, authentication_backend=backend)
 
@@ -236,10 +236,10 @@ def test_login_with_custom_session_cookie() -> None:
 
 
 def test_authenticated_request_with_custom_session_cookie() -> None:
-    app = Starlette()
+    app = Litestar()
     backend = CustomBackend(
         secret_key="test",
-        session_cookie="my_cookie",
+        key="my_cookie",
     )
     Admin(app=app, engine=engine, authentication_backend=backend)
 
@@ -252,17 +252,19 @@ def test_authenticated_request_with_custom_session_cookie() -> None:
 def test_default_session_cookie_unchanged() -> None:
     backend = CustomBackend(secret_key="test")
     middleware = backend.middlewares[0]
-    assert "session_cookie" not in middleware.kwargs
+    config = middleware.kwargs["backend"].config
+    assert config.key == "session"
 
 
 def test_extra_session_kwargs_passed_to_middleware() -> None:
     backend = CustomBackend(
         secret_key="test",
-        session_cookie="my_cookie",
+        key="my_cookie",
         max_age=3600,
-        https_only=True,
+        secure=True,
     )
     middleware = backend.middlewares[0]
-    assert middleware.kwargs["session_cookie"] == "my_cookie"
-    assert middleware.kwargs["max_age"] == 3600
-    assert middleware.kwargs["https_only"] is True
+    config = middleware.kwargs["backend"].config
+    assert config.key == "my_cookie"
+    assert config.max_age == 3600
+    assert config.secure is True

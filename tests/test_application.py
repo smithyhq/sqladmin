@@ -1,16 +1,14 @@
 from typing import Generator
 
 import pytest
+from litestar import Litestar, Request
+from litestar.handlers import HTTPRouteHandler
+from litestar.middleware import DefineMiddleware
+from litestar.response import Response
+from litestar.testing import TestClient
+from litestar.types import ASGIApp, Message, Receive, Scope, Send
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
-from starlette.applications import Starlette
-from starlette.datastructures import MutableHeaders
-from starlette.middleware import Middleware
-from starlette.requests import Request
-from starlette.responses import Response
-from starlette.routing import Route
-from starlette.testclient import TestClient
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -39,7 +37,7 @@ def prepare_database() -> Generator[None, None, None]:
 
 
 def test_application_title() -> None:
-    app = Starlette()
+    app = Litestar()
     Admin(app=app, engine=engine)
 
     with TestClient(app) as client:
@@ -51,7 +49,7 @@ def test_application_title() -> None:
 
 
 def test_application_logo() -> None:
-    app = Starlette()
+    app = Litestar()
     Admin(
         app=app,
         engine=engine,
@@ -70,7 +68,7 @@ def test_application_logo() -> None:
 
 
 def test_application_logo_custom_dimensions() -> None:
-    app = Starlette()
+    app = Litestar()
     Admin(
         app=app,
         engine=engine,
@@ -98,17 +96,16 @@ def test_middlewares() -> None:
         async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
             async def send_wrapper(message: Message) -> None:
                 if message["type"] == "http.response.start":
-                    headers = MutableHeaders(scope=message)
-                    headers.append("X-Correlation-ID", "UUID")
+                    message["headers"].append((b"X-Correlation-ID", b"UUID"))
                 await send(message)
 
             await self.app(scope, receive, send_wrapper)
 
-    app = Starlette()
+    app = Litestar()
     Admin(
         app=app,
         engine=engine,
-        middlewares=[Middleware(CorrelationIdMiddleware)],
+        middlewares=[DefineMiddleware(CorrelationIdMiddleware)],
     )
 
     with TestClient(app) as client:
@@ -119,17 +116,7 @@ def test_middlewares() -> None:
 
 
 def test_get_save_redirect_url():
-    async def index(request: Request):
-        obj = User(id=1)
-        form_data = await request.form()
-        url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
-        return Response(str(url))
-
-    app = Starlette(
-        routes=[
-            Route("/{identity}", index, methods=["POST"]),
-        ]
-    )
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     class UserAdmin(ModelView, model=User):
@@ -137,7 +124,16 @@ def test_get_save_redirect_url():
 
     admin.add_view(UserAdmin)
 
-    client = TestClient(app)
+    async def index(request: Request) -> Response:
+        obj = User(id=1)
+        form_data = await request.form()
+        url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
+        return Response(content=str(url))
+
+    handler = HTTPRouteHandler(path="/{identity:str}", http_method="POST")(index)
+    app.register(handler)
+
+    client = TestClient(app, base_url="http://testserver")
 
     response = client.post("/user", data={"save": "Save"})
     assert response.text == "http://testserver/admin/user/list"
@@ -153,7 +149,7 @@ def test_get_save_redirect_url():
 
 
 def test_build_category_menu():
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     class UserAdmin(ModelView, model=User):
@@ -165,7 +161,7 @@ def test_build_category_menu():
 
 
 def test_normalize_wtform_fields() -> None:
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     class DataModelAdmin(ModelView, model=DataModel): ...
@@ -176,7 +172,7 @@ def test_normalize_wtform_fields() -> None:
 
 
 def test_denormalize_wtform_fields() -> None:
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     class DataModelAdmin(ModelView, model=DataModel): ...
@@ -194,7 +190,7 @@ def test_denormalize_wtform_fields() -> None:
 
 
 def test_validate_page_and_page_size():
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     class UserAdmin(ModelView, model=User): ...
@@ -212,7 +208,7 @@ def test_validate_page_and_page_size():
 
 def test_is_list_template_global():
     """Test that is_list correctly identifies list and set types."""
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     is_list = admin.templates.env.globals["is_list"]

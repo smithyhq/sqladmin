@@ -2,12 +2,14 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from fastapi_storages import FileSystemStorage, StorageFile
-from fastapi_storages.integrations.sqlalchemy import FileType
 from sqlalchemy import Column, Integer, select
 from sqlalchemy.orm import declarative_base, sessionmaker
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
+from litestar import Litestar
+from litestar.testing import TestClient
+
+fastapi_storages = pytest.importorskip("fastapi_storages")
+from fastapi_storages import FileSystemStorage, StorageFile
+from fastapi_storages.integrations.sqlalchemy import FileType
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -15,7 +17,7 @@ from tests.common import sync_engine as engine
 Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 

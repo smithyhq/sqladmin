@@ -1,5 +1,5 @@
 import pytest
-from starlette.datastructures import URL
+from litestar.datastructures import URL
 
 from sqladmin.pagination import PageControl, Pagination
 

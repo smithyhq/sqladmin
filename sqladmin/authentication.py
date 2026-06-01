@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import hashlib
 from typing import Any, Callable
 
 from litestar import Request
@@ -18,7 +19,7 @@ class AuthenticationBackend:
 
         secret_bytes = secret_key.encode("utf-8") if isinstance(secret_key, str) else secret_key
         session_config = CookieBackendConfig(
-            secret=secret_bytes, **session_kwargs
+            secret=hashlib.sha256(secret_bytes).digest(), **session_kwargs
         )
         self.middlewares = [
             session_config.middleware,
@@ -60,7 +61,8 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @functools.wraps(func)
     async def wrapper_decorator(*args: Any, **kwargs: Any) -> Any:
-        view, request = args[0], args[1]
+        view = args[0] if args else func.__self__
+        request = kwargs.get("request") or (args[1] if len(args) > 1 else None)
         admin = getattr(view, "_admin_ref", view)
         auth_backend = getattr(admin, "authentication_backend", None)
         if auth_backend is not None:

@@ -3,8 +3,8 @@ from typing import Generator
 import pytest
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Integer, String
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
+from litestar import Litestar
+from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -12,7 +12,7 @@ from tests.common import sync_engine as engine
 Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 

@@ -2,11 +2,11 @@
 from typing import Callable, Generator
 
 import pytest
+from litestar import Litestar
+from litestar.testing import TestClient
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.orm import Session, declarative_base
 from sqlalchemy.pool import StaticPool
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
 
@@ -45,7 +45,7 @@ def make_client(tmp_path) -> Generator[_ClientFixtureType, None, None]:
         template_dir.mkdir(parents=True, exist_ok=True)
         (template_dir / template_name).write_text(template_content)
 
-        app = Starlette()
+        app = Litestar()
         admin = Admin(app, engine, templates_dir=str(tmp_path))
         admin.add_view(UserAdmin)
         return TestClient(app)

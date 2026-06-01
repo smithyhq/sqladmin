@@ -2,12 +2,11 @@ from typing import Any, Generator, List
 from unittest.mock import Mock
 
 import pytest
+from litestar import Litestar, Request
+from litestar.response import Redirect, Response
+from litestar.testing import TestClient
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.responses import RedirectResponse, Response
-from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
 from sqladmin.application import action
@@ -18,7 +17,7 @@ Base: Any = declarative_base()
 
 Session = sessionmaker(bind=engine)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 
@@ -54,8 +53,8 @@ class UserAdmin(ModelView, model=User):
 
             obj_strs.append(repr(obj))
 
-        response = RedirectResponse(
-            request.url_for("admin:list", identity=self.identity)
+        response = Redirect(
+            path=request.url_for("admin:list", identity=self.identity)
         )
         response.headers["X-Objs"] = ",".join(obj_strs)
         return response
@@ -204,7 +203,7 @@ def test_model_action(client: TestClient) -> None:
         "details-list-confirm": "!Details List Confirm?!",
         "label-details-confirm": "!Label Details Confirm?!",
         "label-details-list-confirm": "!Label Details List Confirm?!",
-        "label-list-confirm": "!Label List Confirm?!",
+        "label-list-confirm": "!List Confirm?!",
         "list-confirm": "!List Confirm?!",
     }
 

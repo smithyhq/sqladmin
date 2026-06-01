@@ -1,8 +1,10 @@
 import enum
 import json
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
+from litestar import Litestar, Request
+from litestar.testing import TestClient
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -17,9 +19,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -27,7 +26,7 @@ from tests.common import sync_engine as engine
 Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 
@@ -782,7 +781,7 @@ def test_update_submit_form(client: TestClient) -> None:
 
     data = {"name": "Jack", "email": "", "save": "Save as new"}
     response = client.post("/admin/user/edit/1", data=data)
-    assert response.url == "http://testserver/admin/user/edit/2"
+    assert str(response.url) == "http://testserver/admin/user/edit/2"
 
     data = {"name": "Jack", "email": "amin"}
     client.post("/admin/user/edit/1", data=data)

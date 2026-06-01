@@ -1,10 +1,10 @@
 from typing import Generator
 
 import pytest
+from litestar import Litestar
+from litestar.testing import TestClient
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -41,7 +41,7 @@ def prepare_database() -> Generator[None, None, None]:
 
 def test_root_path_ajax_lookup_url_includes_root_path() -> None:
     """AJAX data-url for Select2 relationship fields must include root_path."""
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
     class UserAdmin(ModelView, model=User):

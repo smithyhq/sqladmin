@@ -19,8 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload
-from starlette.applications import Starlette
-from starlette.requests import Request
+from litestar import Litestar, Request
 
 from sqladmin import Admin, ModelView
 from tests.common import async_engine as engine
@@ -32,7 +31,7 @@ session_maker = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
 )
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 

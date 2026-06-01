@@ -9,9 +9,9 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import Column, Integer, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.responses import PlainTextResponse
+from litestar import Litestar, Request
+from litestar.enums import MediaType
+from litestar.response import Response
 
 from sqladmin import Admin, ModelView, Secret
 from tests.common import async_engine as engine
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.anyio
 Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine, templates_dir="tests/templates")
 
 
@@ -37,10 +37,10 @@ class TokenAdmin(ModelView, model=Token):
 
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> PlainTextResponse | None:
+    ) -> Response | None:
         if model.name.startswith("resp-"):
             action = "created" if is_created else "updated"
-            return PlainTextResponse(f"custom-{action}-{model.name}")
+            return Response(content=f"custom-{action}-{model.name}", media_type=MediaType.TEXT)
         if model.name.startswith("bad-"):
             return "not a response"  # type: ignore[return-value]
         if model.name.startswith("secret-"):

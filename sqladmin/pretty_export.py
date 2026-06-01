@@ -39,7 +39,7 @@ class PrettyExport:
     ) -> List[Any]:
         row_values = []
         for name in column_names:
-            value, formatted_value = model_view.get_list_value(row, name)
+            value, formatted_value = await model_view.get_list_value(row, name)
             custom_value = await model_view.custom_export_cell(row, name, value)
             if custom_value is None:
                 cell_value = await cls._base_export_cell(

@@ -10,7 +10,7 @@ from sqlalchemy.orm import (
     MappedAsDataclass,
     mapped_column,
 )
-from starlette.applications import Starlette
+from litestar import Litestar
 
 from sqladmin import Admin
 from sqladmin.models import ModelView
@@ -41,7 +41,7 @@ class UserAdmin(ModelView, model=User):
     column_labels = {"name": "Name", "email": "Email"}
 
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 admin.add_view(UserAdmin)
 

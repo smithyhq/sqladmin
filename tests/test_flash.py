@@ -1,10 +1,9 @@
 from typing import Generator
 
 import pytest
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
-from starlette.testclient import TestClient
+from litestar import Litestar, Request
+from litestar.response import Redirect
+from litestar.testing import TestClient
 
 from sqladmin import Admin, BaseView, expose
 from sqladmin.authentication import AuthenticationBackend
@@ -172,12 +171,12 @@ class AlwaysAuthBackend(AuthenticationBackend):
 
 class FlashTriggerView(BaseView):
     @expose("/flash-trigger", methods=["GET"])
-    async def trigger_flash(self, request: Request):
+    async def trigger_flash(self, request: Request) -> Redirect:
         flash(request, message="Toast test message", category="success", title="Done")
-        return RedirectResponse(request.url_for("admin:index"), status_code=302)
+        return Redirect(path=request.url_for("admin:index"), status_code=302)
 
 
-app = Starlette()
+app = Litestar()
 admin = Admin(
     app=app,
     engine=engine,

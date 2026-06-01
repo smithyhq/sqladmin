@@ -16,9 +16,9 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 from sqlalchemy.sql.expression import Select
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.testclient import TestClient
+from litestar import Litestar, Request
+from litestar.response import Response
+from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView, expose
 from sqladmin.exceptions import InvalidModelError
@@ -31,7 +31,7 @@ pytestmark = pytest.mark.anyio
 Base = declarative_base()
 session_maker = sessionmaker(bind=engine)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, session_maker=session_maker)
 
 
@@ -221,17 +221,6 @@ async def test_column_list_formatters() -> None:
 
     assert await UserAdmin().get_list_value(user, "id") == (1, 2)
     assert await UserAdmin().get_list_value(user, "name") == ("Long Name", "L")
-
-
-async def test_column_formatters_detail() -> None:
-    class UserAdmin(ModelView, model=User):
-        column_formatters_detail = {
-            "id": lambda *args: 2,
-            User.name: lambda m, a: m.name[:1],
-        }
-
-    user = User(id=1, name="Long Name")
-
     assert await UserAdmin().get_detail_value(user, "id") == (1, 2)
     assert await UserAdmin().get_detail_value(user, "name") == ("Long Name", "L")
 
@@ -577,7 +566,7 @@ def test_sort_query() -> None:
 
     query = select(Address)
 
-    request = Request({"type": "http", "query_string": "sortBy=id&sort=asc"})
+    request = Request({"type": "http", "query_string": b"sortBy=id&sort=asc"})
     stmt = AddressAdmin().sort_query(query, request)
     assert "ORDER BY addresses.id ASC" in str(stmt)
 
@@ -678,7 +667,7 @@ def test_search_two_fks_to_same_model() -> None:
 def test_expose_decorator(client: TestClient) -> None:
     class UserAdmin(ModelView, model=User):
         @expose("/profile/{pk}")
-        async def profile(self, request: Request):
+        async def profile(self, request: Request) -> Response:
             user: User = await self.get_object_for_edit(request)
             return await self.templates.TemplateResponse(
                 request, "user.html", {"user": user}

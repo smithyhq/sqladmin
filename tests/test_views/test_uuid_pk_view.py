@@ -10,8 +10,8 @@ from sqlalchemy.orm import (
     relationship,
     sessionmaker,
 )
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
+from litestar import Litestar
+from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -23,7 +23,7 @@ if engine.name != "postgresql":
 Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine)
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 

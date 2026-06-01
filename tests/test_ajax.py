@@ -2,10 +2,10 @@ from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from litestar import Litestar
 from sqlalchemy import Column, ForeignKey, Integer, String, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, relationship, selectinload
-from starlette.applications import Starlette
 
 from sqladmin import Admin, ModelView
 from sqladmin.ajax import create_ajax_loader
@@ -18,7 +18,7 @@ session_maker = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
 )
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 
 

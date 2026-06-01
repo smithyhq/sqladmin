@@ -1,17 +1,17 @@
 from typing import Generator
 
 import pytest
+from litestar import Litestar, Request
+from litestar.response import Response
+from litestar.testing import TestClient
 from sqlalchemy.orm import declarative_base
-from starlette.applications import Starlette
-from starlette.requests import Request
-from starlette.testclient import TestClient
 
 from sqladmin import Admin, BaseView, expose
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine, templates_dir="tests/templates")
 
 
@@ -20,17 +20,17 @@ class CustomAdmin(BaseView):
     icon = "fa fa-test"
 
     @expose("/custom", methods=["GET"])
-    async def custom(self, request: Request):
+    async def custom(self, request: Request) -> Response:
         return await self.templates.TemplateResponse(request, "custom.html")
 
     @expose("/custom/report")
-    async def custom_report(self, request: Request):
+    async def custom_report(self, request: Request) -> Response:
         return await self.templates.TemplateResponse(request, "custom.html")
 
     # Add this for second test: Before alphabetically (!)
     # first `expose` was BaseView url, now it's first by `order`
     @expose("/a")
-    async def a(self, request: Request):
+    async def a(self, request: Request) -> Response:
         return await self.templates.TemplateResponse(request, "custom.html")
 
 

@@ -3,12 +3,12 @@ import datetime
 import io
 import json
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import pytest
+from litestar.response import Stream
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from starlette.responses import StreamingResponse
 
 from sqladmin import ModelView
 from sqladmin.pretty_export import PrettyExport
@@ -50,9 +50,9 @@ def prepare_database():
 
 
 class TestPrettyExport:
-    async def _get_csv_content(self, response: StreamingResponse) -> str:
+    async def _get_stream_content(self, response: Stream) -> str:
         content = []
-        async for chunk in response.body_iterator:
+        async for chunk in response.content:
             if isinstance(chunk, bytes):
                 content.append(chunk.decode("utf-8"))
             else:
@@ -177,12 +177,12 @@ class TestPrettyExport:
         model_view = UserAdmin()
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
-        assert isinstance(response, StreamingResponse)
+        assert isinstance(response, Stream)
         assert response.media_type == "text/csv"
         assert "attachment" in response.headers["Content-Disposition"]
         assert "csv" in response.headers["Content-Disposition"]
 
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         lines = csv_content.strip().split("\n")
         assert len(lines) == 3
 
@@ -209,7 +209,7 @@ class TestPrettyExport:
         model_view = UserAdmin()
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         csv_reader = csv.reader(io.StringIO(csv_content))
         rows = list(csv_reader)
 
@@ -231,7 +231,7 @@ class TestPrettyExport:
         model_view = UserAdmin()
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         csv_reader = csv.reader(io.StringIO(csv_content))
         rows = list(csv_reader)
 
@@ -260,7 +260,7 @@ class TestPrettyExport:
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
 
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         csv_reader = csv.reader(io.StringIO(csv_content))
         rows = list(csv_reader)
 
@@ -279,7 +279,7 @@ class TestPrettyExport:
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
 
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         lines = csv_content.strip().split("\n")
         assert len(lines) == 1
 
@@ -300,7 +300,7 @@ class TestPrettyExport:
         model_view = UserAdmin()
 
         response = await PrettyExport.pretty_export_csv(model_view, users)
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         csv_reader = csv.reader(io.StringIO(csv_content))
         rows = list(csv_reader)
 
@@ -320,11 +320,11 @@ class TestPrettyExport:
         model_view = UserAdmin()
 
         response = await model_view.export_data(users, "csv")
-        csv_content = await self._get_csv_content(response)
+        csv_content = await self._get_stream_content(response)
         csv_reader = csv.reader(io.StringIO(csv_content))
         rows = list(csv_reader)
 
-        assert isinstance(response, StreamingResponse)
+        assert isinstance(response, Stream)
         assert response.media_type == "text/csv"
         assert rows[0] == ["id", "name", "email"]
         assert rows[1] == ["1", "John Doe", "john@example.com"]
@@ -371,10 +371,10 @@ class TestPrettyExport:
         model_view = UserAdmin()
         response = await model_view._export_json([User(id=1)])
 
-        assert isinstance(response, StreamingResponse)
+        assert isinstance(response, Stream)
         assert response.media_type == "application/json"
 
-        content = await self._get_csv_content(response)
+        content = await self._get_stream_content(response)
         payload = json.loads(content)
 
         assert payload == [
@@ -397,7 +397,7 @@ class TestPrettyExport:
         model_view = UserAdmin()
         response = await model_view._export_json([])
 
-        assert isinstance(response, StreamingResponse)
+        assert isinstance(response, Stream)
         assert response.media_type == "application/json"
 
         content_disposition = response.headers["Content-Disposition"]
@@ -406,5 +406,5 @@ class TestPrettyExport:
             or "test_export_with_special_chars_.json" in content_disposition
         )
 
-        content = await self._get_csv_content(response)
+        content = await self._get_stream_content(response)
         assert content == "[]"

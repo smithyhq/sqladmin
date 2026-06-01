@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
-from starlette.requests import Request
+from litestar import Request
 
 from sqladmin import ModelView
 from sqladmin._menu import CategoryMenu, ItemMenu, Menu, ViewMenu

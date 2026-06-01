@@ -14,8 +14,8 @@ from sqlalchemy.orm import (
     mapped_column,
     sessionmaker,
 )
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
+from litestar import Litestar
+from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
@@ -40,7 +40,7 @@ class UserAdmin(ModelView, model=User):
     column_labels = {"name": "Name", "email": "Email"}
 
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app=app, engine=engine)
 admin.add_model_view(UserAdmin)
 

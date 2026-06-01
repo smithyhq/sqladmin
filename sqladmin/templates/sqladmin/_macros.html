@@ -54,17 +54,22 @@
 </div>
 {% endmacro %}
 
-{% macro render_field(field, kwargs={}) %}
+{% macro render_field(field, kwargs={}, ajax_lookup_url="") %}
 <div class="mb-3 form-group row">
   {{ field.label(
     class_="form-label col-sm-2 col-form-label" + (' required-label' if field.flags.required else ''),
     **({'title': "This is a required field"} if field.flags.required else {})
   ) }}
   <div class="col-sm-10">
-    {% if field.errors %}
-    {{ field(class_="form-control is-invalid") }}
+    {% if ajax_lookup_url and field.loader is defined %}
+      {% set extra = {"data_url": ajax_lookup_url} %}
     {% else %}
-    {{ field() }}
+      {% set extra = {} %}
+    {% endif %}
+    {% if field.errors %}
+    {{ field(class_="form-control is-invalid", **extra) }}
+    {% else %}
+    {{ field(**extra) }}
     {% endif %}
     {% for error in field.errors %}
     <div class="invalid-feedback">{{ error }}</div>
@@ -76,7 +81,7 @@
 </div>
 {% endmacro %}
 
-{% macro render_form_fields(form, form_opts=None) %}
+{% macro render_form_fields(form, form_opts=None, ajax_lookup_url="") %}
 {% if form.hidden_tag is defined %}
 {{ form.hidden_tag() }}
 {% else %}
@@ -86,6 +91,6 @@
 {% endif %}
 
 {% for f in form if f.widget.input_type != 'hidden' %}
-{{ render_field(f, kwargs) }}
+{{ render_field(f, kwargs, ajax_lookup_url=ajax_lookup_url) }}
 {% endfor %}
 {% endmacro %}

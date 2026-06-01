@@ -4,7 +4,7 @@ $(document).on('shown.bs.modal', '#modal-delete', function (event) {
 
   var name = element.data("name");
   var pk = element.data("pk");
-  $("#modal-delete-text").text("This will permanently delete " + name + " " + pk + " ?");
+  $("#modal-delete-text").text("This will permanently delete " + name + " " + pk + "?");
 
   $("#modal-delete-button").attr("data-url", element.data("url"));
 });
@@ -13,13 +13,48 @@ $(document).on('click', '#modal-delete-button', function () {
   $.ajax({
     url: $(this).attr('data-url'),
     method: 'DELETE',
+    headers: {
+      'Accept': 'text/html',
+    },
     success: function (result) {
       window.location.href = result;
     },
-    error: function (request, status, error) {
-      alert(request.responseText);
+    error: function (request) {
+      const contentType = request.getResponseHeader('Content-Type') || '';
+
+      if (contentType.includes('text/html')) {
+        document.open();
+        document.write(request.responseText);
+        document.close();
+      } else {
+        alert(request.responseText);
+      }
     }
   });
+});
+
+// One-time secret modal
+document.addEventListener('DOMContentLoaded', function () {
+  var modalEl = document.getElementById('modal-secret');
+  if (!modalEl) {
+    return;
+  }
+  document.getElementById('modal-secret-trigger').click();
+  var nextUrl = modalEl.dataset.nextUrl;
+  if (nextUrl) {
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      window.location.replace(nextUrl);
+    });
+  }
+  var copyButton = document.getElementById('modal-secret-copy');
+  var secretValueInput = document.getElementById('modal-secret-value');
+  if (copyButton && secretValueInput) {
+    copyButton.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(secretValueInput.value);
+      }
+    });
+  }
 });
 
 // Search
@@ -56,6 +91,9 @@ var timeout = null;
 // Search
 $(document).on('keyup', '#search-input', function (e) {
   clearTimeout(timeout);
+  if ($(this).data('searchAutoSubmit') === false) {
+    return;
+  }
   // Make a new timeout set to go off in 1000ms (1 second)
   timeout = setTimeout(function () {
     $('#search-button').click();

@@ -15,8 +15,7 @@ class User(Base):
     name = Column(String)
 
 
-class UserAdmin(ModelView, model=User):
-    ...
+class UserAdmin(ModelView, model=User): ...
 
 
 request = Request({"type": "http"})

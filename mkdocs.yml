@@ -1,16 +1,23 @@
 site_name: SQLAlchemy Admin
 site_description: Flexible admin dashboard for SQLAlchemy.
-site_url: https://aminalaee.github.io/sqladmin/
+site_url: https://smithyhq.github.io/sqladmin/
 
 theme:
-  name: "material"
+  name: "zensical"
   palette:
-    primary: white
-  features:
-    - content.code.copy
+    - scheme: default
+      toggle:
+        icon: lucide/sun
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: lucide/moon
+        name: Switch to light mode
+  icon:
+    repo: simple/github
 
-repo_name: aminalaee/sqladmin
-repo_url: https://github.com/aminalaee/sqladmin
+repo_name: smithyhq/sqladmin
+repo_url: https://github.com/smithyhq/sqladmin
 edit_uri: ""
 
 nav:
@@ -29,11 +36,13 @@ nav:
       - Multiple databases: "cookbook/multiple_databases.md"
       - Using rich text editor: "cookbook/using_wysiwyg.md"
       - Working with Passwords: "cookbook/working_with_passwords.md"
+      - Displaying one-time secrets: "cookbook/displaying_one_time_secrets.md"
   - API Reference:
       - Application: "api_reference/application.md"
       - ModelView: "api_reference/model_view.md"
       - BaseView: "api_reference/base_view.md"
       - Authentication: "api_reference/authentication.md"
+  - Contributing: "contributing.md"
 
 markdown_extensions:
   - markdown.extensions.codehilite:
@@ -44,9 +53,6 @@ markdown_extensions:
   - pymdownx.tabbed
   - pymdownx.superfences
 
-extra_css:
-  - stylesheets/extra.css
-
 watch:
   - sqladmin/
 
@@ -54,11 +60,6 @@ plugins:
   - search
   - mkdocstrings:
       default_handler: python
-      handlers:
-        python:
-          options:
-            show_root_heading: true
-            show_source: false
 
 extra:
   analytics:
@@ -66,8 +67,6 @@ extra:
     property: G-MV427T1Z9X
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/aminalaee
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/aminalaee
+      link: https://github.com/smithyhq
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/amin-alaee

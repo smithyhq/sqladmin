@@ -68,6 +68,10 @@ class UserAdmin(ModelView, model=User):
     async def action_list(self, request: Request) -> Response:
         return await self._action_stub(request)  # pragma: no cover
 
+    @action(name="delete", add_in_detail=False, add_in_list=False)
+    async def action_delete(self, request: Request) -> Response:
+        return await self._action_stub(request)  # pragma: no cover
+
     @action(name="details_list", add_in_detail=True, add_in_list=True)
     async def action_details_list(self, request: Request) -> Response:
         return await self._action_stub(request)  # pragma: no cover
@@ -240,6 +244,26 @@ def test_model_action(client: TestClient) -> None:
         assert response.text.count("!Label Details Confirm?!") == 1
         assert response.text.count("!Label List Confirm?!") == 0
         assert response.text.count("!Label Details List Confirm?!") == 1
+
+
+def test_delete_error_shows_in_list_page(client: TestClient, monkeypatch) -> None:
+    async def bad_delete(self, request: Request, pk: Any) -> Response:
+        raise Exception("SQLAlchemy error: NotNullViolation")
+
+    with Session() as session:
+        monkeypatch.setattr(UserAdmin, "delete_model", bad_delete)
+        user = User()
+        session.add(user)
+        session.commit()
+
+        response = client.delete(
+            "/admin/user/delete", params={"pks": [user.id]}, follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert "error=SQLAlchemy+error%3A+NotNullViolation" in response.text
+
+        response = client.get(response.text)  # go to redirected url
+        assert response.text.count("SQLAlchemy error: NotNullViolation") == 1
 
 
 def test_filter_processing_has_operator(client: TestClient) -> None:

@@ -20,14 +20,13 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INET, MACADDR, UUID
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import (
     ColumnProperty,
     column_property,
     composite,
     declarative_base,
     relationship,
-    sessionmaker,
 )
 from wtforms import BooleanField, Field, Form, IntegerField, StringField, TimeField
 from wtforms.fields.core import UnboundField
@@ -39,8 +38,8 @@ from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: ignore
-session_maker = sessionmaker(bind=engine, class_=AsyncSession)
+Base = declarative_base()
+session_maker = async_sessionmaker(bind=engine, class_=AsyncSession)
 
 
 class Status(enum.Enum):
@@ -108,9 +107,12 @@ class Profile(Base):
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
     yield
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
     await engine.dispose()
 
 

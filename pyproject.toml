@@ -33,7 +33,7 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "litestar>=2.10,<4.0.0",
+  "litestar[cryptography]>=2.10,<4.0.0",
   "wtforms >=3.1, <3.2",
   "jinja2",
   "sqlalchemy >= 2.0",

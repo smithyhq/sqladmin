@@ -123,10 +123,10 @@ class BaseAdmin:
         self.session_maker.configure(autoflush=False, autocommit=False)
         self.is_async = is_async_session_maker(self.session_maker)
 
-        middlewares = list(middlewares or [])
+        self.middlewares = list(middlewares or [])
         self.authentication_backend = authentication_backend
         if authentication_backend:
-            middlewares.extend(authentication_backend.middlewares)
+            self.middlewares.extend(authentication_backend.middlewares)
 
         self.templates = self.init_templating_engine()
         self._views: list[BaseView | ModelView] = []

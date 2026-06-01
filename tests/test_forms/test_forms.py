@@ -337,7 +337,7 @@ async def test_model_field_clashing_with_wtforms_reserved_attribute() -> None:
     class DataModel(Base):
         __tablename__ = "model_with_wtforms_reserved_attribute"
         id = Column(Integer, primary_key=True)
-        data = Column(String)
+        data = Column(String, default="untitled")
         errors = Column(String)
         process = Column(String)
         validate = Column(Boolean)
@@ -358,6 +358,7 @@ async def test_model_field_clashing_with_wtforms_reserved_attribute() -> None:
     assert Form.process_.name == "process"
     assert Form.validate_.name == "validate"
     assert Form.populate_obj_.name == "populate_obj"
+    assert Form()._fields["data_"].default == "untitled"
     assert isinstance(Form.data, property)
     assert isinstance(Form.errors, property)
     assert isinstance(form.data, dict)

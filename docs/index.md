@@ -24,32 +24,34 @@
 
 ---
 
-# SQLAlchemy Admin for Starlette/FastAPI
+# SQLAlchemy Admin for Litestar
 
-SQLAdmin is a flexible Admin interface for SQLAlchemy models.
+SQLAdmin is a flexible Admin interface for SQLAlchemy models, ported to [Litestar](https://litestar.dev).
 
 Main features include:
 
 * [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) sync/async engines
-* [Starlette](https://github.com/encode/starlette) integration
-* [FastAPI](https://github.com/tiangolo/fastapi) integration
+* [Litestar](https://litestar.dev) integration
 * [WTForms](https://github.com/wtforms/wtforms) form building
 * [SQLModel](https://github.com/tiangolo/sqlmodel) support
 * UI using [Tabler](https://github.com/tabler/tabler)
+* Authentication via session cookies
+* AJAX lookups for relationships
+* Export to CSV/JSON
 
 ---
 
-**Documentation**: [https://smithyhq.github.io/sqladmin](https://smithyhq.github.io/sqladmin)
+**Documentation**: see `docs/` folder
 
-**Source Code**: [https://github.com/smithyhq/sqladmin](https://github.com/smithyhq/sqladmin)
+**Source Code**: [https://github.com/anomalyco/sqladmin-litestar](https://github.com/anomalyco/sqladmin-litestar)
 
 ---
 
 ## Installation
 
 ```shell
-$ pip install sqladmin
-$ pip install sqladmin[full]
+$ pip install sqladmin-litestar
+$ pip install sqladmin-litestar[full]
 ```
 
 ---
@@ -85,32 +87,12 @@ class User(Base):
 Base.metadata.create_all(engine)  # Create tables
 ```
 
-If you want to use `SQLAdmin` with `FastAPI`:
-
 ```python
-from fastapi import FastAPI
+from litestar import Litestar
 from sqladmin import Admin, ModelView
 
 
-app = FastAPI()
-admin = Admin(app, engine)
-
-
-class UserAdmin(ModelView, model=User):
-    column_list = [User.id, User.name]
-
-
-admin.add_view(UserAdmin)
-```
-
-Or if you want to use `SQLAdmin` with `Starlette`:
-
-```python
-from sqladmin import Admin, ModelView
-from starlette.applications import Starlette
-
-
-app = Starlette()
+app = Litestar()
 admin = Admin(app, engine)
 
 

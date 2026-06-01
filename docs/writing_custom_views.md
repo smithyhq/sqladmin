@@ -62,14 +62,14 @@ The example above was very basic and you probably want to access database and SQ
     from sqlalchemy import Column, Integer, String, select, func
     from sqlalchemy.orm import sessionmaker, declarative_base
     from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+    from litestar import Litestar
     from sqladmin import Admin, BaseView, expose
-    from starlette.applications import Starlette
 
     Base = declarative_base()
     engine = create_async_engine("sqlite+aiosqlite:///test.db")
     Session = sessionmaker(bind=engine, class_=AsyncSession)
 
-    app = Starlette()
+    app = Litestar()
     admin = Admin(app=app, engine=engine)
 
 

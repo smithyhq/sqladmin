@@ -51,6 +51,6 @@ return response
 ## Custom rendering
 
 If you need full control over the response (custom template, redirect to a
-wizard step, file download, etc.), return a Starlette `Response` from
+wizard step, file download, etc.), return a Litestar `Response` from
 `after_model_change` instead - see
 [Controlling the response with `after_model_change`](../configurations.md#controlling-the-response-with-after_model_change).

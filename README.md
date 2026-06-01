@@ -153,13 +153,16 @@ class UserAdmin(ModelView, model=User):
     page_size = 25
 ```
 
-## Key differences from Starlette/FastAPI version
+## Key differences from the original Starlette/FastAPI version
 
-1. **Framework**: Built for Litestar instead of Starlette/FastAPI
-2. **Session middleware**: Uses Litestar's `CookieBackendConfig` instead of Starlette's `SessionMiddleware`
-3. **Routing**: Uses Litestar's `Router` and `HTTPRouteHandler`
-4. **Static files**: Uses Litestar's `StaticFilesConfig`
-5. **Dependencies**: Depends on `litestar` instead of `starlette`
+1. **Framework**: Built for Litestar — uses `Litestar()` instead of `FastAPI()` or `Starlette()`
+2. **Session middleware**: Uses Litestar's `CookieBackendConfig` (client-side sessions) instead of Starlette's `SessionMiddleware`
+3. **Routing**: Registers `HTTPRouteHandler` directly on the main Litestar app, no sub-mounting
+4. **Static files**: Served via a dedicated route handler, not `StaticFiles` mount
+5. **Imports**: `from litestar import Request`, `from litestar.response import Redirect, Response` — no Starlette imports
+6. **Templates**: Uses `jinja2.Environment(enable_async=True)` with `await template.render_async()` — template methods must be async
+7. **Model methods**: `get_prop_value`, `get_list_value`, `get_detail_value`, `check_can_view_details`, `check_can_edit`, `check_can_delete` are `async def` — must be `await`ed
+8. **Dependencies**: Depends on `litestar` instead of `starlette` or `fastapi`
 
 ## License
 

@@ -1,4 +1,4 @@
-It is common and useful to deploy your `SQLAdmin` or FastAPI/Starlette application
+It is common and useful to deploy your `SQLAdmin` or Litestar application
 behind a reverse proxy like Nginx and enable `HTTPS` on the reverse proxy.
 
 Running the app locally you would not face any issues but with HTTPS enabled

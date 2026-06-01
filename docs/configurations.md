@@ -41,14 +41,12 @@ class Address(Base):
 Base.metadata.create_all(engine)  # Create tables
 ```
 
-If you want to integrate SQLAdmin into FastAPI application:
-
 ```python
-from fastapi import FastAPI
+from litestar import Litestar
 from sqladmin import Admin, ModelView
 
 
-app = FastAPI()
+app = Litestar()
 admin = Admin(app, engine)
 
 
@@ -469,7 +467,7 @@ By default these methods do nothing.
 after a successful create or edit:
 
 - **`None`** (default) – the normal redirect happens.
-- **`Response`** – a custom Starlette `Response` is returned directly.
+- **`Response`** – a custom Litestar `Response` is returned directly.
 
 !!! example
 
@@ -497,8 +495,8 @@ To add custom action on models to the Admin, you can use the `action` decorator.
 !!! example
 
     ```python
+    from litestar.response import Redirect
     from sqladmin import BaseView, action, Flash
-    from starlette.responses import RedirectResponse
 
     class UserAdmin(ModelView, model=User):
         @action(
@@ -518,9 +516,9 @@ To add custom action on models to the Admin, you can use the `action` decorator.
             referer = request.headers.get("Referer")
             Flash.success(request, "Users approved successfully")
             if referer:
-                return RedirectResponse(referer)
+                return Redirect(path=referer)
             else:
-                return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+                return Redirect(path=request.url_for("admin:list", identity=self.identity))
 
     admin.add_view(UserAdmin)
     ```
@@ -545,8 +543,8 @@ either the `Flash` utility class or the low-level `flash()` function.
 Import it directly from `sqladmin`:
 
 ```python
+from litestar.response import Redirect
 from sqladmin import BaseView, action, Flash
-from starlette.responses import RedirectResponse
 
 class UserAdmin(ModelView, model=User):
     @action(name="approve_users", label="Approve", add_in_list=True)
@@ -560,9 +558,9 @@ class UserAdmin(ModelView, model=User):
         Flash.success(request, "Users approved successfully")
         referer = request.headers.get("Referer")
         if referer:
-            return RedirectResponse(referer)
+            return Redirect(path=referer)
         else:
-            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+            return Redirect(path=request.url_for("admin:list", identity=self.identity))
 ```
 
 The available convenience methods are:

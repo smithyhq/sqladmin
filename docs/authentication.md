@@ -13,10 +13,10 @@ The class `AuthenticationBackend` has three methods you need to override:
 * `logout`: Will be called only for the logout, usually clearing the session.
 
 ```python
+from litestar import Request
+from litestar.response import Redirect
 from sqladmin import Admin
 from sqladmin.authentication import AuthenticationBackend
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
 
 
 class AdminAuth(AuthenticationBackend):
@@ -35,33 +35,32 @@ class AdminAuth(AuthenticationBackend):
         request.session.clear()
         return True
 
-    async def authenticate(self, request: Request) -> bool:
+    async def authenticate(self, request: Request) -> bool | Redirect:
         token = request.session.get("token")
 
         if not token:
-            return False
+            return Redirect(request.url_for("admin:login"), status_code=302)
 
         # Check the token in depth
         return True
 
 
 authentication_backend = AdminAuth(secret_key="...")
-admin = Admin(app=..., authentication_backend=authentication_backend، ...)
+admin = Admin(app=..., authentication_backend=authentication_backend)
 ```
 
 !!! note
-    In order to use AuthenticationBackend you need to install the `itsdangerous` package.
+    The session cookie encryption uses `hashlib.sha256` to derive a 32-byte key from any-length secret.
 
 ??? example "Full Example"
 
     ```python
+    from litestar import Litestar, Request
+    from litestar.response import Redirect
     from sqladmin import Admin, ModelView
     from sqladmin.authentication import AuthenticationBackend
     from sqlalchemy import Column, Integer, String, create_engine
     from sqlalchemy.orm import declarative_base
-    from starlette.applications import Starlette
-    from starlette.requests import Request
-    from starlette.responses import RedirectResponse
 
 
     Base = declarative_base()
@@ -90,17 +89,14 @@ admin = Admin(app=..., authentication_backend=authentication_backend، ...)
             request.session.clear()
             return True
 
-        async def authenticate(self, request: Request) -> bool:
+        async def authenticate(self, request: Request) -> bool | Redirect:
             token = request.session.get("token")
-
             if not token:
-                return False
-
-            # Check the token in depth
+                return Redirect(request.url_for("admin:login"), status_code=302)
             return True
 
 
-    app = Starlette()
+    app = Litestar()
     authentication_backend = AdminAuth(secret_key="...")
     admin = Admin(app=app, engine=engine, authentication_backend=authentication_backend)
 
@@ -122,18 +118,11 @@ You can also integrate OAuth into SQLAdmin, for this example we will integrate G
 If you have followed the previous example, there are only two changes required to the authentication flow:
 
 ```python
-from typing import Union
-
+from litestar import Litestar, Request
+from litestar.response import Redirect, Response
 from authlib.integrations.starlette_client import OAuth
 from sqladmin.authentication import AuthenticationBackend
-from starlette.applications import Starlette
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
 
-
-app = Starlette()
-app.add_middleware(SessionMiddleware, secret_key="test")
 
 oauth = OAuth()
 oauth.register(
@@ -157,27 +146,16 @@ class AdminAuth(AuthenticationBackend):
         request.session.clear()
         return True
 
-    async def authenticate(self, request: Request) -> Union[bool, RedirectResponse]:
+    async def authenticate(self, request: Request) -> bool | Redirect:
         user = request.session.get("user")
         if not user:
             redirect_uri = request.url_for('login_google')
             return await google.authorize_redirect(request, redirect_uri)
-
         return True
 
 
+app = Litestar()
 admin = Admin(app=app, engine=engine, authentication_backend=AdminAuth("test"))
-
-
-async def login_google(request: Request) -> Response:
-    token = await google.authorize_access_token(request)
-    user = token.get('userinfo')
-    if user:
-        request.session['user'] = user
-    return RedirectResponse(request.url_for("admin:index"))
-
-
-admin.app.router.add_route("/auth/google", login_google)
 ```
 
 ## Permissions
@@ -203,7 +181,7 @@ Both methods implement the same signature and should return a boolean.
 So in order to override these methods:
 
 ```python
-from starlette.requests import Request
+from litestar import Request
 
 
 class UserAdmin(ModelView, model=User):

@@ -110,11 +110,11 @@ If your customizations are so extensive that using blocks isn't sufficient, you 
 You can add custom environment options to use it on your custom templates. First set up a project:
 
 ```python
+from litestar import Litestar
 from sqladmin import Admin
-from starlette.applications import Starlette
 
 
-app = Starlette()
+app = Litestar()
 admin = Admin(app, engine)
 ```
 

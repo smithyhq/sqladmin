@@ -16,7 +16,7 @@ It also includes custom SQLAlchemy types to make it easier to integrate into `SQ
 Let's see a minimal example:
 
 ```python
-from fastapi import FastAPI
+from litestar import Litestar
 from sqladmin import Admin, ModelView
 from sqlalchemy import Column, Integer, create_engine
 from sqlalchemy.orm import declarative_base
@@ -26,7 +26,7 @@ from fastapi_storages.integrations.sqlalchemy import FileType
 
 Base = declarative_base()
 engine = create_engine("sqlite:///example.db")
-app = FastAPI()
+app = Litestar()
 admin = Admin(app, engine)
 storage = FileSystemStorage(path="/tmp")
 

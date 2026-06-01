@@ -154,7 +154,7 @@ class BaseView(BaseModelView):
 
             @expose("/custom", methods=["GET"])
             async def test_page(self, request: Request):
-                return self.templates.TemplateResponse(request, "custom.html")
+                return await self.templates.TemplateResponse(request, "custom.html")
 
         admin.add_base_view(CustomAdmin)
         ```

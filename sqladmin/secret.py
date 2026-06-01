@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
-from starlette.requests import Request
-from starlette.responses import Response
+from litestar import Request
+from litestar.response import Response
 
 
 class Secret:

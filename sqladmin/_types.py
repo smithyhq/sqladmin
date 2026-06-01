@@ -17,7 +17,7 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 from sqlalchemy.sql.expression import Select
-from starlette.requests import Request
+from litestar import Request
 
 MODEL_PROPERTY = Union[ColumnProperty, RelationshipProperty]
 ENGINE_TYPE = Union[Engine, AsyncEngine]

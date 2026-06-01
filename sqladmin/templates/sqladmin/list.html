@@ -109,16 +109,16 @@
                     <th>
                       {% if name in model_view._sort_fields %}
                       {% if request.query_params.get("sortBy") == name and request.query_params.get("sort") == "asc" %}
-                      <a href="{{ request.url.include_query_params(sort='desc') }}"><i class="fa-solid fa-arrow-up"></i>
+                      <a href="{{ include_query_params(request.url, sort='desc') }}"><i class="fa-solid fa-arrow-up"></i>
                         {{
                         label }}</a>
                       {% elif request.query_params.get("sortBy") == name and request.query_params.get("sort") == "desc"
                       %}
-                      <a href="{{ request.url.include_query_params(sort='asc') }}"><i
-                          class="fa-solid fa-arrow-down"></i> {{ label
-                        }}</a>
+<a href="{{ include_query_params(request.url, sort='asc') }}"><i
+                            class="fa-solid fa-arrow-down"></i> {{ label
+                          }}</a>
                       {% else %}
-                      <a href="{{ request.url.include_query_params(sortBy=name, sort='asc') }}">{{ label }}</a>
+                      <a href="{{ include_query_params(request.url, sortBy=name, sort='asc') }}">{{ label }}</a>
                       {% endif %}
                       {% else %}
                       {{ label }}
@@ -228,7 +228,7 @@
                 <div class="dropdown-menu">
                   {% for page_size_option in model_view.page_size_options %}
                   <a class="dropdown-item"
-                    href="{{ request.url.include_query_params(pageSize=page_size_option, page=pagination.resize(page_size_option).page) }}">
+                    href="{{ include_query_params(request.url, pageSize=page_size_option, page=pagination.resize(page_size_option).page) }}">
                     {{ page_size_option }} / Page
                   </a>
                   {% endfor %}

@@ -7,14 +7,14 @@ module-name = "sqladmin"
 module-root = ""
 
 [project]
-name = "sqladmin"
-version = "0.27.0"
-description = 'SQLAlchemy admin for FastAPI and Starlette'
+name = "sqladmin-litestar"
+version = "0.27.1"
+description = 'SQLAlchemy admin for Litestar'
 readme = "README.md"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"
-keywords = ["sqlalchemy", "fastapi", "starlette", "admin"]
-authors = [{ name = "Amin Alaee", email = "mohammadamin.alaee@gmail.com" }]
+keywords = ["sqlalchemy", "litestar", "admin"]
+authors = []
 maintainers = [
   { name = "Miradil Zeynalli", email = "miradil.zeynalli@gmail.com" },
 ]
@@ -33,13 +33,11 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "starlette>=0.50,<2.0.0",
+  "litestar>=2.10,<4.0.0",
   "wtforms >=3.1, <3.2",
   "jinja2",
-  "python-multipart",
   "sqlalchemy >= 2.0",
 ]
-
 
 [project.optional-dependencies]
 full = ["itsdangerous"]
@@ -48,7 +46,6 @@ full = ["itsdangerous"]
 Documentation = "https://smithyhq.github.io/sqladmin/"
 Issues = "https://github.com/smithyhq/sqladmin/issues"
 Source = "https://github.com/smithyhq/sqladmin"
-
 
 [dependency-groups]
 dev = [
@@ -59,17 +56,13 @@ dev = [
   "build",
   "colour",
   "coverage",
-  "email-validator",
-  "fastapi-storages",
   "greenlet",
   "httpx",
   "itsdangerous",
-  "phonenumbers",
   "pillow",
   "psycopg2-binary",
   "psycopg[binary]",
   "pytest",
-  "python-dateutil",
   "sqlalchemy_utils",
   "sqlmodel",
   "bandit",

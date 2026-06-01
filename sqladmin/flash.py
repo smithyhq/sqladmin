@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, List
 
-from starlette.requests import Request
+from litestar import Request
 
 
 class FlashLevel(Enum):

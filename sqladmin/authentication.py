@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import functools
-import inspect
 from typing import Any, Callable
 
-from starlette.middleware import Middleware
-from starlette.requests import Request
-from starlette.responses import RedirectResponse, Response
+from litestar import Request
+from litestar.response import Redirect, Response
 
 
 class AuthenticationBackend:
@@ -15,17 +13,21 @@ class AuthenticationBackend:
     `login`, `logout` and `authenticate`.
     """
 
-    def __init__(self, secret_key: str, **session_kwargs: Any) -> None:
-        from starlette.middleware.sessions import SessionMiddleware
+    def __init__(self, secret_key: str | bytes, **session_kwargs: Any) -> None:
+        from litestar.middleware.session.client_side import CookieBackendConfig
 
+        secret_bytes = secret_key.encode("utf-8") if isinstance(secret_key, str) else secret_key
+        session_config = CookieBackendConfig(
+            secret=secret_bytes, **session_kwargs
+        )
         self.middlewares = [
-            Middleware(SessionMiddleware, secret_key=secret_key, **session_kwargs),
+            session_config.middleware,
         ]
 
     async def login(self, request: Request) -> bool:
         """Implement login logic here.
         You can access the login form data `await request.form()`
-        andvalidate the credentials.
+        and validate the credentials.
         """
         raise NotImplementedError()
 
@@ -33,7 +35,7 @@ class AuthenticationBackend:
         """Implement logout logic here.
         This will usually clear the session with `request.session.clear()`.
 
-        If a `Response` or `RedirectResponse` is returned,
+        If a `Response` or `Redirect` is returned,
         that response is returned to the user,
         otherwise the user will be redirected to the index page.
         """
@@ -44,7 +46,7 @@ class AuthenticationBackend:
         This method will be called for each incoming request
         to validate the authentication.
 
-        If a `Response` or `RedirectResponse` is returned,
+        If a `Response` or `Redirect` is returned,
         that response is returned to the user,
         otherwise a True/False is expected.
         """
@@ -66,10 +68,8 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
             if isinstance(response, Response):
                 return response
             if not bool(response):
-                return RedirectResponse(request.url_for("admin:login"), status_code=302)
+                return Redirect(request.url_for("admin:login"), status_code=302)
 
-        if inspect.iscoroutinefunction(func):
-            return await func(*args, **kwargs)
-        return func(*args, **kwargs)
+        return await func(*args, **kwargs)
 
     return wrapper_decorator

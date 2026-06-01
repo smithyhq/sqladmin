@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql.expression import Select, and_, or_
-from starlette.requests import Request
-from starlette.responses import Response
+from litestar import Request
+from litestar.response import Response
 
 from sqladmin._types import MODEL_PROPERTY
 from sqladmin.helpers import (
@@ -143,7 +143,7 @@ class Query:
             return
         if not isinstance(result, Response):
             raise TypeError(
-                "after_model_change must return None or a starlette Response, "
+                "after_model_change must return None or a litestar Response, "
                 f"got {type(result).__name__}"
             )
         request.state._sqladmin_after_change_response = result

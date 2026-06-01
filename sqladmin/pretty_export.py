@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, AsyncGenerator, List
 
-from starlette.responses import StreamingResponse
+from litestar.response import Stream
 
 from sqladmin.helpers import Writer, secure_filename, stream_to_csv
 
@@ -39,7 +39,7 @@ class PrettyExport:
     ) -> List[Any]:
         row_values = []
         for name in column_names:
-            value, formatted_value = await model_view.get_list_value(row, name)
+            value, formatted_value = model_view.get_list_value(row, name)
             custom_value = await model_view.custom_export_cell(row, name, value)
             if custom_value is None:
                 cell_value = await cls._base_export_cell(
@@ -53,7 +53,7 @@ class PrettyExport:
     @classmethod
     async def pretty_export_csv(
         cls, model_view: "ModelView", rows: List[Any]
-    ) -> StreamingResponse:
+    ) -> Stream:
         async def generate(writer: Writer) -> AsyncGenerator[Any, None]:
             column_names = model_view.get_export_columns()
             headers = [
@@ -68,7 +68,7 @@ class PrettyExport:
 
         filename = secure_filename(model_view.get_export_name(export_type="csv"))
 
-        return StreamingResponse(
+        return Stream(
             content=stream_to_csv(generate),
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment;filename={filename}"},

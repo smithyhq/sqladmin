@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from starlette.datastructures import URL
-from starlette.requests import Request
+from litestar.datastructures import URL
+from litestar import Request
 
 if TYPE_CHECKING:
     from sqladmin.application import BaseView, ModelView

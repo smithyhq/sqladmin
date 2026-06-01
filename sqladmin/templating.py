@@ -1,66 +1,56 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Dict, Optional
+from urllib.parse import urljoin
 
 import jinja2
-from starlette.background import BackgroundTask
-from starlette.datastructures import URL
-from starlette.requests import Request
-from starlette.responses import HTMLResponse
-from starlette.types import Receive, Scope, Send
+from litestar.datastructures import URL
+from litestar import Request
+from litestar.response import Response
 
-
-class _TemplateResponse(HTMLResponse):
-    def __init__(
-        self,
-        template: jinja2.Template,
-        content: str,
-        context: dict,
-        status_code: int = 200,
-        headers: Mapping[str, str] | None = None,
-        media_type: str | None = None,
-        background: BackgroundTask | None = None,
-    ):
-        self.template = template
-        self.context = context
-        super().__init__(content, status_code, headers, media_type, background)
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        request = self.context.get("request", {})
-        extensions = request.get("extensions", {})
-        if "http.response.debug" in extensions:
-            await send(
-                {
-                    "type": "http.response.debug",
-                    "info": {
-                        "template": self.template,
-                        "context": self.context,
-                    },
-                }
-            )
-        await super().__call__(scope, receive, send)
+from sqladmin.utils import include_query_params, remove_query_params
 
 
 class Jinja2Templates:
     def __init__(self, directory: str) -> None:
+        self._static_file_names: set[str] = set()
+
         @jinja2.pass_context
-        def url_for(context: dict, __name: str, **path_params: Any) -> URL:
+        def url_for(context: Dict, __name: str, **path_params: Any) -> URL:
             request: Request = context["request"]
+            admin = context.get("admin")
+            if __name in self._static_file_names and "path" in path_params:
+                if admin is not None and hasattr(admin, "base_url"):
+                    static_path = urljoin(f"{admin.base_url}/", f"statics/{path_params['path']}")
+                    return URL(static_path)
+                return request.url_for_static_asset(__name, path_params["path"])
             return request.url_for(__name, **path_params)
 
-        loader = jinja2.FileSystemLoader(directory)
-        self.env = jinja2.Environment(loader=loader, autoescape=True, enable_async=True)
-        self.env.globals["url_for"] = url_for
+        @jinja2.pass_context
+        def url_for_static_asset(
+            context: Dict, __name: str, **path_params: Any
+        ) -> str:
+            request: Request = context["request"]
+            return request.url_for_static_asset(__name, **path_params)
 
-    async def TemplateResponse(
+        loader = jinja2.FileSystemLoader(directory)
+        self.env = jinja2.Environment(
+            loader=loader, autoescape=True
+        )
+        self.env.globals["url_for"] = url_for
+        self.env.globals["url_for_static_asset"] = url_for_static_asset
+        self.env.globals["include_query_params"] = include_query_params
+        self.env.globals["remove_query_params"] = remove_query_params
+
+    def TemplateResponse(
         self,
         request: Request,
         name: str,
-        context: dict | None = None,
+        context: Optional[Dict] = None,
         status_code: int = 200,
-    ) -> _TemplateResponse:
+    ) -> Response:
         context = context or {}
         context.setdefault("request", request)
         template = self.env.get_template(name)
-        content = await template.render_async(context)
-        return _TemplateResponse(template, content, context, status_code)
+        content = template.render(context)
+        return Response(content, media_type="text/html", status_code=status_code)

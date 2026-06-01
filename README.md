@@ -1,79 +1,36 @@
-<p align="center">
-<a href="https://github.com/smithyhq/sqladmin">
-    <img width="400px" src="https://raw.githubusercontent.com/smithyhq/sqladmin/main/docs/assets/images/banner.png" alt"SQLAdmin">
-</a>
-</p>
+# SQLAlchemy Admin for Litestar
 
-<p align="center">
-<a href="https://github.com/smithyhq/sqladmin/actions">
-    <img src="https://github.com/smithyhq/sqladmin/workflows/Test%20Suite/badge.svg" alt="Build Status">
-</a>
-<a href="https://github.com/smithyhq/sqladmin/actions">
-    <img src="https://github.com/smithyhq/sqladmin/workflows/Publish/badge.svg" alt="Publish Status">
-</a>
-<a href="https://codecov.io/gh/smithyhq/sqladmin">
-    <img src="https://codecov.io/gh/smithyhq/sqladmin/branch/main/graph/badge.svg" alt="Coverage">
-</a>
-<a href="https://pypi.org/project/sqladmin/">
-    <img src="https://badge.fury.io/py/sqladmin.svg" alt="Package version">
-</a>
-<a href="https://pypi.org/project/sqladmin" target="_blank">
-    <img src="https://img.shields.io/pypi/pyversions/sqladmin.svg?color=%2334D058" alt="Supported Python versions">
-</a>
-</p>
+SQLAdmin is a flexible admin interface for SQLAlchemy models, adapted for [Litestar](https://litestar.dev).
 
----
+Main features:
 
-# SQLAlchemy Admin for Starlette/FastAPI
-
-SQLAdmin is a flexible Admin interface for SQLAlchemy models.
-
-Main features include:
-
-* [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) sync/async engines
-* [Starlette](https://github.com/encode/starlette) integration
-* [FastAPI](https://github.com/tiangolo/fastapi) integration
-* [WTForms](https://github.com/wtforms/wtforms) form building
-* [SQLModel](https://github.com/tiangolo/sqlmodel) support
-* UI using [Tabler](https://github.com/tabler/tabler)
-
----
-
-**Documentation**: [https://smithyhq.github.io/sqladmin](https://smithyhq.github.io/sqladmin)
-
-**Source Code**: [https://github.com/smithyhq/sqladmin](https://github.com/smithyhq/sqladmin)
-
----
+- SQLAlchemy sync/async engines
+- Litestar ASGI framework integration
+- WTForms form scaffolding
+- SQLModel support
+- Tabler-based UI
+- Export to CSV/JSON
+- Authentication via session cookies
+- AJAX lookups for relationships
+- Column filters and search
+- Custom views and actions
 
 ## Installation
 
-Install using `pip`:
+```bash
+pip install sqladmin-litestar
 
-```shell
-$ pip install sqladmin
+# With full optional dependencies
+pip install "sqladmin-litestar[full]"
 ```
-
-This will install the full version of sqladmin with optional dependencies:
-
-```shell
-$ pip install "sqladmin[full]"
-```
-
----
-
-## Screenshots
-
-<img width="1492" alt="sqladmin-1" src="https://user-images.githubusercontent.com/19784933/208232730-0114a155-2740-4e89-9d73-64a4e51a5cf5.png">
-<img width="1492" alt="sqladmin-2" src="https://user-images.githubusercontent.com/19784933/208232731-6d783dde-b93e-41c0-911b-3d1c3c73f1d5.png">
 
 ## Quickstart
 
-Let's define an example SQLAlchemy model:
+Define your SQLAlchemy model:
 
 ```python
 from sqlalchemy import Column, Integer, String, create_engine
-from sqlalchemy.orm import declarative_base
-
+from sqlalchemy.orm import DeclarativeBase
 
 Base = declarative_base()
 engine = create_engine(
@@ -81,57 +38,129 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 
-
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
-
-Base.metadata.create_all(engine)  # Create tables
+Base.metadata.create_all(engine)
 ```
 
-If you want to use `SQLAdmin` with `FastAPI`:
+Create the Litestar app and register the admin:
 
 ```python
-from fastapi import FastAPI
+from litestar import Litestar
 from sqladmin import Admin, ModelView
 
-
-app = FastAPI()
+app = Litestar()
 admin = Admin(app, engine)
-
 
 class UserAdmin(ModelView, model=User):
     column_list = [User.id, User.name]
 
-
 admin.add_view(UserAdmin)
 ```
 
-Or if you want to use `SQLAdmin` with `Starlette`:
+Visit `/admin` in your browser to see the admin interface.
+
+## Using async engine
 
 ```python
-from sqladmin import Admin, ModelView
-from starlette.applications import Starlette
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-
-app = Starlette()
-admin = Admin(app, engine)
-
-
-class UserAdmin(ModelView, model=User):
-    column_list = [User.id, User.name]
-
-
-admin.add_view(UserAdmin)
+async_engine = create_async_engine("sqlite+aiosqlite:///example.db")
+admin = Admin(app, async_engine)
 ```
 
-Now visiting `/admin` on your browser you can see the `SQLAdmin` interface.
+## Authentication
 
-## Related projects and inspirations
+```python
+from litestar import Request
+from litestar.response import Redirect
+from sqladmin import Admin
+from sqladmin.authentication import AuthenticationBackend
 
-* [Flask-Admin](https://github.com/flask-admin/flask-admin) Admin interface for Flask supporting different database backends and ORMs. This project has inspired SQLAdmin extensively and most of the features and configurations are implemented the same.
-* [FastAPI-Admin](https://github.com/fastapi-admin/fastapi-admin) Admin interface for FastAPI which works with `TortoiseORM`.
-* [Dashboard](https://github.com/encode/dashboard) Admin interface for ASGI frameworks which works with the `orm` package.
+class MyAuthBackend(AuthenticationBackend):
+    async def login(self, request: Request) -> bool:
+        form = await request.form()
+        username = form.get("username")
+        password = form.get("password")
+        # validate credentials
+        return True
+
+    async def logout(self, request: Request) -> bool:
+        request.session.clear()
+        return True
+
+    async def authenticate(self, request: Request) -> bool | Redirect:
+        if "user_id" not in request.session:
+            return Redirect(request.url_for("admin:login"), status_code=302)
+        return True
+
+auth_backend = MyAuthBackend(secret_key="your-secret-key")
+admin = Admin(app, engine, authentication_backend=auth_backend)
+```
+
+## Custom Views
+
+```python
+from sqladmin import BaseView, expose
+
+class MyView(BaseView):
+    name = "Dashboard"
+    icon = "fa-solid fa-chart-line"
+
+    @expose("/dashboard", methods=["GET"])
+    async def dashboard(self, request: Request):
+        return await self.templates.TemplateResponse(
+            request, "custom_dashboard.html"
+        )
+
+admin.add_base_view(MyView)
+```
+
+## Model Configuration
+
+```python
+class UserAdmin(ModelView, model=User):
+    # Permissions
+    can_create = True
+    can_edit = True
+    can_delete = True
+    can_view_details = True
+    can_export = True
+
+    # List columns
+    column_list = [User.id, User.name, User.email]
+
+    # Form columns
+    form_excluded_columns = [User.id]
+
+    # Search
+    column_searchable_list = [User.name, User.email]
+
+    # Sorting
+    column_sortable_list = [User.id, User.name]
+
+    # Filters
+    column_filters = [User.is_active]
+
+    # Labels
+    column_labels = {User.email: "Email Address"}
+
+    # Page size
+    page_size = 25
+```
+
+## Key differences from Starlette/FastAPI version
+
+1. **Framework**: Built for Litestar instead of Starlette/FastAPI
+2. **Session middleware**: Uses Litestar's `CookieBackendConfig` instead of Starlette's `SessionMiddleware`
+3. **Routing**: Uses Litestar's `Router` and `HTTPRouteHandler`
+4. **Static files**: Uses Litestar's `StaticFilesConfig`
+5. **Dependencies**: Depends on `litestar` instead of `starlette`
+
+## License
+
+BSD-3-Clause

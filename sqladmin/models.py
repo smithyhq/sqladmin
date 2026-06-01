@@ -30,10 +30,10 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import Select, select
-from starlette.datastructures import URL
-from starlette.exceptions import HTTPException
-from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from litestar.datastructures import URL
+from litestar.exceptions import HTTPException
+from litestar import Request
+from litestar.response import Response, Stream
 from wtforms import Field, Form
 from wtforms.fields.core import UnboundField
 
@@ -154,7 +154,7 @@ class BaseView(BaseModelView):
 
             @expose("/custom", methods=["GET"])
             async def test_page(self, request: Request):
-                return await self.templates.TemplateResponse(request, "custom.html")
+                return self.templates.TemplateResponse(request, "custom.html")
 
         admin.add_base_view(CustomAdmin)
         ```
@@ -809,7 +809,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         return request.url_for(
             name,
             identity=slugify_class_name(obj.__class__.__name__),
-            pk=get_object_identifier(obj),
+            pk=str(get_object_identifier(obj)),
         )
 
     def _get_prop_name(self, prop: MODEL_ATTR) -> str:
@@ -1108,21 +1108,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
     async def check_can_view_details(self, request: Request, model: Any) -> bool:
-        """
-        You can add a custom model attribute checker before view details.
-        """
+        """Override to add custom permission check before viewing details."""
         return self.can_view_details
 
     async def check_can_edit(self, request: Request, model: Any) -> bool:
-        """
-        You can add a custom model attribute checker before edit.
-        """
+        """Override to add custom permission check before editing."""
         return self.can_edit
 
     async def check_can_delete(self, request: Request, model: Any) -> bool:
-        """
-        You can add a custom model attribute checker before delete.
-        """
+        """Override to add custom permission check before deleting."""
         return self.can_delete
 
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
@@ -1313,7 +1307,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self,
         data: List[Any],
         export_type: str = "csv",
-    ) -> StreamingResponse:
+    ) -> Stream:
         if export_type == "csv":
             export_method = (
                 PrettyExport.pretty_export_csv(self, data)
@@ -1330,9 +1324,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     async def _export_csv(
         self,
         data: List[Any],
-    ) -> StreamingResponse:
+    ) -> Stream:
         async def generate(writer: Writer) -> AsyncGenerator[Any, None]:
-            # Append the column titles at the beginning
             yield writer.writerow(self._export_prop_names)
 
             for row in data:
@@ -1342,11 +1335,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 ]
                 yield writer.writerow(vals)
 
-        # `get_export_name` can be subclassed.
-        # So we want to keep the filename secure outside that method.
         filename = secure_filename(self.get_export_name(export_type="csv"))
 
-        return StreamingResponse(
+        return Stream(
             content=stream_to_csv(generate),
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f"attachment;filename={filename}"},
@@ -1356,7 +1347,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self,
         data: List[Any],
         ensure_ascii: bool = False,
-    ) -> StreamingResponse:
+    ) -> Stream:
         async def generate() -> AsyncGenerator[str, None]:
             yield "["
             len_data = len(data)
@@ -1377,7 +1368,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             yield "]"
 
         filename = secure_filename(self.get_export_name(export_type="json"))
-        return StreamingResponse(
+        return Stream(
             content=generate(),
             media_type="application/json",
             headers={"Content-Disposition": f"attachment;filename={filename}"},

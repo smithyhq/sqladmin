@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from litestar.datastructures import URL
 from litestar import Request
+from litestar.datastructures import URL
 
 if TYPE_CHECKING:
     from sqladmin.application import BaseView, ModelView
@@ -69,7 +69,9 @@ class ViewMenu(ItemMenu):
         return self.view.is_accessible(request)
 
     def is_active(self, request: Request) -> bool:
-        return self.view.identity == request.path_params.get("identity")
+        return self.view.identity == request.scope.get("path_params", {}).get(
+            "identity"
+        )
 
     def url(self, request: Request) -> str | URL:
         if self.view.is_model:

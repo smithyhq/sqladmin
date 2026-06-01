@@ -60,6 +60,7 @@ dev = [
   "httpx",
   "itsdangerous",
   "pillow",
+  "phonenumbers",
   "psycopg2-binary",
   "psycopg[binary]",
   "pytest",

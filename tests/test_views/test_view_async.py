@@ -3,6 +3,7 @@ from typing import Any, AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from litestar import Litestar, Request
 from sqlalchemy import (
     JSON,
     BigInteger,
@@ -19,7 +20,6 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload
-from litestar import Litestar, Request
 
 from sqladmin import Admin, ModelView
 from tests.common import async_engine as engine

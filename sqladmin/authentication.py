@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import inspect
 from typing import Any, Callable
 
 from litestar import Request
@@ -17,7 +18,9 @@ class AuthenticationBackend:
     def __init__(self, secret_key: str | bytes, **session_kwargs: Any) -> None:
         from litestar.middleware.session.client_side import CookieBackendConfig
 
-        secret_bytes = secret_key.encode("utf-8") if isinstance(secret_key, str) else secret_key
+        secret_bytes = (
+            secret_key.encode("utf-8") if isinstance(secret_key, str) else secret_key
+        )
         session_config = CookieBackendConfig(
             secret=hashlib.sha256(secret_bytes).digest(), **session_kwargs
         )
@@ -61,8 +64,11 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @functools.wraps(func)
     async def wrapper_decorator(*args: Any, **kwargs: Any) -> Any:
-        view = args[0] if args else func.__self__
+        view = args[0] if args else getattr(func, "__self__", None)
         request = kwargs.get("request") or (args[1] if len(args) > 1 else None)
+        if request is None:
+            raise RuntimeError("Request is required for sqladmin route handlers")
+
         admin = getattr(view, "_admin_ref", view)
         auth_backend = getattr(admin, "authentication_backend", None)
         if auth_backend is not None:
@@ -72,6 +78,8 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
             if not bool(response):
                 return Redirect(request.url_for("admin:login"), status_code=302)
 
-        return await func(*args, **kwargs)
+        if inspect.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapper_decorator

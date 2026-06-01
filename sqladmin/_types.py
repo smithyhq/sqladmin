@@ -8,6 +8,7 @@ from typing import (
     runtime_checkable,
 )
 
+from litestar import Request
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from sqlalchemy.orm import (
@@ -17,7 +18,6 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 from sqlalchemy.sql.expression import Select
-from litestar import Request
 
 MODEL_PROPERTY = Union[ColumnProperty, RelationshipProperty]
 ENGINE_TYPE = Union[Engine, AsyncEngine]

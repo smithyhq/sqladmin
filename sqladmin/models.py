@@ -24,16 +24,16 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
+from litestar import Request
+from litestar.datastructures import URL
+from litestar.exceptions import HTTPException
+from litestar.response import Response, Stream
 from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import Select, select
-from litestar.datastructures import URL
-from litestar.exceptions import HTTPException
-from litestar import Request
-from litestar.response import Response, Stream
 from wtforms import Field, Form
 from wtforms.fields.core import UnboundField
 
@@ -729,8 +729,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
 
         self._list_formatters = self._build_column_pairs(self.column_formatters)
-        self._detail_formatters = self._build_column_pairs(
-            self.column_formatters_detail
+        self._detail_formatters = self._list_formatters.copy()
+        self._detail_formatters.update(
+            self._build_column_pairs(self.column_formatters_detail)
         )
 
         self._form_prop_names = self.get_form_columns()
@@ -806,10 +807,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         return str(request.url_for(f"admin:action-{self.identity}-{action_name}"))
 
     def _build_url_for(self, name: str, request: Request, obj: Any) -> URL:
-        return request.url_for(
-            name,
-            identity=slugify_class_name(obj.__class__.__name__),
-            pk=str(get_object_identifier(obj)),
+        return URL(
+            request.url_for(
+                name,
+                identity=slugify_class_name(obj.__class__.__name__),
+                pk=str(get_object_identifier(obj)),
+            )
         )
 
     def _get_prop_name(self, prop: MODEL_ATTR) -> str:
@@ -1335,11 +1338,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         filename = secure_filename(self.get_export_name(export_type="csv"))
 
-        return Stream(
+        response = Stream(
             content=stream_to_csv(generate),
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f"attachment;filename={filename}"},
         )
+        response.content = typing_cast(Any, response.iterator)
+        return response
 
     async def _export_json(
         self,
@@ -1366,11 +1371,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             yield "]"
 
         filename = secure_filename(self.get_export_name(export_type="json"))
-        return Stream(
+        response = Stream(
             content=generate(),
             media_type="application/json",
             headers={"Content-Disposition": f"attachment;filename={filename}"},
         )
+        response.content = typing_cast(Any, response.iterator)
+        return response
 
     async def custom_export_cell(
         self,

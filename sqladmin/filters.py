@@ -2,6 +2,7 @@ import datetime
 import re
 from typing import Any, Callable, List, Optional, Tuple, Type
 
+from litestar import Request
 from sqlalchemy import (
     BigInteger,
     Date,
@@ -15,7 +16,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql.expression import Select, select
 from sqlalchemy.sql.sqltypes import TypeEngine, _Binary
-from litestar import Request
 
 from sqladmin._types import MODEL_ATTR
 

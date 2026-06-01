@@ -3,7 +3,7 @@ import datetime
 import io
 import json
 from decimal import Decimal
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, Optional
 
 import pytest
 from litestar.response import Stream

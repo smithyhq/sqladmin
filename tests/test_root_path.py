@@ -61,7 +61,7 @@ def test_root_path_ajax_lookup_url_includes_root_path() -> None:
         response = client.get("/api/v1/admin/user/create")
         assert response.status_code == 200
         assert (
-            'data-url="http://testserver/api/v1/admin/user/ajax/lookup"'
+            'data-url="http://testserver.local/api/v1/admin/user/ajax/lookup"'
             in response.text
         )
 
@@ -78,7 +78,7 @@ def test_root_path_ajax_lookup_url_includes_root_path() -> None:
         response = client.get("/api/v1/admin/user/edit/1")
         assert response.status_code == 200
         assert (
-            'data-url="http://testserver/api/v1/admin/user/ajax/lookup"'
+            'data-url="http://testserver.local/api/v1/admin/user/ajax/lookup"'
             in response.text
         )
         assert "data_url=" not in response.text

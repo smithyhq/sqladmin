@@ -4,7 +4,6 @@ from sqladmin.flash import Flash
 from sqladmin.models import BaseView, ModelView
 from sqladmin.secret import Secret
 
-
 __all__ = [
     "Admin",
     "expose",

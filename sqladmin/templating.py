@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 import jinja2
-from litestar.datastructures import URL
 from litestar import Request
 from litestar.response import Response
 
@@ -16,15 +14,11 @@ class Jinja2Templates:
         self._static_file_names: set[str] = set()
 
         @jinja2.pass_context
-        def url_for(context: Dict, __name: str, **path_params: Any) -> URL:
+        def url_for(context: Dict, __name: str, **path_params: Any) -> str:
             request: Request = context["request"]
-            admin = context.get("admin")
             if __name in self._static_file_names and "path" in path_params:
-                if admin is not None and hasattr(admin, "base_url"):
-                    static_path = urljoin(f"{admin.base_url}/", f"statics/{path_params['path']}")
-                    return URL(static_path)
-                return request.url_for_static_asset(__name, path_params["path"])
-            return request.url_for(__name, **path_params)
+                return request.url_for(__name, file_path=path_params["path"])
+            return str(request.url_for(__name, **path_params))
 
         @jinja2.pass_context
         def url_for_static_asset(

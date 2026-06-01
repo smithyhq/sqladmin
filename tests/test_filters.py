@@ -4,6 +4,7 @@ from typing import Any, AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from litestar import Litestar
 from sqlalchemy import (
     Boolean,
     Column,
@@ -16,7 +17,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from litestar import Litestar
 
 from sqladmin import Admin, ModelView
 from sqladmin.filters import (

@@ -1,6 +1,8 @@
 from typing import Generator
 
 import pytest
+from litestar import Litestar
+from litestar.testing import TestClient
 from sqlalchemy import (
     Integer,
     String,
@@ -14,8 +16,6 @@ from sqlalchemy.orm import (
     mapped_column,
     sessionmaker,
 )
-from litestar import Litestar
-from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine

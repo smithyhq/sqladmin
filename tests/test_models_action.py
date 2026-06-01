@@ -203,7 +203,7 @@ def test_model_action(client: TestClient) -> None:
         "details-list-confirm": "!Details List Confirm?!",
         "label-details-confirm": "!Label Details Confirm?!",
         "label-details-list-confirm": "!Label Details List Confirm?!",
-        "label-list-confirm": "!List Confirm?!",
+        "label-list-confirm": "!Label List Confirm?!",
         "list-confirm": "!List Confirm?!",
     }
 
@@ -224,7 +224,7 @@ def test_model_action(client: TestClient) -> None:
             f"/admin/user/action/details?pks={user1.id},{user2.id}",
             follow_redirects=False,
         )
-        assert response.status_code == 307
+        assert response.status_code == 302
         assert f"User: {user1.id}" in response.headers["X-Objs"]
         assert f"User: {user2.id}" in response.headers["X-Objs"]
 

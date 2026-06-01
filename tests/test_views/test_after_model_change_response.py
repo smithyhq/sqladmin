@@ -6,12 +6,12 @@ from typing import Any, AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import Column, Integer, String, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
 from litestar import Litestar, Request
 from litestar.enums import MediaType
 from litestar.response import Response
+from sqlalchemy import Column, Integer, String, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from sqladmin import Admin, ModelView, Secret
 from tests.common import async_engine as engine
@@ -40,7 +40,10 @@ class TokenAdmin(ModelView, model=Token):
     ) -> Response | None:
         if model.name.startswith("resp-"):
             action = "created" if is_created else "updated"
-            return Response(content=f"custom-{action}-{model.name}", media_type=MediaType.TEXT)
+            return Response(
+                content=f"custom-{action}-{model.name}",
+                media_type=MediaType.TEXT,
+            )
         if model.name.startswith("bad-"):
             return "not a response"  # type: ignore[return-value]
         if model.name.startswith("secret-"):

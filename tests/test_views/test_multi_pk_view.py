@@ -1,10 +1,10 @@
 from typing import Generator
 
 import pytest
-from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Integer, String
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from litestar import Litestar
 from litestar.testing import TestClient
+from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Integer, String
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine

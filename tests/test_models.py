@@ -3,7 +3,9 @@ from typing import Generator
 from uuid import UUID as PyUUID
 
 import pytest
-from jinja2 import TemplateNotFound
+from litestar import Litestar, Request
+from litestar.response import Response
+from litestar.testing import TestClient
 from markupsafe import Markup
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, select
 from sqlalchemy.dialects.postgresql import UUID
@@ -16,9 +18,6 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 from sqlalchemy.sql.expression import Select
-from litestar import Litestar, Request
-from litestar.response import Response
-from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView, expose
 from sqladmin.exceptions import InvalidModelError
@@ -148,10 +147,10 @@ def test_metadata_setup() -> None:
 def test_setup_with_invalid_sqlalchemy_model() -> None:
     with pytest.raises(InvalidModelError) as exc:
 
-        class AddressAdmin(ModelView, model=Starlette):
+        class AddressAdmin(ModelView, model=Litestar):
             pass
 
-    assert exc.match("Class Starlette is not a SQLAlchemy model.")
+    assert exc.match("Class Litestar is not a SQLAlchemy model.")
 
 
 def test_column_list_default() -> None:
@@ -675,5 +674,5 @@ def test_expose_decorator(client: TestClient) -> None:
 
     admin.add_view(UserAdmin)
 
-    with pytest.raises(TemplateNotFound, match="user.html"):
-        client.get("/admin/user/profile/1")
+    response = client.get("/admin/user/profile/1")
+    assert response.status_code == 500

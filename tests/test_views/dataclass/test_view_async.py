@@ -2,6 +2,7 @@ from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from litestar import Litestar
 from sqlalchemy import Integer, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import (
@@ -10,7 +11,6 @@ from sqlalchemy.orm import (
     MappedAsDataclass,
     mapped_column,
 )
-from litestar import Litestar
 
 from sqladmin import Admin
 from sqladmin.models import ModelView

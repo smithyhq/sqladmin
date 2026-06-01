@@ -2,17 +2,17 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from sqlalchemy import Column, Integer, select
-from sqlalchemy.orm import declarative_base, sessionmaker
 from litestar import Litestar
 from litestar.testing import TestClient
+from sqlalchemy import Column, Integer, select
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 fastapi_storages = pytest.importorskip("fastapi_storages")
-from fastapi_storages import FileSystemStorage, StorageFile
-from fastapi_storages.integrations.sqlalchemy import FileType
+from fastapi_storages import FileSystemStorage, StorageFile  # noqa: E402
+from fastapi_storages.integrations.sqlalchemy import FileType  # noqa: E402
 
-from sqladmin import Admin, ModelView
-from tests.common import sync_engine as engine
+from sqladmin import Admin, ModelView  # noqa: E402
+from tests.common import sync_engine as engine  # noqa: E402
 
 Base = declarative_base()  # type: Any
 session_maker = sessionmaker(bind=engine)

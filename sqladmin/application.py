@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import inspect
-import io
 import logging
 import mimetypes
 import os
+import re
 from types import MethodType
 from typing import (
     Any,
@@ -17,13 +17,12 @@ from urllib.parse import parse_qsl, urljoin
 
 import anyio
 from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
-from litestar import Litestar, MediaType, Request, asgi
-from litestar.datastructures import URL, FormMultiDict, UploadFile
+from litestar import Litestar, MediaType, Request
+from litestar.datastructures import FormMultiDict, UploadFile
 from litestar.exceptions import HTTPException
 from litestar.handlers import HTTPRouteHandler
 from litestar.middleware import DefineMiddleware
 from litestar.response import Redirect, Response
-from litestar.static_files.config import StaticFilesConfig
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
@@ -53,6 +52,11 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 _STATICS_DIRECTORY: str = os.path.join(os.path.dirname(__file__), "statics")
+_UNTYPED_PATH_PARAM_RE = re.compile(r"{([A-Za-z_][A-Za-z0-9_]*)}")
+
+
+def _ensure_typed_path_params(path: str) -> str:
+    return _UNTYPED_PATH_PARAM_RE.sub(r"{\1:str}", path)
 
 
 async def _serve_static_file(request: Request) -> Response:
@@ -125,8 +129,6 @@ class BaseAdmin:
 
         self.middlewares = list(middlewares or [])
         self.authentication_backend = authentication_backend
-        if authentication_backend:
-            self.middlewares.extend(authentication_backend.middlewares)
 
         self.templates = self.init_templating_engine()
         self._views: list[BaseView | ModelView] = []
@@ -253,14 +255,17 @@ class BaseAdmin:
     ) -> None:
         if hasattr(func, "_exposed"):
             if view.is_model:
-                path = f"{self.base_url}/{view_instance.identity}" + getattr(
-                    func, "_path"
+                path = _ensure_typed_path_params(
+                    f"{self.base_url}/{view_instance.identity}"
+                    + getattr(func, "_path")
                 )
                 name = f"view-{view_instance.identity}-{func.__name__}"
             else:
                 identity = getattr(func, "_identity")
                 view.identity = identity
-                path = f"{self.base_url}" + getattr(func, "_path")
+                path = _ensure_typed_path_params(
+                    f"{self.base_url}" + getattr(func, "_path")
+                )
                 name = identity
 
             from sqladmin.authentication import login_required
@@ -512,30 +517,75 @@ class Admin(BaseAdminView):
             )
         )
 
-        # Build and register route handlers directly on the main app
-        # with full paths (including base_url) so that request.url_for works correctly.
-        route_defs: list[tuple[str, str, list[str], Any]] = [
-            (f"{self.base_url}/", "admin:index", ["GET"], self.index),
-            (f"{self.base_url}/{{identity:str}}/list", "admin:list", ["GET"], self.list),
-            (f"{self.base_url}/{{identity:str}}/details/{{pk:str}}", "admin:details", ["GET"], self.details),
-            (f"{self.base_url}/{{identity:str}}/delete", "admin:delete", ["DELETE"], self.delete, 200),
-            (f"{self.base_url}/{{identity:str}}/create", "admin:create", ["GET", "POST"], self.create),
-            (f"{self.base_url}/{{identity:str}}/edit/{{pk:str}}", "admin:edit", ["GET", "POST"], self.edit),
-            (f"{self.base_url}/{{identity:str}}/export/{{export_type:str}}", "admin:export", ["GET"], self.export),
-            (f"{self.base_url}/{{identity:str}}/ajax/lookup", "admin:ajax_lookup", ["GET"], self.ajax_lookup),
-            (f"{self.base_url}/login", "admin:login", ["GET", "POST"], self.login),
-            (f"{self.base_url}/logout", "admin:logout", ["GET"], self.logout),
+        route_defs: list[tuple[str, str, list[str], Any, int]] = [
+            (f"{self.base_url}/", "admin:index", ["GET"], self.index, 200),
+            (
+                f"{self.base_url}/{{identity:str}}/list",
+                "admin:list",
+                ["GET"],
+                self.list,
+                200,
+            ),
+            (
+                f"{self.base_url}/{{identity:str}}/details/{{pk:str}}",
+                "admin:details",
+                ["GET"],
+                self.details,
+                200,
+            ),
+            (
+                f"{self.base_url}/{{identity:str}}/delete",
+                "admin:delete",
+                ["DELETE"],
+                self.delete,
+                200,
+            ),
+            (
+                f"{self.base_url}/{{identity:str}}/create",
+                "admin:create",
+                ["GET", "POST"],
+                self.create,
+                200,
+            ),
+            (
+                f"{self.base_url}/{{identity:str}}/edit/{{pk:str}}",
+                "admin:edit",
+                ["GET", "POST"],
+                self.edit,
+                200,
+            ),
+            (
+                f"{self.base_url}/{{identity:str}}/export/{{export_type:str}}",
+                "admin:export",
+                ["GET"],
+                self.export,
+                200,
+            ),
+            (
+                f"{self.base_url}/{{identity:str}}/ajax/lookup",
+                "admin:ajax_lookup",
+                ["GET"],
+                self.ajax_lookup,
+                200,
+            ),
+            (
+                f"{self.base_url}/login",
+                "admin:login",
+                ["GET", "POST"],
+                self.login,
+                200,
+            ),
+            (f"{self.base_url}/logout", "admin:logout", ["GET"], self.logout, 200),
         ]
 
-        for entry in route_defs:
-            path, name, methods, handler = entry[:4]
-            status_code = entry[4] if len(entry) > 4 else None
+        for path, name, methods, handler, status_code in route_defs:
             kwargs: dict[str, Any] = {
-                "path": path, "name": name, "http_method": methods,
+                "path": path,
+                "name": name,
+                "http_method": methods,
                 "middleware": middlewares,
+                "status_code": status_code,
             }
-            if status_code is not None:
-                kwargs["status_code"] = status_code
             self.app.register(HTTPRouteHandler(**kwargs)(handler))
 
     def _register_route(self, handler: Any) -> None:
@@ -574,7 +624,7 @@ class Admin(BaseAdminView):
 
         if request_page > pagination.page:
             url = include_query_params(request.url, page=str(pagination.page))
-            return Redirect(path=url, status_code=302)
+            return Redirect(path=str(url), status_code=302)
 
         context = {"model_view": model_view, "pagination": pagination}
 
@@ -585,7 +635,7 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(
                 request, model_view.list_template, context
             )
-        except Exception as exc:
+        except Exception:
             logger.exception("Error rendering list template")
             raise
 
@@ -640,7 +690,7 @@ class Admin(BaseAdminView):
 
         list_url = request.url_for("admin:list", identity=identity)
         if referer_params:
-            list_url = include_query_params(URL(list_url), **referer_params)
+            list_url = include_query_params(list_url, **referer_params)
         return Response(
             content=str(list_url),
             media_type="text/plain",
@@ -918,16 +968,32 @@ class Admin(BaseAdminView):
             empty_upload = len(await value.read(1)) != 1
             await value.seek(0)
             if should_clear:
-                form_data.append((key, UploadFile(content=b"")))
+                form_data.append(
+                    (
+                        key,
+                        UploadFile(
+                            content_type="application/octet-stream",
+                            filename="",
+                            file_data=b"",
+                        ),
+                    )
+                )
             elif empty_upload and obj and getattr(obj, key):
                 f = getattr(obj, key)
+                file = f.open()
+                try:
+                    file_data = file.read()
+                finally:
+                    close = getattr(file, "close", None)
+                    if close is not None:
+                        close()
                 form_data.append(
                     (
                         key,
                         UploadFile(
                             filename=f.name,
                             content_type=f.content_type,
-                            file_data=f.open(),
+                            file_data=file_data,
                         ),
                     )
                 )

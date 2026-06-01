@@ -2,6 +2,8 @@ from typing import Any, Generator
 from uuid import UUID
 
 import pytest
+from litestar import Litestar
+from litestar.testing import TestClient
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import (
     Mapped,
@@ -10,8 +12,6 @@ from sqlalchemy.orm import (
     relationship,
     sessionmaker,
 )
-from litestar import Litestar
-from litestar.testing import TestClient
 
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine

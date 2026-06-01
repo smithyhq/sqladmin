@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, AsyncGenerator, List
+from typing import TYPE_CHECKING, Any, AsyncGenerator, List, cast
 
 from litestar.response import Stream
 
@@ -67,9 +67,10 @@ class PrettyExport:
                 yield writer.writerow(vals)
 
         filename = secure_filename(model_view.get_export_name(export_type="csv"))
-
-        return Stream(
+        response = Stream(
             content=stream_to_csv(generate),
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment;filename={filename}"},
         )
+        response.content = cast(Any, response.iterator)
+        return response

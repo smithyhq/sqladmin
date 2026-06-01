@@ -204,6 +204,7 @@ Usage in templates:
 ```
 
 # Template Blocks
+
 The SQLAdmin templates use blocks to allow easy customization and extension of the templates. Here is a list of the main blocks available SQLAdmin templates:
 
 | Block Name              | Description                                                       |
@@ -224,6 +225,6 @@ The SQLAdmin templates use blocks to allow easy customization and extension of t
 | `action_buttons_bottom` | The action buttons at the bottom of details view                  |
 | `model_list_table`      | The table displaying records in the list view                     |
 | `model_menu_bar`        | The menu bar at the top of model list view                        |
-
+| Block Name              | Description                                                       |
 
 You can override these blocks in your custom templates to modify the layout and appearance of the admin interface as needed.

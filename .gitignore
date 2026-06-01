@@ -18,6 +18,3 @@ coverage.xml
 dist/
 site/
 .idea/
-demo_app/*.db
-demo_app/*.db-*
-demo_app/venv/

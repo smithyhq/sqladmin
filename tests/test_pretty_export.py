@@ -371,6 +371,9 @@ class TestPrettyExport:
         model_view = UserAdmin()
         response = await model_view._export_json([User(id=1)])
 
+        assert isinstance(response, StreamingResponse)
+        assert response.media_type == "application/json"
+
         content = await self._get_csv_content(response)
         payload = json.loads(content)
 

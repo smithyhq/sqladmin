@@ -1,6 +1,7 @@
 import enum
 import math
 from typing import Generator
+from uuid import UUID as PyUUID
 
 import pytest
 from jinja2 import TemplateNotFound
@@ -8,8 +9,10 @@ from markupsafe import Markup
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, select
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import (
+    Mapped,
     contains_eager,
     declarative_base,
+    mapped_column,
     relationship,
     sessionmaker,
 )
@@ -31,7 +34,7 @@ from tests.common import sync_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: ignore
+Base = declarative_base()
 session_maker = sessionmaker(bind=engine)
 
 app = Starlette()
@@ -102,6 +105,17 @@ class Profile(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
 
     user = relationship("User", back_populates="profile")
+
+
+class Shipment(Base):
+    __tablename__ = "shipments"
+
+    id = Column(Integer, primary_key=True)
+    origin_address_id = Column(Integer, ForeignKey("addresses.id"))
+    destination_address_id = Column(Integer, ForeignKey("addresses.id"))
+
+    origin_address = relationship("Address", foreign_keys=[origin_address_id])
+    destination_address = relationship("Address", foreign_keys=[destination_address_id])
 
 
 @pytest.fixture(autouse=True)
@@ -229,8 +243,7 @@ async def test_column_formatters_detail() -> None:
 
 
 async def test_column_formatters_default() -> None:
-    class ProfileAdmin(ModelView, model=Profile):
-        ...
+    class ProfileAdmin(ModelView, model=Profile): ...
 
     user = User(id=1, name="Long Name")
     profile = Profile(user=user, is_active=True)
@@ -419,9 +432,18 @@ def test_get_python_type_postgresql() -> None:
     get_column_python_type(PostgresModel.uuid) is str
 
 
+@pytest.mark.skipif(engine.name != "postgresql", reason="PostgreSQL only")
+def test_get_python_annotated_type_postgresql() -> None:
+    class PostgresModel(Base):
+        __tablename__ = "postgres_model2"
+
+        uuid: Mapped[PyUUID] = mapped_column(primary_key=True)
+
+    get_column_python_type(PostgresModel.uuid) is str
+
+
 def test_model_default_sort() -> None:
-    class UserAdmin(ModelView, model=User):
-        ...
+    class UserAdmin(ModelView, model=User): ...
 
     assert UserAdmin()._get_default_sort() == [("id", False)]
 
@@ -557,8 +579,7 @@ async def test_model_property_in_columns() -> None:
 
 
 def test_sort_query() -> None:
-    class AddressAdmin(ModelView, model=Address):
-        ...
+    class AddressAdmin(ModelView, model=Address): ...
 
     query = select(Address)
 
@@ -575,6 +596,33 @@ def test_sort_query() -> None:
     assert "ORDER BY profiles.role ASC" in str(stmt)
 
 
+def test_count_query() -> None:
+    class AddressAdmin(ModelView, model=Address): ...
+
+    request = Request({"type": "http"})
+    stmt = AddressAdmin().count_query(request)
+    assert "SELECT count(addresses.id) AS count_1" in str(stmt)
+
+
+async def test_count_multi_bind() -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import declarative_base
+
+    OtherBase = declarative_base()
+    other_engine = create_engine("sqlite:///:memory:")
+
+    multi_bind_session_maker = sessionmaker(
+        binds={Base: engine, OtherBase: other_engine}
+    )
+
+    class AddressAdmin(ModelView, model=Address):
+        session_maker = multi_bind_session_maker
+
+    request = Request({"type": "http"})
+    count = await AddressAdmin().count(request)
+    assert count == 0
+
+
 def test_search_query() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_searchable_list = ["user.name", "user.profile.role"]
@@ -582,6 +630,55 @@ def test_search_query() -> None:
     stmt = AddressAdmin().search_query(select(Address), "example")
     assert "lower(CAST(users.name AS VARCHAR))" in str(stmt)
     assert "lower(CAST(profiles.role AS VARCHAR))" in str(stmt)
+
+
+def test_sort_multi_fields_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = [Address.id, User.id, User.name]
+
+    query = select(Address)
+    request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
+    stmt = AddressAdmin().sort_query(query, request)
+
+    stmt_str = str(stmt)
+    assert "ORDER BY users.id ASC" in stmt_str
+    assert stmt_str.count("JOIN") == 1
+
+
+def test_search_multi_fields_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name", "user.id"]
+
+    stmt = AddressAdmin().search_query(select(Address), "example")
+    assert str(stmt).count("JOIN") == 1
+
+
+def test_sort_then_search_no_duplicate_joins() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name"]
+        column_sortable_list = [User.id]
+
+    query = select(Address)
+    request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
+
+    stmt = AddressAdmin().sort_query(query, request)
+    stmt_after_sort = str(stmt)
+    assert stmt_after_sort.count("JOIN") == 1
+
+    stmt = AddressAdmin().search_query(stmt, "test")
+    stmt_after_search = str(stmt)
+    assert stmt_after_search.count("JOIN") == 1
+
+
+def test_search_two_fks_to_same_model() -> None:
+    class ShipmentAdmin(ModelView, model=Shipment):
+        column_searchable_list = ["origin_address.name", "destination_address.name"]
+
+    stmt = ShipmentAdmin().search_query(select(Shipment), "example")
+    stmt_str = str(stmt)
+    assert stmt_str.count("JOIN") == 2
+    assert "origin_address_id" in stmt_str
+    assert "destination_address_id" in stmt_str
 
 
 def test_expose_decorator(client: TestClient) -> None:

@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     Union,
@@ -23,22 +24,23 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, asc, cast, desc, func, inspect, or_
+from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
-from sqlalchemy.orm import selectinload, sessionmaker
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import Select, select
 from starlette.datastructures import URL
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response, StreamingResponse
 from wtforms import Field, Form
 from wtforms.fields.core import UnboundField
 
 from sqladmin._queries import Query
 from sqladmin._types import (
     MODEL_ATTR,
+    SESSION_MAKER,
     ColumnFilter,
     OperationColumnFilter,
     SimpleColumnFilter,
@@ -49,6 +51,7 @@ from sqladmin.formatters import BASE_FORMATTERS
 from sqladmin.forms import ModelConverter, ModelConverterBase, get_model_form
 from sqladmin.helpers import (
     Writer,
+    default_encoder,
     get_object_identifier,
     get_primary_keys,
     object_identifier_values,
@@ -64,8 +67,6 @@ from sqladmin.pretty_export import PrettyExport
 from sqladmin.templating import Jinja2Templates
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import async_sessionmaker
-
     from sqladmin.application import BaseAdmin
 
 __all__ = [
@@ -83,8 +84,8 @@ class ModelViewMeta(type):
     """
 
     @no_type_check
-    def __new__(mcls, name, bases, attrs: dict, **kwargs: Any):
-        cls: Type["ModelView"] = super().__new__(mcls, name, bases, attrs)
+    def __new__(mcs, name, bases, attrs: dict, **kwargs: Any):
+        cls: Type["ModelView"] = super().__new__(mcs, name, bases, attrs)
 
         model = kwargs.get("model")
 
@@ -93,10 +94,10 @@ class ModelViewMeta(type):
 
         try:
             inspect(model)
-        except NoInspectionAvailable:
+        except NoInspectionAvailable as exc:
             raise InvalidModelError(
                 f"Class {model.__name__} is not a SQLAlchemy model."
-            )
+            ) from exc
 
         cls.pk_columns = get_primary_keys(model)
         cls.identity = slugify_class_name(model.__name__)
@@ -105,21 +106,19 @@ class ModelViewMeta(type):
         cls.name = attrs.get("name", prettify_class_name(cls.model.__name__))
         cls.name_plural = attrs.get("name_plural", f"{cls.name}s")
 
-        mcls._check_conflicting_options(["column_list", "column_exclude_list"], attrs)
-        mcls._check_conflicting_options(
-            ["form_columns", "form_excluded_columns"], attrs
-        )
-        mcls._check_conflicting_options(
+        mcs._check_conflicting_options(["column_list", "column_exclude_list"], attrs)
+        mcs._check_conflicting_options(["form_columns", "form_excluded_columns"], attrs)
+        mcs._check_conflicting_options(
             ["column_details_list", "column_details_exclude_list"], attrs
         )
-        mcls._check_conflicting_options(
+        mcs._check_conflicting_options(
             ["column_export_list", "column_export_exclude_list"], attrs
         )
 
         return cls
 
     @classmethod
-    def _check_conflicting_options(mcls, keys: List[str], attrs: dict) -> None:
+    def _check_conflicting_options(mcs, keys: List[str], attrs: dict) -> None:
         if all(k in attrs for k in keys):
             raise AssertionError(f"Cannot use {' and '.join(keys)} together.")
 
@@ -212,7 +211,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Internals
     pk_columns: ClassVar[Tuple[Column]]
-    session_maker: ClassVar[Union[sessionmaker, "async_sessionmaker"]]
+    session_maker: ClassVar[SESSION_MAKER]
     is_async: ClassVar[bool] = False
     is_model: ClassVar[bool] = True
     ajax_lookup_url: ClassVar[str] = ""
@@ -320,6 +319,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         class UserAdmin(ModelView, model=User):
             column_searchable_list = [User.name]
         ```
+    """
+
+    search_auto_submit: ClassVar[bool] = True
+    """Automatically submit search while typing in list view.
+
+    When set to `True`, typing in the search input triggers a delayed search.
+    Set to `False` to require pressing `Enter` or clicking the search button.
     """
 
     column_filters: ClassVar[Sequence[ColumnFilter]] = []
@@ -455,7 +461,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Template configuration
     show_compact_lists: ClassVar[bool] = True
-    """Show compact lists. Default is `True`. 
+    """Show compact lists. Default is `True`.
     If False, when showing lists of objects, each object will be \
     displayed in a separate line."""
 
@@ -496,7 +502,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
     Enable export of CSV files using column labels and column formatters.
 
-    If set to True, the export will apply column labels and formatting logic 
+    If set to True, the export will apply column labels and formatting logic
     used in the list template.
     Otherwise, raw database values and field names will be used.
 
@@ -832,8 +838,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 return self.column_default_sort
             if isinstance(self.column_default_sort, tuple):
                 return [self.column_default_sort]
-            else:
-                return [(self.column_default_sort, False)]
+
+            return [(self.column_default_sort, False)]
 
         return [(pk.name, False) for pk in self.pk_columns]
 
@@ -850,10 +856,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         try:
             return int(number)
-        except ValueError:
+        except ValueError as exc:
             raise HTTPException(
                 status_code=400, detail="Invalid page or pageSize parameter"
-            )
+            ) from exc
 
     async def count(self, request: Request, stmt: Optional[Select] = None) -> int:
         if stmt is None:
@@ -870,18 +876,26 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         stmt = self.list_query(request)
         stmt = self.add_relation_loads(stmt)
 
-        for filter in self.get_filters():
-            filter_param_name = filter.parameter_name
+        for filter_ in self.get_filters():
+            filter_param_name = filter_.parameter_name
+            filter_value = request.query_params.get(filter_param_name)
 
-            # Handle DateRangeFilter specially
-            if hasattr(filter, "is_date_filter") and filter.is_date_filter:
-                start_param = request.query_params.get(f"{filter_param_name}_start")
-                end_param = request.query_params.get(f"{filter_param_name}_end")
-                if start_param or end_param:
-                    date_range = {"start": start_param, "end": end_param}
-                    simple_filter = typing_cast(SimpleColumnFilter, filter)
+            if filter_value:
+                if hasattr(filter_, "has_operator") and filter_.has_operator:
+                    # Use operation-based filtering
+                    operation_filter = typing_cast(OperationColumnFilter, filter_)
+                    operation_param = request.query_params.get(
+                        f"{filter_param_name}_op"
+                    )
+                    if operation_param:
+                        stmt = await operation_filter.get_filtered_query(
+                            stmt, operation_param, filter_value, self.model
+                        )
+                else:
+                    # Use simple filtering for filters without operators
+                    simple_filter = typing_cast(SimpleColumnFilter, filter_)
                     stmt = await simple_filter.get_filtered_query(
-                        stmt, date_range, self.model
+                        stmt, filter_value, self.model
                     )
             else:
                 # Support both single value and multiple values
@@ -924,7 +938,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             else:
                 stmt = self.search_query(stmt=stmt, term=search)
 
-        count = await self.count(request, select(func.count()).select_from(stmt))
+        count = await self.count(
+            request, select(func.count()).select_from(stmt.subquery())
+        )
 
         stmt = stmt.limit(page_size).offset((page - 1) * page_size)
         rows = await self._run_query(stmt)
@@ -1025,14 +1041,16 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """This function generalizes constructing a list of columns
         for any sequence of inclusions or exclusions.
         """
-
         if include == "__all__":
             return self._prop_names
-        elif include:
+
+        if include:
             return [self._get_prop_name(item) for item in include]
-        elif exclude:
+
+        if exclude:
             exclude = [self._get_prop_name(item) for item in exclude]
             return [prop for prop in self._prop_names if prop not in exclude]
+
         return defaults
 
     def get_list_columns(self) -> List[str]:
@@ -1101,10 +1119,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> None:
+    ) -> Response | None:
         """Perform some actions after a model was created
         or updated and committed to the database.
-        By default does nothing.
+
+        The return value controls the HTTP response:
+
+        * ``None`` (default) -- redirect as usual.
+        * ``Response`` -- return a custom Starlette ``Response`` directly.
         """
 
     def _build_column_pairs(
@@ -1135,13 +1157,31 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         By default do nothing.
         """
 
+    async def check_can_view_details(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before view details.
+        """
+        return self.can_view_details
+
+    async def check_can_edit(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before edit.
+        """
+        return self.can_edit
+
+    async def check_can_delete(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before delete.
+        """
+        return self.can_delete
+
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
         if self.form is not None:
             return self.form
 
         form = await get_model_form(
             model=self.model,
-            session_maker=self.session_maker,
+            session_maker=self.session_maker,  # type: ignore[arg-type]
             only=self._form_prop_names,
             column_labels=self._column_labels,
             form_args=self.form_args,
@@ -1176,6 +1216,38 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
         return ", ".join(field_names)
 
+    def _join_relationship_paths(
+        self,
+        stmt: Select,
+        field_path: str,
+        joined_paths: Set[str],
+    ) -> Tuple[Select, Any]:
+        """Join relationship paths and return the statement and target model.
+
+        Navigates through a dotted relationship path (e.g. ``user.profile.role``)
+        and joins each segment via its relationship attribute, which lets
+        SQLAlchemy pick the correct foreign key when a model has multiple
+        relationships to the same target. Paths are tracked to avoid duplicate
+        joins within a single call; SQLAlchemy itself dedupes joins on the same
+        relationship attribute across calls.
+        """
+        model = self.model
+        parts = field_path.split(".")
+
+        current_path = ""
+        for part in parts[:-1]:
+            current_path = f"{current_path}.{part}" if current_path else part
+            relationship_attr = getattr(model, part)
+            next_model = relationship_attr.mapper.class_
+
+            if current_path not in joined_paths:
+                stmt = stmt.join(relationship_attr)
+                joined_paths.add(current_path)
+
+            model = next_model
+
+        return stmt, model
+
     def search_query(self, stmt: Select, term: str) -> Select:
         """Specify the search query given the SQLAlchemy statement
         and term to search for.
@@ -1187,17 +1259,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
         expressions = []
+        joined_paths: Set[str] = set()
+
         for field in self._search_fields:
-            model = self.model
+            stmt, model = self._join_relationship_paths(stmt, field, joined_paths)
             parts = field.split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = self._safe_join(stmt, model)
+            field_attr = getattr(model, parts[-1])
+            expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
-            field = getattr(model, parts[-1])
-            expressions.append(cast(field, String).ilike(f"%{term}%"))
-
-        return stmt.filter(or_(*expressions))
+        return stmt.filter(or_(false(), *expressions))
 
     async def async_search_query(
         self, stmt: Select, term: str, request: Request
@@ -1219,7 +1289,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         customized. By default it will select all objects without any filters.
         """
 
-        return self.form_edit_query(request)
+        return self.form_details_query(request)
+
+    def form_details_query(self, request: Request) -> Select:
+        """
+        The SQLAlchemy select expression used for the details page which can be
+        customized. By default it will select the object by primary key(s) without any
+        additional filters.
+        """
+        stmt = self._stmt_by_identifier(request.path_params["pk"])
+        for relation in self._details_relations:
+            stmt = stmt.options(selectinload(relation))
+        return stmt
 
     def edit_form_query(self, request: Request) -> Select:
         msg = (
@@ -1247,7 +1328,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         By default it will select all objects without any filters.
         """
 
-        return select(func.count(self.pk_columns[0]))
+        return select(func.count(self.pk_columns[0])).select_from(self.model)
 
     def sort_query(self, stmt: Select, request: Request) -> Select:
         """
@@ -1265,13 +1346,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         else:
             sort_fields = self._get_default_sort()
 
-        for sort_field, is_desc in sort_fields:
-            model = self.model
+        joined_paths: Set[str] = set()
 
-            parts = self._get_prop_name(sort_field).split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = self._safe_join(stmt, model)
+        for sort_field, is_desc in sort_fields:
+            field_path = self._get_prop_name(sort_field)
+            stmt, model = self._join_relationship_paths(stmt, field_path, joined_paths)
+            parts = field_path.split(".")
 
             if is_desc:
                 stmt = stmt.order_by(desc(getattr(model, parts[-1])))
@@ -1300,7 +1380,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         elif export_type == "json":
             if self.use_pretty_export:
                 return await PrettyExport.pretty_export_json(self, data)
-            return await self._export_json(data)
+            else:
+                return await self._export_json(data)
+
         raise NotImplementedError("Only export_type='csv' or 'json' is implemented.")
 
     async def _export_csv(
@@ -1331,6 +1413,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     async def _export_json(
         self,
         data: List[Any],
+        ensure_ascii: bool = False,
     ) -> StreamingResponse:
         async def generate() -> AsyncGenerator[str, None]:
             yield "["
@@ -1340,12 +1423,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
             for idx, row in enumerate(data):
                 row_dict = {
-                    name: str(await self.get_prop_value(row, name))
+                    name: await self.get_prop_value(row, name)
                     for name in self._export_prop_names
                 }
-                yield json.dumps(row_dict, ensure_ascii=False) + (
-                    separator if idx < last_idx else ""
-                )
+                yield json.dumps(
+                    row_dict,
+                    default=default_encoder,
+                    ensure_ascii=ensure_ascii,
+                ) + (separator if idx < last_idx else "")
 
             yield "]"
 

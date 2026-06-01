@@ -55,7 +55,7 @@
                 <div class="dropdown col-4">
                   <button {% if not model_view.can_delete and not model_view._custom_actions_in_list %} disabled {%
                     endif %} class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Actions
                   </button>
                   {% if model_view.can_delete or model_view._custom_actions_in_list %}
@@ -221,7 +221,7 @@
               </ul>
               <div class="dropdown text-muted">
                 Show
-                <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true"
                   aria-expanded="false">
                   {{ request.query_params.get("pageSize") or model_view.page_size }} / Page
                 </a>

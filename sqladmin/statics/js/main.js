@@ -150,6 +150,15 @@ $("#select-all").click(function () {
   $('input.select-box:checkbox').prop('checked', this.checked);
 });
 
+function showModal(modalId) {
+  var modalElement = document.getElementById(modalId);
+  if (!modalElement) {
+    return;
+  }
+  // Use Tabler bundled Bootstrap.
+  window.tabler.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+}
+
 // Bulk delete
 $("#action-delete").click(function () {
   var pks = [];
@@ -161,7 +170,7 @@ $("#action-delete").click(function () {
 
   $('#action-delete').data("pk", pks);
   $('#action-delete').data("url", $(this).data('url') + '?pks=' + pks.join(","));
-  $('#modal-delete').modal('show');
+  showModal('modal-delete');
 });
 
 $("[id^='action-custom-']").click(function () {

@@ -33,7 +33,7 @@ from sqlalchemy.sql.expression import Select, select
 from starlette.datastructures import URL
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response, StreamingResponse
 from wtforms import Field, Form
 from wtforms.fields.core import UnboundField
 
@@ -1114,7 +1114,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> None:
+    ) -> Response | None:
         """Perform some actions after a model was created
         or updated and committed to the database.
         By default does nothing.
@@ -1274,7 +1274,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         customized. By default it will select all objects without any filters.
         """
 
-        return self.form_edit_query(request)
+        return self.form_details_query(request)
+
+    def form_details_query(self, request: Request) -> Select:
+        """
+        The SQLAlchemy select expression used for the details page which can be
+        customized. By default it will select the object by primary key(s) without any
+        additional filters.
+        """
+        stmt = self._stmt_by_identifier(request.path_params["pk"])
+        for relation in self._details_relations:
+            stmt = stmt.options(selectinload(relation))
+        return stmt
 
     def edit_form_query(self, request: Request) -> Select:
         msg = (

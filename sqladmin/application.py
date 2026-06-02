@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import URL, FormData, MultiDict, UploadFile
 from starlette.exceptions import HTTPException
-from starlette.formparsers import MultiPartException
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import (
@@ -419,7 +418,6 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
-        form_max_fields: int = 5000,
     ) -> None:
         """
         Args:
@@ -432,7 +430,6 @@ class Admin(BaseAdminView):
             logo_width: Width of the logo image in pixels. Defaults to 64.
             logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
-            form_max_fields: Max fields in form submissions. Default is 5000.
         """
 
         super().__init__(
@@ -451,7 +448,6 @@ class Admin(BaseAdminView):
         )
 
         statics = StaticFiles(packages=["sqladmin"])
-        self.form_max_fields = form_max_fields
 
         async def http_exception(
             request: Request, exc: Exception
@@ -628,10 +624,7 @@ class Admin(BaseAdminView):
         model_view = self._find_model_view(identity)
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
-        try:
-            form_data = await self._handle_form_data(request)
-        except MultiPartException as e:
-            return Response(content=str(e), status_code=400)
+        form_data = await self._handle_form_data(request)
         form = Form(form_data)
 
         context = {
@@ -682,11 +675,10 @@ class Admin(BaseAdminView):
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
 
+        Form = await model_view.scaffold_form(model_view._form_edit_rules)
         model = await model_view.get_object_for_edit(request)
         if not model:
             raise HTTPException(status_code=404)
-
-        Form = await model_view.scaffold_form(model_view._form_edit_rules)
         initial_data = await model_view.get_form_data_for_edit(model)
         context = {
             "obj": model,
@@ -699,10 +691,7 @@ class Admin(BaseAdminView):
                 request, model_view.edit_template, context
             )
 
-        try:
-            form_data = await self._handle_form_data(request)
-        except MultiPartException as e:
-            return Response(content=str(e), status_code=400)
+        form_data = await self._handle_form_data(request, model)
         form = Form(form_data)
         if not form.validate():
             context["form"] = form
@@ -834,19 +823,15 @@ class Admin(BaseAdminView):
 
         return request.url_for("admin:create", identity=identity)
 
-    async def _handle_form_data(
-        self,
-        request: Request,
-        obj: Any = None,
-        max_fields: int | None = None,
-    ) -> FormData:
+    @staticmethod
+    async def _handle_form_data(request: Request, obj: Any = None) -> FormData:
         """
         Handle form data and modify in case of UploadFile.
         This is needed since in edit page
         there's no way to show current file of object.
         """
-        max_fields = max_fields or self.form_max_fields
-        form = await request.form(max_fields=max_fields)
+
+        form = await request.form()
         form_data: list[tuple[str, str | UploadFile]] = []
         for key, value in form.multi_items():
             if not isinstance(value, UploadFile):

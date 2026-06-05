@@ -3425,7 +3425,9 @@
 <span class="normal">1420</span>
 <span class="normal">1421</span>
 <span class="normal">1422</span>
-<span class="normal">1423</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ModelView</span><span class="p">(</span><span class="n">BaseView</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelViewMeta</span><span class="p">):</span>
+<span class="normal">1423</span>
+<span class="normal">1424</span>
+<span class="normal">1425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ModelView</span><span class="p">(</span><span class="n">BaseView</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelViewMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for defining admnistrative behaviour for the model.</span>
 
 <span class="sd">    ???+ usage</span>
@@ -4518,6 +4520,8 @@
         <span class="n">sort</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">query_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sort&quot;</span><span class="p">,</span> <span class="s2">&quot;asc&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">sort_by</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sort_by</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sort_fields</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid sortBy parameter&quot;</span><span class="p">)</span>
             <span class="n">sort_fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">sort_by</span><span class="p">,</span> <span class="n">sort</span> <span class="o">==</span> <span class="s2">&quot;desc&quot;</span><span class="p">)]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sort_fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_sort</span><span class="p">()</span>
@@ -5785,10 +5789,9 @@ If not set, will use default Flask-Admin form rendering logic.</p>
 
         <p>Dictionary of value type formatters to be used in the list view.</p>
 <p>By default, two types are formatted:</p>
-<div class="codehilite"><pre><span></span><code>- None will be displayed as an empty string
+<div class="highlight"><pre><span></span><code>- None will be displayed as an empty string
 - bool will be displayed as a checkmark if it is True otherwise as an X.
 </code></pre></div>
-
 <p>If you don't like the default behavior and don't want any type formatters applied,
 just override this property with an empty dictionary:</p>
 <details class="example" open="open">
@@ -6155,7 +6158,9 @@ By default, sorting takes place by default fields.</p>
 <span class="normal">1302</span>
 <span class="normal">1303</span>
 <span class="normal">1304</span>
-<span class="normal">1305</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sort_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+<span class="normal">1305</span>
+<span class="normal">1306</span>
+<span class="normal">1307</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sort_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A method that is called every time the fields are sorted</span>
 <span class="sd">    and that can be customized.</span>
@@ -6167,6 +6172,8 @@ By default, sorting takes place by default fields.</p>
     <span class="n">sort</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">query_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sort&quot;</span><span class="p">,</span> <span class="s2">&quot;asc&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sort_by</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sort_by</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sort_fields</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid sortBy parameter&quot;</span><span class="p">)</span>
         <span class="n">sort_fields</span> <span class="o">=</span> <span class="p">[(</span><span class="n">sort_by</span><span class="p">,</span> <span class="n">sort</span> <span class="o">==</span> <span class="s2">&quot;desc&quot;</span><span class="p">)]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sort_fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_sort</span><span class="p">()</span>

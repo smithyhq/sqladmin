@@ -17,6 +17,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql.expression import Select
 from starlette.applications import Starlette
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.testclient import TestClient
 
@@ -573,7 +574,8 @@ async def test_model_property_in_columns() -> None:
 
 
 def test_sort_query() -> None:
-    class AddressAdmin(ModelView, model=Address): ...
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = ["id", "user.name", "user.profile.role"]
 
     query = select(Address)
 
@@ -588,6 +590,47 @@ def test_sort_query() -> None:
     request = Request({"type": "http", "query_string": b"sortBy=user.profile.role"})
     stmt = AddressAdmin().sort_query(query, request)
     assert "ORDER BY profiles.role ASC" in str(stmt)
+
+
+def test_sort_query_rejects_field_not_in_sortable_list() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_list = [Address.id]
+        column_sortable_list = [Address.id]
+
+    admin = AddressAdmin()
+    assert admin._sort_fields == ["id"]
+
+    query = select(Address)
+
+    request = Request({"type": "http", "query_string": b"sortBy=name&sort=asc"})
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
+
+    request = Request({"type": "http", "query_string": b"sortBy=user.name&sort=desc"})
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
+
+
+def test_sort_query_rejects_invalid_field() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = [Address.id]
+
+    admin = AddressAdmin()
+    query = select(Address)
+
+    request = Request(
+        {"type": "http", "query_string": b"sortBy=does_not_exist&sort=asc"}
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
+
+    request = Request({"type": "http", "query_string": b"sortBy=name.x&sort=asc"})
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
 
 
 def test_count_query() -> None:
@@ -628,7 +671,7 @@ def test_search_query() -> None:
 
 def test_sort_multi_fields_no_duplicate_joins() -> None:
     class AddressAdmin(ModelView, model=Address):
-        column_sortable_list = [Address.id, User.id, User.name]
+        column_sortable_list = [Address.id, "user.id", "user.name"]
 
     query = select(Address)
     request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
@@ -650,7 +693,7 @@ def test_search_multi_fields_no_duplicate_joins() -> None:
 def test_sort_then_search_no_duplicate_joins() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_searchable_list = ["user.name"]
-        column_sortable_list = [User.id]
+        column_sortable_list = ["user.id"]
 
     query = select(Address)
     request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})

@@ -967,14 +967,14 @@ def test_export_permission(client: TestClient) -> None:
     assert response.status_code == 403
 
 
-def test_sort_and_search_together_no_ambigious_column_error(
-    client: TestClient,
-) -> None:
+def test_sort_and_search_together_no_ambigious_column_error() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_searchable_list = ["user.name", "user.email"]
         column_sortable_list = [Address.id, "user.id", "user.name"]
 
-    admin.add_view(AddressAdmin)
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(AddressAdmin)
 
     with session_maker() as session:
         user1 = User(name="Alice", email="alice@example.com")
@@ -986,7 +986,8 @@ def test_sort_and_search_together_no_ambigious_column_error(
         session.add_all([user1, user2, user3, address1, address2, address3])
         session.commit()
 
-    response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
     assert response.status_code == 200
 
 

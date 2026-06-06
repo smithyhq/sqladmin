@@ -8,7 +8,7 @@ module-root = ""
 
 [project]
 name = "sqladmin"
-version = "0.27.0"
+version = "0.27.1"
 description = 'SQLAlchemy admin for FastAPI and Starlette'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -75,7 +75,7 @@ dev = [
   "bandit",
 ]
 
-lint = ["mypy==1.19.1", "ruff==0.15.12", "types-wtforms>=3.2.1.20250809"]
+lint = ["mypy==1.19.1", "ruff==0.15.15", "types-wtforms>=3.2.1.20250809"]
 
 docs = ["zensical~=0.0.42", "mkdocstrings[python]~=1.0.3"]
 

@@ -1286,6 +1286,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         sort = request.query_params.get("sort", "asc")
 
         if sort_by:
+            if sort_by not in self._sort_fields:
+                raise HTTPException(status_code=400, detail="Invalid sortBy parameter")
             sort_fields = [(sort_by, sort == "desc")]
         else:
             sort_fields = self._get_default_sort()

@@ -1,0 +1,56 @@
+{% if not incremental %}
+<!-- markdownlint-disable-file MD024 -->
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+{% endif %}
+{% set section_map = {
+	'feat': 'Added',
+	'fix': 'Fixed',
+	'docs': 'Docs',
+	'perf': 'Changed',
+	'refactor': 'Changed',
+	'test': 'Tests',
+	'chore': 'Changed',
+	'build': 'Changed',
+	'ci': 'Changed',
+	'breaking change': 'Breaking Changes',
+	'breaking-change': 'Breaking Changes',
+	'security': 'Security'
+} %}
+{% for entry in tree %}
+
+## Version [{{ entry.version }}](https://github.com/smithyhq/sqladmin/releases/tag/{{ entry.version }}): {{ entry.date }}
+
+{% for change_key, changes in entry.changes.items() %}
+{% if change_key %}
+{% set normalized_key = change_key|lower %}
+### {{ section_map.get(normalized_key, change_key|title) }}
+
+{% endif %}
+{% for change in changes if change.message %}
+{% set message_text = change.message %}
+{% set pr_number = None %}
+{% if message_text.endswith(')') and ' (#' in message_text %}
+{% set pr_parts = message_text.rsplit(' (#', 1) %}
+{% set pr_candidate = pr_parts[1][:-1] %}
+{% if pr_candidate.isdigit() %}
+{% set message_text = pr_parts[0] %}
+{% set pr_number = pr_candidate %}
+{% endif %}
+{% endif %}
+{% if normalized_key in ['feat', 'fix', 'docs', 'perf', 'refactor', 'test', 'build', 'ci', 'chore'] %}
+* {{ normalized_key }}{% if change.scope %}({{ change.scope }}){% endif %}: {{ message_text }}{% if pr_number %} in [#{{ pr_number }}](https://github.com/smithyhq/sqladmin/pull/{{ pr_number }}){% endif %}{{ '\n' }}
+{% else %}
+* {{ message_text }}{% if pr_number %} in [#{{ pr_number }}](https://github.com/smithyhq/sqladmin/pull/{{ pr_number }}){% endif %}{{ '\n' }}
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+{% if not loop.last %}
+**Full Changelog**: [{{ loop.nextitem.version }}...{{ entry.version }}](https://github.com/smithyhq/sqladmin/compare/{{ loop.nextitem.version }}...{{ entry.version }})
+{% endif %}
+{% endfor %}

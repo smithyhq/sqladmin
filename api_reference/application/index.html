@@ -1882,7 +1882,16 @@
 <span class="normal">869</span>
 <span class="normal">870</span>
 <span class="normal">871</span>
-<span class="normal">872</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Admin</span><span class="p">(</span><span class="n">BaseAdminView</span><span class="p">):</span>
+<span class="normal">872</span>
+<span class="normal">873</span>
+<span class="normal">874</span>
+<span class="normal">875</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span>
+<span class="normal">880</span>
+<span class="normal">881</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Admin</span><span class="p">(</span><span class="n">BaseAdminView</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entrypoint to admin interface.</span>
 
 <span class="sd">    ???+ usage</span>
@@ -2126,6 +2135,17 @@
         <span class="n">model_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_model_view</span><span class="p">(</span><span class="n">identity</span><span class="p">)</span>
 
         <span class="n">Form</span> <span class="o">=</span> <span class="k">await</span> <span class="n">model_view</span><span class="o">.</span><span class="n">scaffold_form</span><span class="p">(</span><span class="n">model_view</span><span class="o">.</span><span class="n">_form_create_rules</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;GET&quot;</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="n">Form</span><span class="p">()</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;model_view&quot;</span><span class="p">:</span> <span class="n">model_view</span><span class="p">,</span>
+                <span class="s2">&quot;form&quot;</span><span class="p">:</span> <span class="n">form</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">templates</span><span class="o">.</span><span class="n">TemplateResponse</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span> <span class="n">model_view</span><span class="o">.</span><span class="n">create_template</span><span class="p">,</span> <span class="n">context</span>
+            <span class="p">)</span>
+
         <span class="n">form_data</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_form_data</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
         <span class="n">form</span> <span class="o">=</span> <span class="n">Form</span><span class="p">(</span><span class="n">form_data</span><span class="p">)</span>
 
@@ -2133,11 +2153,6 @@
             <span class="s2">&quot;model_view&quot;</span><span class="p">:</span> <span class="n">model_view</span><span class="p">,</span>
             <span class="s2">&quot;form&quot;</span><span class="p">:</span> <span class="n">form</span><span class="p">,</span>
         <span class="p">}</span>
-
-        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;GET&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">templates</span><span class="o">.</span><span class="n">TemplateResponse</span><span class="p">(</span>
-                <span class="n">request</span><span class="p">,</span> <span class="n">model_view</span><span class="o">.</span><span class="n">create_template</span><span class="p">,</span> <span class="n">context</span>
-            <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">form</span><span class="o">.</span><span class="n">validate</span><span class="p">():</span>
             <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">templates</span><span class="o">.</span><span class="n">TemplateResponse</span><span class="p">(</span>
@@ -2316,7 +2331,10 @@
         <span class="n">identifier</span> <span class="o">=</span> <span class="n">get_object_identifier</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Save&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">url_for</span><span class="p">(</span><span class="s2">&quot;admin:list&quot;</span><span class="p">,</span> <span class="n">identity</span><span class="o">=</span><span class="n">identity</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">url_for</span><span class="p">(</span><span class="s2">&quot;admin:list&quot;</span><span class="p">,</span> <span class="n">identity</span><span class="o">=</span><span class="n">identity</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="p">:</span>
+                <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">url</span>
 
         <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Save and continue editing&quot;</span> <span class="ow">or</span> <span class="p">(</span>
             <span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Save as new&quot;</span> <span class="ow">and</span> <span class="n">model_view</span><span class="o">.</span><span class="n">save_as_continue</span>
@@ -3206,7 +3224,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">view</span><span class="o">.</span><span class="n">identity</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;_identity&quot;</span><span class="p">)</span>
                 <span class="n">path</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;_path&quot;</span><span class="p">)</span>
-                <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;_identity&quot;</span><span class="p">)</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;view-</span><span class="si">{</span><span class="n">view</span><span class="o">.</span><span class="n">identity</span><span class="si">}</span><span class="s2">&quot;</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span>
                 <span class="n">route</span><span class="o">=</span><span class="n">func</span><span class="p">,</span>
@@ -3719,16 +3737,7 @@ with this to:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/application.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span>
-<span class="normal">899</span>
-<span class="normal">900</span>
-<span class="normal">901</span>
-<span class="normal">902</span>
-<span class="normal">903</span>
-<span class="normal">904</span>
-<span class="normal">905</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">905</span>
 <span class="normal">906</span>
 <span class="normal">907</span>
 <span class="normal">908</span>
@@ -3758,7 +3767,16 @@ with this to:</p>
 <span class="normal">932</span>
 <span class="normal">933</span>
 <span class="normal">934</span>
-<span class="normal">935</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">action</span><span class="p">(</span>
+<span class="normal">935</span>
+<span class="normal">936</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">action</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">confirmation_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

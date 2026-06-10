@@ -73,6 +73,8 @@ dev = [
   "sqlalchemy_utils",
   "sqlmodel",
   "bandit",
+  "uvicorn>=0.49.0",
+  "fastapi>=0.136.3",
 ]
 
 lint = ["mypy==1.19.1", "ruff==0.15.12", "types-wtforms>=3.2.1.20250809"]

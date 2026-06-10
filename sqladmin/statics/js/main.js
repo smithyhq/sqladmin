@@ -148,8 +148,12 @@ $(':input[data-role="select2-ajax"]').each(function () {
 
   $select.on('change', function () {
     var val = $select.val();
-    $hiddenInput.val(val ? val.join(',') : '');
-  });
+    if (Array.isArray(val)) {
+    $hiddenInput.val(val.join(','));
+    } else {
+    $hiddenInput.val(val || '');
+    }
+});
 
   var existing_data = $select.data("json") || [];
   existing_data.forEach(function (data) {

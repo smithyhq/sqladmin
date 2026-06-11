@@ -42,6 +42,7 @@ nav:
       - ModelView: "api_reference/model_view.md"
       - BaseView: "api_reference/base_view.md"
       - Authentication: "api_reference/authentication.md"
+      - Rich Text Editors: "api_reference/editors.md" 
   - Contributing: "contributing.md"
 
 markdown_extensions:

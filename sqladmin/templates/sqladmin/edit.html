@@ -46,3 +46,24 @@
   </div>
 </div>
 {% endblock %}
+
+
+
+{% block tail %}
+{{ super() }}
+{% if model_view._rich_text_map %}
+  {% for url in model_view._rich_text_assets.styles %}
+  <link rel="stylesheet" href="{{ url }}">
+  {% endfor %}
+  {% for url in model_view._rich_text_assets.scripts %}
+  <script src="{{ url }}"></script>
+  {% endfor %}
+ 
+  {% for group in model_view._rich_text_groups %}
+    {% with editor = group.editor, field_ids = group.field_ids %}
+      {% include editor.template_name %}
+    {% endwith %}
+  {% endfor %}
+{% endif %}
+{% endblock %}
+ 

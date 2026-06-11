@@ -1,0 +1,28 @@
+{% extends "sqladmin/editors/base.html" %}
+
+{% block init_script %}
+<script>
+  $(document).ready(function () {
+    var fieldIds = {{ field_ids | tojson }};
+    var height = {{ editor.height }};
+
+    fieldIds.forEach(function (fieldId) {
+      var $el = $("#" + fieldId);
+      if ($el.data("summernoteInitialized")) {
+        return;
+      }
+      $el.data("summernoteInitialized", true);
+
+      $el.summernote({
+        height: height,
+        toolbar: [
+          ["style", ["bold", "italic", "underline", "clear"]],
+          ["para", ["ul", "ol", "paragraph"]],
+          ["insert", ["link", "table"]],
+          ["view", ["codeview"]],
+        ],
+      });
+    });
+  });
+</script>
+{% endblock %}

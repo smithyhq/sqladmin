@@ -1,6 +1,8 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     List,
     Protocol,
     Tuple,
@@ -61,3 +63,12 @@ class OperationColumnFilter(Protocol):
 
 
 ColumnFilter = Union[SimpleColumnFilter, OperationColumnFilter]
+
+
+if TYPE_CHECKING:
+    from sqladmin.editors import RichTextEditor
+
+RichTextFieldsType = Union[
+    List[str],
+    Dict[str, "RichTextEditor"],
+]

@@ -1,0 +1,19 @@
+{% extends "sqladmin/editors/base.html" %}
+
+{% block init_script %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var fieldIds = {{ field_ids | tojson }};
+    var selector = fieldIds.map(function (id) { return "#" + id; }).join(", ");
+
+    tinymce.init({
+      selector: selector,
+      plugins: "{{ editor.plugins }}",
+      toolbar: "{{ editor.toolbar }}",
+      min_height: {{ editor.min_height }},
+      promotion: false,
+      resize: false,
+    });
+  });
+</script>
+{% endblock %}

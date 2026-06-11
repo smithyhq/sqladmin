@@ -1,0 +1,46 @@
+{% extends "sqladmin/editors/base.html" %}
+
+{% block init_script %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var fieldIds = {{ field_ids | tojson }};
+    var theme = "{{ editor.theme }}";
+    var minHeight = {{ editor.min_height }};
+    var editors = [];
+
+    fieldIds.forEach(function (fieldId) {
+      var textarea = document.querySelector("#" + fieldId)
+                  || document.querySelector("[name='" + fieldId + "']");
+      if (!textarea) {
+        console.warn("QuillEditor: element not found for field", fieldId);
+        return;
+      }
+      if (textarea.dataset.quillInitialized === "1") {
+        return;
+      }
+      textarea.dataset.quillInitialized = "1";
+
+      var container = document.createElement("div");
+      container.style.minHeight = minHeight + "px";
+      textarea.parentNode.insertBefore(container, textarea);
+      textarea.style.display = "none";
+
+      var quill = new Quill(container, { theme: theme });
+      if (textarea.value) {
+        quill.root.innerHTML = textarea.value;
+      }
+
+      editors.push({ quill: quill, textarea: textarea });
+    });
+
+    var form = document.querySelector("form");
+    if (form) {
+      form.addEventListener("submit", function () {
+        editors.forEach(function (e) {
+          e.textarea.value = e.quill.root.innerHTML;
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

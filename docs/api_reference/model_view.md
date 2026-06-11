@@ -50,6 +50,7 @@
         - form_rules
         - form_create_rules
         - form_edit_rules
+        - rich_text_fields
         - column_type_formatters
         - list_query
         - count_query

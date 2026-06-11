@@ -8,7 +8,8 @@ from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -116,6 +117,21 @@ def test_middlewares() -> None:
 
     assert response.status_code == 200
     assert "x-correlation-id" in response.headers
+
+
+def test_static_files_follow_symlink() -> None:
+    """Issue #863: package statics must follow symlinks (uv symlink mode)."""
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    statics_mount = next(
+        route
+        for route in admin.admin.router.routes
+        if isinstance(route, Mount) and route.name == "statics"
+    )
+    assert isinstance(statics_mount.app, StaticFiles)
+    assert statics_mount.app.follow_symlink is True
+    assert statics_mount.app.packages == ["sqladmin"]
 
 
 def test_get_save_redirect_url():

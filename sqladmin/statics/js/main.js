@@ -82,7 +82,7 @@ $(document).on('click', '#search-reset', function () {
 // Press enter to search
 $(document).on('keypress', '#search-input', function (e) {
   if (e.which === 13) {
-    $('#search-button').click();
+    $('#search-button').trigger('click');
   }
 });
 
@@ -96,7 +96,7 @@ $(document).on('keyup', '#search-input', function (e) {
   }
   // Make a new timeout set to go off in 1000ms (1 second)
   timeout = setTimeout(function () {
-    $('#search-button').click();
+    $('#search-button').trigger('click');
   }, 1000);
 });
 
@@ -146,7 +146,7 @@ $(':input[data-role="select2-ajax"]').each(function () {
 });
 
 // Checkbox select
-$("#select-all").click(function () {
+$("#select-all").on('click', function () {
   $('input.select-box:checkbox').prop('checked', this.checked);
 });
 
@@ -160,7 +160,7 @@ function showModal(modalId) {
 }
 
 // Bulk delete
-$("#action-delete").click(function () {
+$("#action-delete").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
     if ($(this).is(':checked')) {
@@ -173,7 +173,7 @@ $("#action-delete").click(function () {
   showModal('modal-delete');
 });
 
-$("[id^='action-custom-']").click(function () {
+$("[id^='action-custom-']").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
     if ($(this).is(':checked')) {

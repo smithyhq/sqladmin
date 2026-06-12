@@ -122,7 +122,9 @@ $(':input[data-role="datetimepicker"]:not([readonly])').each(function () {
 
 // Ajax Refs
 $(':input[data-role="select2-ajax"]').each(function () {
-  $(this).select2({
+  var allowBlank = !!$(this).data("allowBlank");
+  var isMultiple = !!$(this).prop("multiple");
+  var select2AjaxOptions = {
     minimumInputLength: 1,
     ajax: {
       url: $(this).data("url"),
@@ -135,11 +137,18 @@ $(':input[data-role="select2-ajax"]').each(function () {
         return query;
       }
     }
-  });
+  };
 
-  existing_data = $(this).data("json") || [];
+  if (allowBlank && !isMultiple) {
+    select2AjaxOptions.allowClear = true;
+    select2AjaxOptions.placeholder = "";
+  }
+
+  $(this).select2(select2AjaxOptions);
+
+  var existing_data = $(this).data("json") || [];
   for (var i = 0; i < existing_data.length; i++) {
-    data = existing_data[i];
+    var data = existing_data[i];
     var option = new Option(data.text, data.id, true, true);
     $(this).append(option).trigger('change');
   }

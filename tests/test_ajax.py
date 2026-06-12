@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
@@ -236,11 +237,13 @@ async def test_create_page_template(client: AsyncClient) -> None:
     assert 'data-json="[]"' in response.text
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/user/ajax/lookup"' in response.text
+    assert 'data-allow-blank="1"' not in response.text
 
     response = await client.get("/admin/address/create")
 
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
+    assert 'data-allow-blank="1"' in response.text
 
 
 async def test_edit_page_template(client: AsyncClient) -> None:
@@ -268,6 +271,7 @@ async def test_edit_page_template(client: AsyncClient) -> None:
     )
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
+    assert 'data-allow-blank="1"' in response.text
 
 
 async def test_create_and_edit_forms(client: AsyncClient) -> None:
@@ -287,9 +291,12 @@ async def test_create_and_edit_forms(client: AsyncClient) -> None:
     async with session_maker() as s:
         stmt = select(User).options(selectinload(User.addresses))
         result = await s.execute(stmt)
+        address = await s.get(Address, 1)
 
     user = result.scalar_one()
     assert len(user.addresses) == 0
+    assert address is not None
+    assert address.user_id is None
 
     data = {"addresses": ["1"]}
     response = await client.post("/admin/user/edit/1", data=data)
@@ -312,3 +319,14 @@ async def test_create_and_edit_forms(client: AsyncClient) -> None:
 
     user = result.scalar_one()
     assert len(user.addresses) == 2
+
+
+async def test_ajax_select2_init_respects_allow_blank_flag() -> None:
+    main_js = Path("sqladmin/statics/js/main.js").read_text(encoding="utf-8")
+
+    if '$(this).data("allowBlank")' not in main_js:
+        raise AssertionError("select2 ajax init should read data-allow-blank")
+    if "allowClear: true" not in main_js and "allowClear = true" not in main_js:
+        raise AssertionError("select2 ajax init should enable allowClear")
+    if 'placeholder: ""' not in main_js and 'placeholder = ""' not in main_js:
+        raise AssertionError("select2 ajax init should set an empty placeholder")

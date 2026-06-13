@@ -8,7 +8,7 @@
     </div>
     <div class="card-body border-bottom py-3">
       {% block edit_form %}
-      <form action="{{ model_view._build_url_for('admin:edit', request, obj) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" method="POST"
+      <form action="{{ model_view._build_url_for_current_view('admin:edit', request, obj) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" method="POST"
         enctype="multipart/form-data">
         <div class="row">
           {% if error %}

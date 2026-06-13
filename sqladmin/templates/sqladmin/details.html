@@ -67,7 +67,7 @@
           {% endif %}
           {% if model_view.check_can_edit(request, model) %}
           <div class="col-auto">
-            <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
+            <a href="{{ model_view._build_url_for_current_view('admin:edit', request, model) }}" class="btn btn-primary">
               Edit
             </a>
           </div>

@@ -31,6 +31,28 @@ class User(Base):
     name = Column(String(32), default="SQLAdmin")
 
 
+class PinnedObject(Base):
+    __tablename__ = "pinned_objects"
+
+    id = Column(Integer, primary_key=True)
+    pinnedable_type = Column(String)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "pinned_object",
+        "polymorphic_on": pinnedable_type,
+    }
+
+
+class NewsPinned(PinnedObject):
+    __mapper_args__ = {"polymorphic_identity": "news_pinned"}
+
+
+class RelatedModel(Base):
+    __tablename__ = "related_models"
+
+    id = Column(Integer, primary_key=True)
+
+
 @pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
@@ -218,6 +240,43 @@ def test_validate_page_and_page_size():
 
     response = client.get("/admin/user/list?page=aaaa")
     assert response.status_code == 400
+
+
+def test_polymorphic_model_urls_use_view_identity() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class PinnedObjectAdmin(ModelView, model=PinnedObject): ...
+
+    admin.add_view(PinnedObjectAdmin)
+    view = admin.views[0]
+    obj = NewsPinned(id=1)
+    request = Request(
+        {
+            "type": "http",
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": "/",
+            "raw_path": b"/",
+            "query_string": b"",
+            "headers": [(b"host", b"testserver")],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+            "root_path": "",
+            "app": app,
+        }
+    )
+
+    assert str(view._build_url_for_current_view("admin:edit", request, obj)) == (
+        "http://testserver/admin/pinned-object/edit/1"
+    )
+    assert view._url_for_delete(request, obj) == (
+        "http://testserver/admin/pinned-object/delete?pks=1"
+    )
+    assert str(view._build_url_for("admin:details", request, RelatedModel(id=2))) == (
+        "http://testserver/admin/related-model/details/2"
+    )
 
 
 def test_is_list_template_global():

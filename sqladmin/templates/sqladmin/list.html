@@ -137,13 +137,13 @@
                     </td>
                     <td class="text-end">
                       {% if model_view.check_can_view_details(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:details', request, row) }}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for_current_view('admin:details', request, row) }}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="View">
                         <span class="me-1"><i class="fa-solid fa-eye"></i></span>
                       </a>
                       {% endif %}
                       {% if model_view.check_can_edit(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for_current_view('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="Edit">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>

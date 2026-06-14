@@ -991,6 +991,52 @@ def test_sort_and_search_together_no_ambigious_column_error() -> None:
     assert response.status_code == 200
 
 
+def test_list_column_formatter_receives_request_from_template() -> None:
+    class UserRequestFormatterAdmin(ModelView, model=User):
+        column_list = [User.name]
+        column_formatters = {
+            User.name: lambda m, a, r: str(r.url_for("admin:list", identity="user")),
+        }
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRequestFormatterAdmin)
+
+    with session_maker() as session:
+        session.add(User(name="Daniel"))
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/user/list")
+
+    assert response.status_code == 200
+    assert "http://testserver/admin/user/list" in response.text
+
+
+def test_detail_column_formatter_receives_request_from_template() -> None:
+    class UserRequestFormatterAdmin(ModelView, model=User):
+        column_details_list = [User.name]
+        column_formatters_detail = {
+            User.name: lambda m, a, r: str(
+                r.url_for("admin:details", identity="user", pk=m.id)
+            ),
+        }
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRequestFormatterAdmin)
+
+    with session_maker() as session:
+        session.add(User(name="Daniel"))
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/user/details/1")
+
+    assert response.status_code == 200
+    assert "http://testserver/admin/user/details/1" in response.text
+
+
 def test_hybrid_property(client: TestClient) -> None:
     with session_maker() as session:
         person = Person(name="Daniel")

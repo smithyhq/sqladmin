@@ -159,7 +159,7 @@
                       {% endif %}
                     </td>
                     {% for name in model_view._list_prop_names %}
-                    {% set value, formatted_value = model_view.get_list_value(row, name) %}
+                    {% set value, formatted_value = model_view.get_list_value(row, name, request) %}
                     {% if name in model_view._relation_names %}
                     {% if is_list( value ) %}
                     <td>

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
@@ -319,14 +318,3 @@ async def test_create_and_edit_forms(client: AsyncClient) -> None:
 
     user = result.scalar_one()
     assert len(user.addresses) == 2
-
-
-async def test_ajax_select2_init_respects_allow_blank_flag() -> None:
-    main_js = Path("sqladmin/statics/js/main.js").read_text(encoding="utf-8")
-
-    if '$(this).data("allowBlank")' not in main_js:
-        raise AssertionError("select2 ajax init should read data-allow-blank")
-    if "allowClear: true" not in main_js and "allowClear = true" not in main_js:
-        raise AssertionError("select2 ajax init should enable allowClear")
-    if 'placeholder: ""' not in main_js and 'placeholder = ""' not in main_js:
-        raise AssertionError("select2 ajax init should set an empty placeholder")

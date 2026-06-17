@@ -246,6 +246,34 @@ async def test_column_list_formatter_can_receive_request() -> None:
     )
 
 
+async def test_column_list_formatter_request_support_is_cached() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "path": "/admin/user/list",
+            "headers": [(b"host", b"testserver")],
+        }
+    )
+
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: f"{r.url.path}:{m.name[:1]}",
+        }
+
+    model_view = UserAdmin()
+    user = User(id=1, name="Long Name")
+
+    def fail_if_called(formatter):
+        raise AssertionError("formatter request support should be cached")
+
+    model_view._formatter_accepts_request = fail_if_called
+
+    assert await model_view.get_list_value(user, "name", request) == (
+        "Long Name",
+        "/admin/user/list:L",
+    )
+
+
 async def test_column_formatters_detail() -> None:
     class UserAdmin(ModelView, model=User):
         column_formatters_detail = {

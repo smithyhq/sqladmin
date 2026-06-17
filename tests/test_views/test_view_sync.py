@@ -870,6 +870,29 @@ def test_export_csv(client: TestClient) -> None:
     assert response.text == "name,status\r\nDaniel,ACTIVE\r\n"
 
 
+def test_pretty_export_csv_formatter_receives_request() -> None:
+    class UserRequestExportAdmin(ModelView, model=User):
+        column_export_list = [User.name]
+        column_formatters = {
+            User.name: lambda m, a, r: str(r.url_for("admin:list", identity="user")),
+        }
+        use_pretty_export = True
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRequestExportAdmin)
+
+    with session_maker() as session:
+        user = User(name="Daniel", status="ACTIVE")
+        session.add(user)
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/user/export/csv")
+
+    assert response.text == "name\r\nhttp://testserver/admin/user/list\r\n"
+
+
 def test_export_csv_utf8(client: TestClient) -> None:
     with session_maker() as session:
         user_1 = User(name="Daniel", status="ACTIVE")

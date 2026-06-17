@@ -747,7 +747,9 @@ class Admin(BaseAdminView):
         rows = await model_view.get_model_objects(
             request=request, limit=model_view.export_max_rows
         )
-        return await model_view.export_data(rows, export_type=export_type)
+        return await model_view.export_data(
+            rows, export_type=export_type, request=request
+        )
 
     async def login(self, request: Request) -> Response:
         if self.authentication_backend is None:

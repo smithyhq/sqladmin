@@ -733,6 +733,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._detail_formatters = self._build_column_pairs(
             self.column_formatters_detail
         )
+        self._list_formatter_accepts_request = self._build_formatter_request_support(
+            self._list_formatters
+        )
+        self._detail_formatter_accepts_request = self._build_formatter_request_support(
+            self._detail_formatters
+        )
 
         self._form_prop_names = self.get_form_columns()
         self._form_relation_names = [
@@ -852,14 +858,23 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         return positional_count >= 3
 
+    def _build_formatter_request_support(
+        self, formatters: Dict[str, Callable[..., Any]]
+    ) -> Dict[str, bool]:
+        return {
+            prop: self._formatter_accepts_request(formatter)
+            for prop, formatter in formatters.items()
+        }
+
     def _call_formatter(
         self,
         formatter: Callable[..., Any],
         obj: Any,
         prop: str,
         request: Request | None = None,
+        accepts_request: bool = False,
     ) -> Any:
-        if request is not None and self._formatter_accepts_request(formatter):
+        if request is not None and accepts_request:
             return formatter(obj, prop, request)
 
         return formatter(obj, prop)
@@ -1001,7 +1016,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         value = await self.get_prop_value(obj, prop)
         formatter = self._list_formatters.get(prop)
         formatted_value = (
-            self._call_formatter(formatter, obj, prop, request)
+            self._call_formatter(
+                formatter,
+                obj,
+                prop,
+                request,
+                self._list_formatter_accepts_request.get(prop, False),
+            )
             if formatter
             else self._default_formatter(value)
         )
@@ -1015,7 +1036,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         value = await self.get_prop_value(obj, prop)
         formatter = self._detail_formatters.get(prop)
         formatted_value = (
-            self._call_formatter(formatter, obj, prop, request)
+            self._call_formatter(
+                formatter,
+                obj,
+                prop,
+                request,
+                self._detail_formatter_accepts_request.get(prop, False),
+            )
             if formatter
             else self._default_formatter(value)
         )
@@ -1354,10 +1381,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self,
         data: List[Any],
         export_type: str = "csv",
+        request: Request | None = None,
     ) -> StreamingResponse:
         if export_type == "csv":
             export_method = (
-                PrettyExport.pretty_export_csv(self, data)
+                PrettyExport.pretty_export_csv(self, data, request=request)
                 if self.use_pretty_export
                 else self._export_csv(data)
             )

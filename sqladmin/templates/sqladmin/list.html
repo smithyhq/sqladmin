@@ -150,7 +150,7 @@
                       {% endif %}
                       {% if model_view.check_can_delete(request, row) %}
                       <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(row) }}"
-                        data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
+                        data-url="{{ model_view._url_for_delete_current_view(request, row) }}" data-bs-toggle="modal"
                         data-bs-target="#modal-delete">
                         <span data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
                           <span class="me-1"><i class="fa-solid fa-trash"></i></span>

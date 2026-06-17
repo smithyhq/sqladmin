@@ -791,6 +791,16 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     def _url_for_delete(self, request: Request, obj: Any) -> str:
         pk = get_object_identifier(obj)
         query_params = urlencode({"pks": pk})
+        url = request.url_for(
+            "admin:delete", identity=slugify_class_name(obj.__class__.__name__)
+        )
+        return str(url) + "?" + query_params
+
+    # TODO: Merge current-view URL helpers into the legacy helpers in the next
+    # breaking-change window.
+    def _url_for_delete_current_view(self, request: Request, obj: Any) -> str:
+        pk = get_object_identifier(obj)
+        query_params = urlencode({"pks": pk})
         url = request.url_for("admin:delete", identity=self.identity)
         return str(url) + "?" + query_params
 

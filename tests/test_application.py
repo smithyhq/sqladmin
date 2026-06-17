@@ -2,7 +2,7 @@ from typing import Generator
 
 import pytest
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
@@ -16,6 +16,7 @@ from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
+session_maker = sessionmaker(bind=engine)
 
 
 class DataModel(Base):
@@ -45,12 +46,6 @@ class PinnedObject(Base):
 
 class NewsPinned(PinnedObject):
     __mapper_args__ = {"polymorphic_identity": "news_pinned"}
-
-
-class RelatedModel(Base):
-    __tablename__ = "related_models"
-
-    id = Column(Integer, primary_key=True)
 
 
 @pytest.fixture(autouse=True)
@@ -242,7 +237,43 @@ def test_validate_page_and_page_size():
     assert response.status_code == 400
 
 
-def test_polymorphic_model_urls_use_view_identity() -> None:
+def test_polymorphic_model_pages_use_view_identity() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class PinnedObjectAdmin(ModelView, model=PinnedObject):
+        column_list = [PinnedObject.id]
+
+    admin.add_view(PinnedObjectAdmin)
+
+    with session_maker() as session:
+        session.add(NewsPinned(id=1))
+        session.commit()
+
+    client = TestClient(app)
+
+    response = client.get("/admin/pinned-object/list")
+    assert response.status_code == 200
+    assert 'href="http://testserver/admin/pinned-object/details/1"' in response.text
+    assert 'href="http://testserver/admin/pinned-object/edit/1"' in response.text
+    assert (
+        'data-url="http://testserver/admin/pinned-object/delete?pks=1"' in response.text
+    )
+    assert "/admin/news-pinned/" not in response.text
+
+    response = client.get("/admin/pinned-object/details/1")
+    assert response.status_code == 200
+    assert (
+        'data-url="http://testserver/admin/pinned-object/delete?pks=1"' in response.text
+    )
+    assert 'href="http://testserver/admin/pinned-object/edit/1"' in response.text
+
+    response = client.get("/admin/pinned-object/edit/1")
+    assert response.status_code == 200
+    assert 'action="http://testserver/admin/pinned-object/edit/1"' in response.text
+
+
+def test_polymorphic_delete_helper_preserves_object_identity() -> None:
     app = Starlette()
     admin = Admin(app=app, engine=engine)
 
@@ -250,33 +281,16 @@ def test_polymorphic_model_urls_use_view_identity() -> None:
 
     admin.add_view(PinnedObjectAdmin)
     view = admin.views[0]
-    obj = NewsPinned(id=1)
-    request = Request(
-        {
-            "type": "http",
-            "http_version": "1.1",
-            "method": "GET",
-            "scheme": "http",
-            "path": "/",
-            "raw_path": b"/",
-            "query_string": b"",
-            "headers": [(b"host", b"testserver")],
-            "client": ("testclient", 50000),
-            "server": ("testserver", 80),
-            "root_path": "",
-            "app": app,
-        }
-    )
 
-    assert str(view._build_url_for_current_view("admin:edit", request, obj)) == (
-        "http://testserver/admin/pinned-object/edit/1"
-    )
-    assert view._url_for_delete(request, obj) == (
-        "http://testserver/admin/pinned-object/delete?pks=1"
-    )
-    assert str(view._build_url_for("admin:details", request, RelatedModel(id=2))) == (
-        "http://testserver/admin/related-model/details/2"
-    )
+    async def index(request: Request) -> Response:
+        return Response(view._url_for_delete(request, NewsPinned(id=1)))
+
+    app.add_route("/delete-url", index)
+
+    client = TestClient(app)
+    response = client.get("/delete-url")
+
+    assert response.text == "http://testserver/admin/news-pinned/delete?pks=1"
 
 
 def test_is_list_template_global():

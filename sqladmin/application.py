@@ -418,6 +418,7 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        static_files_kwargs: dict[str, Any] | None = None,
     ) -> None:
         """
         Args:
@@ -430,6 +431,7 @@ class Admin(BaseAdminView):
             logo_width: Width of the logo image in pixels. Defaults to 64.
             logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
+            static_files_kwargs: Extra keyword arguments for Starlette StaticFiles.
         """
 
         super().__init__(
@@ -447,7 +449,9 @@ class Admin(BaseAdminView):
             authentication_backend=authentication_backend,
         )
 
-        statics = StaticFiles(packages=["sqladmin"], follow_symlink=True)
+        statics = StaticFiles(
+            **{"packages": ["sqladmin"], **(static_files_kwargs or {})}
+        )
 
         async def http_exception(
             request: Request, exc: Exception

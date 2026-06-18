@@ -119,17 +119,37 @@ def test_middlewares() -> None:
     assert "x-correlation-id" in response.headers
 
 
-def test_static_files_follow_symlink() -> None:
-    """Issue #863: package statics must follow symlinks (uv symlink mode)."""
-    app = Starlette()
-    admin = Admin(app=app, engine=engine)
-
+def _get_statics_mount(admin: Admin) -> Mount:
     statics_mount = next(
         route
         for route in admin.admin.router.routes
         if isinstance(route, Mount) and route.name == "statics"
     )
     assert isinstance(statics_mount.app, StaticFiles)
+    return statics_mount
+
+
+def test_static_files_use_default_kwargs() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    statics_mount = _get_statics_mount(admin)
+
+    assert statics_mount.app.follow_symlink is False
+    assert statics_mount.app.packages == ["sqladmin"]
+
+
+def test_static_files_accept_custom_kwargs() -> None:
+    """Issue #863: package statics can opt into following symlinks."""
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        static_files_kwargs={"follow_symlink": True},
+    )
+
+    statics_mount = _get_statics_mount(admin)
+
     assert statics_mount.app.follow_symlink is True
     assert statics_mount.app.packages == ["sqladmin"]
 

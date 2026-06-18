@@ -6,9 +6,11 @@ from sqlalchemy import Column, ForeignKey, Integer, String, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, relationship, selectinload
 from starlette.applications import Starlette
+from wtforms import Form
 
 from sqladmin import Admin, ModelView
 from sqladmin.ajax import create_ajax_loader
+from sqladmin.fields import AjaxSelectMultipleField
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -243,6 +245,21 @@ async def test_create_page_template(client: AsyncClient) -> None:
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
     assert 'data-allow-blank="1"' in response.text
+
+
+async def test_nullable_multi_select_ajax_field_does_not_allow_clear() -> None:
+    loader = create_ajax_loader(
+        model_admin=UserAdmin(), name="addresses", options={"fields": ("id",)}
+    )
+
+    class F(Form):
+        addresses = AjaxSelectMultipleField(loader=loader, allow_blank=True)
+
+    select = F().addresses()
+
+    assert 'data-role="select2-ajax"' in select
+    assert 'multiple="1"' in select
+    assert 'data-allow-blank="1"' not in select
 
 
 async def test_edit_page_template(client: AsyncClient) -> None:

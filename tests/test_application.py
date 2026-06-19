@@ -154,6 +154,19 @@ def test_static_files_accept_custom_kwargs() -> None:
     assert statics_mount.app.packages == ["sqladmin"]
 
 
+def test_static_files_kwargs_cannot_override_packages() -> None:
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        static_files_kwargs={"packages": ["not_sqladmin"]},
+    )
+
+    statics_mount = _get_statics_mount(admin)
+
+    assert statics_mount.app.packages == ["sqladmin"]
+
+
 def test_get_save_redirect_url():
     async def index(request: Request):
         obj = User(id=1)

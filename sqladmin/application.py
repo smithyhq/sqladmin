@@ -449,9 +449,8 @@ class Admin(BaseAdminView):
             authentication_backend=authentication_backend,
         )
 
-        statics = StaticFiles(
-            **{"packages": ["sqladmin"], **(static_files_kwargs or {})}
-        )
+        static_files_kwargs = {**(static_files_kwargs or {}), "packages": ["sqladmin"]}
+        statics = StaticFiles(**static_files_kwargs)
 
         async def http_exception(
             request: Request, exc: Exception

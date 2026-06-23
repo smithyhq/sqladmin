@@ -1,6 +1,3 @@
-{% extends "sqladmin/editors/base.html" %}
-
-{% block init_script %}
 <style>
   :root {
     --ck-z-default: 100;
@@ -11,37 +8,29 @@
   }
 </style>
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var fieldIds = {{ field_ids | tojson }};
-    var minHeight = {{ editor.min_height }};
+  (function () {
+    var fieldId = "{{ field.id }}";
+    var minHeight = {{ field.min_height }};
 
-    fieldIds.forEach(function (fieldId) {
-      var el = document.querySelector("#" + fieldId)
-            || document.querySelector("[name='" + fieldId + "']");
-      if (!el) {
-        console.warn("CKEditor5: element not found for field", fieldId);
-        return;
-      }
-      if (el.dataset.ckInitialized === "1") {
-        return;
-      }
-      el.dataset.ckInitialized = "1";
-      el.style.resize = "none";
+    var el = document.getElementById(fieldId);
+    if (!el || el.dataset.ckInitialized === "1") {
+      return;
+    }
+    el.dataset.ckInitialized = "1";
+    el.style.resize = "none";
 
-      ClassicEditor.create(el)
-        .then(function (editor) {
-          editor.editing.view.change(function (writer) {
-            writer.setStyle(
-              "min-height",
-              minHeight + "px",
-              editor.editing.view.document.getRoot()
-            );
-          });
-        })
-        .catch(function (err) {
-          console.error("CKEditor5 init error for", fieldId, err);
+    ClassicEditor.create(el)
+      .then(function (editor) {
+        editor.editing.view.change(function (writer) {
+          writer.setStyle(
+            "min-height",
+            minHeight + "px",
+            editor.editing.view.document.getRoot()
+          );
         });
-    });
-  });
+      })
+      .catch(function (err) {
+        console.error("CKEditor5 init error for", fieldId, err);
+      });
+  })();
 </script>
-{% endblock %}

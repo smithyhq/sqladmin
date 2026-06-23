@@ -43,24 +43,27 @@
 </div>
 {% endblock %}
 
-
-
+{% block head_css %}
+{{ super() }}
+{% if form is defined %}
+  {% set form_media = collect_form_media(form) %}
+  {% for url in form_media.css %}
+  <link rel="stylesheet" href="{{ url }}">
+  {% endfor %}
+{% endif %}
+{% endblock %}
 
 {% block tail %}
 {{ super() }}
-{% if model_view._rich_text_map %}
-  {% for url in model_view._rich_text_assets.styles %}
-  <link rel="stylesheet" href="{{ url }}">
-  {% endfor %}
-  {% for url in model_view._rich_text_assets.scripts %}
+{% if form is defined %}
+  {% set form_media = collect_form_media(form) %}
+  {% for url in form_media.js %}
   <script src="{{ url }}"></script>
   {% endfor %}
- 
-  {% for group in model_view._rich_text_groups %}
-    {% with editor = group.editor, field_ids = group.field_ids %}
-      {% include editor.template_name %}
+  {% for field in form if field.editor_init_template is defined %}
+    {% with field = field %}
+      {% include field.editor_init_template %}
     {% endwith %}
   {% endfor %}
 {% endif %}
 {% endblock %}
- 

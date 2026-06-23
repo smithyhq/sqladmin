@@ -4,6 +4,8 @@ site_url: https://smithyhq.github.io/sqladmin/
 
 theme:
   name: "zensical"
+  features:
+    - content.code.copy
   palette:
     - scheme: default
       toggle:
@@ -42,7 +44,6 @@ nav:
       - ModelView: "api_reference/model_view.md"
       - BaseView: "api_reference/base_view.md"
       - Authentication: "api_reference/authentication.md"
-      - Rich Text Editors: "api_reference/editors.md" 
   - Contributing: "contributing.md"
 
 markdown_extensions:

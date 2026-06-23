@@ -1,63 +1,48 @@
 # Using rich text editor
 
-SQLAdmin has built-in support for rich text editors (WYSIWYG) on your model
-fields. Set the `rich_text_fields` attribute on your `ModelView` and the editor
-is automatically loaded on the create and edit pages — no custom templates
-required.
-
-Only fields backed by a `Text` or `UnicodeText` SQLAlchemy column are supported,
-as these render as `<textarea>` elements. Using a `String` (or any other) column
-raises a `ValueError`.
+SQLAdmin ships with rich text editor (WYSIWYG) fields that you can drop onto
+any `Text` column using the standard `form_overrides` and `form_args`
+mechanism. The editor's assets are loaded automatically, and a library used by
+several fields is only loaded once.
 
 ## Quick start
 
-Let's say you have the following model:
-
 ```python
-class Post(Base):
-    id = Column(Integer, primary_key=True)
-    title = Column(String(100))
-    content = Column(Text)
-    summary = Column(Text)
-```
-
-Add `rich_text_fields` to your `ModelView`:
-
-```python
-class PostAdmin(ModelView, model=Post):
-    rich_text_fields = ["content", "summary"]
-```
-
-That's it. The `content` and `summary` fields now use CKEditor 5 on both the
-create and edit pages.
-
-## Choosing an editor
-
-When `rich_text_fields` is a list, all fields use the default `CKEditor5`. To
-use a different editor, or a different editor per field, pass a dictionary
-mapping each field name to an editor instance:
-
-```python
-from sqladmin.editors import CKEditor5, TinyMCE, QuillEditor, Summernote
+from sqladmin import ModelView
+from sqladmin.editors import CKEditor5Field
 
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {
-        "content": CKEditor5(min_height=300),
-        "summary": TinyMCE(api_key="your-api-key"),
-    }
+    form_overrides = {"content": CKEditor5Field}
 ```
 
-SQLAdmin ships with four built-in editors.
+The `content` field now uses CKEditor 5 on both the create and edit pages.
+
+## Configuring an editor
+
+Pass options through `form_args`, exactly as you would for any other field:
+
+```python
+from sqladmin.editors import CKEditor5Field
+
+class PostAdmin(ModelView, model=Post):
+    form_overrides = {"content": CKEditor5Field}
+    form_args = {"content": {"min_height": 300}}
+```
+
+## Available editors
+
+SQLAdmin includes four editor fields.
 
 ### CKEditor 5
 
-The default editor. No API key required.
+No API key required.
 
 ```python
-from sqladmin.editors import CKEditor5
+from sqladmin.editors import CKEditor5Field
 
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {"content": CKEditor5(version="39.0.1", min_height=300)}
+    form_overrides = {"content": CKEditor5Field}
+    form_args = {"content": {"version": "39.0.1", "min_height": 300}}
 ```
 
 ### TinyMCE
@@ -65,28 +50,29 @@ class PostAdmin(ModelView, model=Post):
 Requires a free API key from [tiny.cloud](https://www.tiny.cloud/auth/signup/).
 
 ```python
-from sqladmin.editors import TinyMCE
+from sqladmin.editors import TinyMCEField
 
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {
-        "content": TinyMCE(
-            api_key="your-api-key",
-            plugins="lists link table code",
-            toolbar="bold italic | link | code",
-        )
+    form_overrides = {"content": TinyMCEField}
+    form_args = {
+        "content": {
+            "api_key": "your-api-key",
+            "plugins": "lists link table code",
+            "toolbar": "bold italic | link | code",
+        }
     }
 ```
 
 ### Quill
 
-No API key required. Quill renders into a `div`; SQLAdmin hides the original
-textarea and syncs the content back to it on form submit.
+No API key required.
 
 ```python
-from sqladmin.editors import QuillEditor
+from sqladmin.editors import QuillField
 
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {"content": QuillEditor(theme="snow")}
+    form_overrides = {"content": QuillField}
+    form_args = {"content": {"theme": "snow"}}
 ```
 
 ### Summernote
@@ -95,71 +81,90 @@ No API key required. Built on Bootstrap 4, so it matches the admin interface.
 Requires jQuery, which is loaded automatically unless you disable it.
 
 ```python
-from sqladmin.editors import Summernote
+from sqladmin.editors import SummernoteField
 
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {"content": Summernote(height=300)}
+    form_overrides = {"content": SummernoteField}
+    form_args = {"content": {"min_height": 300}}
 ```
 
-If jQuery is already loaded in your project, avoid loading it twice:
+If jQuery is already loaded in your project:
 
 ```python
-rich_text_fields = {"content": Summernote(include_jquery=False)}
+form_args = {"content": {"include_jquery": False}}
 ```
 
-## Sharing an editor instance
+## Multiple fields
 
-When several fields use the same editor *instance*, the editor's CDN assets are
-loaded only once:
+Use different editors on the same form. Each library is loaded only once even
+when several fields share it:
 
 ```python
-editor = CKEditor5(min_height=300)
+from sqladmin.editors import CKEditor5Field, TinyMCEField
 
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {"content": editor, "summary": editor}
+    form_overrides = {
+        "content": CKEditor5Field,
+        "summary": TinyMCEField,
+    }
+    form_args = {
+        "content": {"min_height": 300},
+        "summary": {"api_key": "your-key"},
+    }
 ```
 
-If you pass two separate instances instead, each field keeps its own
-configuration while the shared library is still loaded only once.
+## Pinning a version
+
+Editors load their assets from a CDN, so you can pin whichever version you
+want:
+
+```python
+form_args = {"content": {"version": "43.0.0"}}
+```
+
+## How asset loading works
+
+Each editor field exposes a `media` property listing its CSS and JS URLs.
+On the create and edit pages, SQLAdmin merges the media of every field
+(deduplicating shared libraries) and injects the CSS in `<head>` and the JS
+before `</body>`. Each field also renders a small init script that wires the
+editor to its textarea.
 
 ## Writing a custom editor
 
-To integrate an editor that isn't built in, subclass `RichTextEditor` and
-provide a `template_name`, the `scripts` to load, and a `get_context()` method.
+A rich text editor is just a `TextAreaField` that declares its assets and an
+init template:
 
 ```python
-from sqladmin.editors import RichTextEditor
+from sqladmin.editors import FieldMedia
+from wtforms.fields import TextAreaField
 
-class MyEditor(RichTextEditor):
-    template_name = "myapp/editors/my_editor.html"
+class MyEditorField(TextAreaField):
+    editor_init_template = "myapp/editors/my_editor.html"
+
+    def __init__(self, *args, min_height: int = 200, **kwargs):
+        self.min_height = min_height
+        super().__init__(*args, **kwargs)
 
     @property
-    def scripts(self) -> list[str]:
-        return ["https://example.com/my-editor.js"]
-
-    @property
-    def styles(self) -> list[str]:
-        return ["https://example.com/my-editor.css"]
-
-    def get_context(self) -> dict:
-        return {"min_height": 200}
+    def media(self) -> FieldMedia:
+        return FieldMedia(
+            css=["https://example.com/my-editor.css"],
+            js=["https://example.com/my-editor.js"],
+        )
 ```
 
-Then create the template. It receives `field_ids` (the list of field names) and
-`editor` (your instance) in its context:
+The init template receives the field instance as `field`:
 
 ```html
 <!-- myapp/editors/my_editor.html -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var fieldIds = {{ field_ids | tojson }};
-    fieldIds.forEach(function (fieldId) {
-      var el = document.querySelector("#" + fieldId);
-      if (el) {
-        MyEditor.create(el, { minHeight: {{ editor.get_context().min_height }} });
-      }
-    });
-  });
+  (function () {
+    var el = document.getElementById("{{ field.id }}");
+    if (el) {
+      MyEditor.create(el, { minHeight: {{ field.min_height }} });
+    }
+  })();
 </script>
 ```
 
@@ -167,36 +172,5 @@ Use it like any built-in editor:
 
 ```python
 class PostAdmin(ModelView, model=Post):
-    rich_text_fields = {"content": MyEditor()}
+    form_overrides = {"content": MyEditorField}
 ```
-
-## Customizing templates manually
-
-If you need full control, you can still inject the editor JavaScript yourself by
-customizing the templates, without using `rich_text_fields`.
-
-Add a `custom_edit.html` to your project's `templates/sqladmin` directory:
-
-```html
-{% extends "sqladmin/edit.html" %}
-{% block tail %}
-{{ super() }}
-<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
-<script>
-    ClassicEditor
-        .create(document.querySelector('#content'))
-        .catch(error => {
-            console.error(error);
-        });
-</script>
-{% endblock %}
-```
-
-Then point your `ModelView` at it:
-
-```python
-class PostAdmin(ModelView, model=Post):
-    edit_template = "custom_edit.html"
-```
-
-You can do the same thing with the `create_template` field.

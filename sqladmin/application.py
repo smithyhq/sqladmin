@@ -36,6 +36,7 @@ from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
@@ -129,6 +130,7 @@ class BaseAdmin:
         templates.env.globals["get_object_identifier"] = get_object_identifier
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
         templates.env.globals["Secret"] = Secret
+        templates.env.globals["collect_form_media"] = collect_form_media
 
         return templates
 

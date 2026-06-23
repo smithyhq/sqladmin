@@ -43,11 +43,9 @@ from sqladmin._types import (
     SESSION_MAKER,
     ColumnFilter,
     OperationColumnFilter,
-    RichTextFieldsType,
     SimpleColumnFilter,
 )
 from sqladmin.ajax import create_ajax_loader
-from sqladmin.editors import RichTextEditor
 from sqladmin.exceptions import InvalidModelError
 from sqladmin.formatters import BASE_FORMATTERS
 from sqladmin.forms import ModelConverter, ModelConverterBase, get_model_form
@@ -671,36 +669,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     form_edit_rules: ClassVar[list[str]] = []
     """Customized rules for the edit form. Cannot be specified with `form_rules`."""
 
-    rich_text_fields: ClassVar[RichTextFieldsType] = []
-    """
-    Fields to render with a rich text editor on create and edit pages.
- 
-    Accepts either a list (all fields use the default ``CKEditor5``) or a
-    dict mapping each field name to a specific ``RichTextEditor`` instance.
-    Only fields backed by a ``Text`` / ``UnicodeText`` SQLAlchemy column
-    type are supported, as those render as ``<textarea>`` elements. Using
-    a non-text column (e.g. ``String``) raises ``ValueError``.
- 
-    List form (all fields use CKEditor5)
-    
-    ???+ example
-        ```python
-        class PostAdmin(ModelView, model=Post):
-            rich_text_fields = ["content", "summary"]
-        ```
-    Dict form (each field uses its own editor):
-    
-    ???+ example
-        ```python
-        from sqladmin.editors import CKEditor5, TinyMCE
- 
-        class PostAdmin(ModelView, model=Post):
-            rich_text_fields = {
-                "content": CKEditor5(min_height=300),
-                "summary": TinyMCE(api_key="your-key"),
-            }
-        ```
-    """
     # General options
     column_labels: ClassVar[Dict[MODEL_ATTR, str]] = {}
     """A mapping of column labels, used to map column names to new names.
@@ -1179,88 +1147,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             self._validate_form_class(rules, form)
 
         return form
-
-    @property
-    def _rich_text_map(self) -> "Dict[str, RichTextEditor]":
-        """
-        Normalises ``rich_text_fields`` to a ``{field_name: editor}`` dict.
-
-        When a list is given, every field maps to a fresh ``CKEditor5``
-        instance with default settings.
-
-        Each field is validated to ensure it is backed by a ``Text`` or
-        ``UnicodeText`` SQLAlchemy column. Rich text editors attach to
-        ``<textarea>`` elements, which WTForms only generates for those
-        column types; other types (e.g. ``String``) render as ``<input>``
-        and are not supported.
-
-        Raises:
-            ValueError: If any field in ``rich_text_fields`` is not backed
-                by a ``Text`` or ``UnicodeText`` column.
-        """
-        from sqlalchemy import Text, UnicodeText
-
-        from sqladmin.editors import CKEditor5
-
-        if isinstance(self.rich_text_fields, list):
-            mapping: "Dict[str, RichTextEditor]" = {
-                field: CKEditor5() for field in self.rich_text_fields
-            }
-        else:
-            mapping = self.rich_text_fields
-
-        for field_name in mapping:
-            column = self._mapper.columns.get(field_name)
-            if column is not None and not isinstance(column.type, (Text, UnicodeText)):
-                raise ValueError(
-                    f"rich_text_fields field '{field_name}' must be backed by "
-                    f"a Text or UnicodeText column, got "
-                    f"'{column.type.__class__.__name__}'. Rich text editors "
-                    f"only attach to <textarea> elements."
-                )
-
-        return mapping
-
-    @property
-    def _rich_text_assets(self) -> "Dict[str, List[str]]":
-        """
-        Collects all unique CDN script and style URLs across every editor,
-        preserving order and removing duplicates.
-
-        Rendered once per page, separately from the init blocks, so loading
-        the same editor library twice (which raises errors such as CKEditor's
-        ``ckeditor-duplicated-modules``) is impossible even when multiple
-        distinct editor instances are configured.
-        """
-        scripts: List[str] = []
-        styles: List[str] = []
-        for editor in self._rich_text_map.values():
-            for url in editor.styles:
-                if url not in styles:
-                    styles.append(url)
-            for url in editor.scripts:
-                if url not in scripts:
-                    scripts.append(url)
-        return {"scripts": scripts, "styles": styles}
-
-    @property
-    def _rich_text_groups(self) -> "List[Dict]":
-        """
-        Groups fields by editor *instance* so each instance's init block is
-        rendered once with all of its fields. CDN assets are NOT emitted here
-        — see ``_rich_text_assets``.
-
-        Returns a list of dicts with keys ``"editor"`` and ``"field_ids"``.
-        Fields mapped to the same editor instance (``id()`` match) are merged
-        into a single group.
-        """
-        groups: "Dict[int, Dict]" = {}
-        for field, editor in self._rich_text_map.items():
-            eid = id(editor)
-            if eid not in groups:
-                groups[eid] = {"editor": editor, "field_ids": []}
-            groups[eid]["field_ids"].append(field)
-        return list(groups.values())
 
     def search_placeholder(self) -> str:
         """Return search placeholder text.

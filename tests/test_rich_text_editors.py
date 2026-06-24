@@ -143,6 +143,15 @@ def test_quill_field_init_template() -> None:
     assert QuillField.editor_init_template == "sqladmin/editors/quill.html"
 
 
+def test_quill_uses_safe_html_loading() -> None:
+    class PostAdmin(ModelView, model=Post):
+        form_overrides = {"content": QuillField}
+
+    with _make_client(PostAdmin) as c:
+        response = c.get("/admin/post/create")
+    assert "dangerouslyPasteHTML" in response.text
+
+
 def test_summernote_field_media_includes_jquery() -> None:
     field = _bind(SummernoteField)
     assert any("jquery" in url.lower() for url in field.media.js)

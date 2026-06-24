@@ -17,7 +17,7 @@
 
     var quill = new Quill(container, { theme: theme });
     if (textarea.value) {
-      quill.root.innerHTML = textarea.value;
+      quill.clipboard.dangerouslyPasteHTML(textarea.value);
     }
 
     var form = textarea.closest("form");

@@ -149,7 +149,9 @@ def test_quill_uses_safe_html_loading() -> None:
 
     with _make_client(PostAdmin) as c:
         response = c.get("/admin/post/create")
-    assert "dangerouslyPasteHTML" in response.text
+    assert "clipboard.convert" in response.text
+    assert "setContents" in response.text
+    assert "dangerouslyPasteHTML" not in response.text
 
 
 def test_summernote_field_media_includes_jquery() -> None:

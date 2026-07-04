@@ -1598,6 +1598,14 @@ where you can view list of User records.</p>
     <span class="n">column_default_sort</span> <span class="o">=</span> <span class="p">[(</span><span class="n">User</span><span class="o">.</span><span class="n">email</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">False</span><span class="p">)]</span>
     <span class="n">column_filterable_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">User</span><span class="o">.</span><span class="n">is_admin</span><span class="p">]</span>
 </code></pre></div>
+<p>Formatters may accept either <code>(model, attribute)</code> or <code>(model, attribute, request)</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UserAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">column_formatters</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">url_for</span><span class="p">(</span>
+            <span class="s2">&quot;admin:details&quot;</span><span class="p">,</span> <span class="n">identity</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">id</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+</code></pre></div>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -1730,6 +1738,7 @@ where you can view details of a single User.</p>
     <span class="n">column_details_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;address.zip_code&quot;</span><span class="p">]</span>
     <span class="n">column_formatters_detail</span> <span class="o">=</span> <span class="p">{</span><span class="n">User</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="mi">10</span><span class="p">]}</span>
 </code></pre></div>
+<p>Formatters may accept either <code>(model, attribute)</code> or <code>(model, attribute, request)</code>.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -2090,7 +2099,7 @@ being displayed. If no session is available, messages are silently ignored.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":[],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.copy"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../assets/javascripts/bundle.6e5f0216.min.js"></script>

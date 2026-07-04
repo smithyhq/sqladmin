@@ -27,7 +27,7 @@
     
     
       
-        <title>Using wysiwyg - SQLAlchemy Admin</title>
+        <title>Using rich text editor - SQLAlchemy Admin</title>
       
     
     
@@ -92,7 +92,8 @@
     <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
-        <a href="#__skip" class="md-skip">
+        
+        <a href="#using-rich-text-editor" class="md-skip">
           Skip to content
         </a>
       
@@ -128,7 +129,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using wysiwyg
+              Using rich text editor
             
           </span>
         </div>
@@ -617,6 +618,25 @@
       
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Using rich text editor
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="././" class="md-nav__link md-nav__link--active">
         
@@ -633,6 +653,153 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quick start
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-an-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuring an editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-editors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Available editors
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available editors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ckeditor-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CKEditor 5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tinymce" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        TinyMCE
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quill" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quill
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summernote" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summernote
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Multiple fields
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pinning-a-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Pinning a version
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-asset-loading-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How asset loading works
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#writing-a-custom-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Writing a custom editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -900,6 +1067,13 @@
                     
                     
                     
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
                     
                   
                   <div class="md-sidebar__inner">
@@ -910,6 +1084,143 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quick start
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-an-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuring an editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-editors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Available editors
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available editors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ckeditor-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CKEditor 5
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tinymce" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        TinyMCE
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quill" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quill
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summernote" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summernote
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Multiple fields
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pinning-a-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Pinning a version
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-asset-loading-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How asset loading works
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#writing-a-custom-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Writing a custom editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -927,41 +1238,132 @@
   
 
 
-  <h1 id="__skip">Using wysiwyg</h1>
+<h1 id="using-rich-text-editor">Using rich text editor</h1>
+<p>SQLAdmin ships with rich text editor (WYSIWYG) fields that you can drop onto
+any <code>Text</code> column using the standard <code>form_overrides</code> and <code>form_args</code>
+mechanism. The editor's assets are loaded automatically, and a library used by
+several fields is only loaded once.</p>
+<h2 id="quick-start">Quick start</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelView</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">CKEditor5Field</span>
 
-<p>You can customize the templates and add custom javascript code to enable CKEditor to your fields.
-In order to use <code>CKEditor</code> you need to inject some JS code into the SQLAdmin and that works by customizing the templates.</p>
-<p>Let's say you have the following model:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Post</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">content</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">CKEditor5Field</span><span class="p">}</span>
 </code></pre></div>
-<ul>
-<li>First create a <code>templates/sqladmin</code> directory in your project.</li>
-<li>
-<p>Then add a file <code>custom_edit.html</code> there with the following content:
-<div class="highlight"><span class="filename">custom_edit.html</span><pre><span></span><code>{% extends &quot;sqladmin/edit.html&quot; %}
-{% block tail %}
-<span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+<p>The <code>content</code> field now uses CKEditor 5 on both the create and edit pages.</p>
+<h2 id="configuring-an-editor">Configuring an editor</h2>
+<p>Pass options through <code>form_args</code>, exactly as you would for any other field:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">CKEditor5Field</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">CKEditor5Field</span><span class="p">}</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min_height&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">}}</span>
+</code></pre></div>
+<h2 id="available-editors">Available editors</h2>
+<p>SQLAdmin includes four editor fields.</p>
+<h3 id="ckeditor-5">CKEditor 5</h3>
+<p>No API key required.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">CKEditor5Field</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">CKEditor5Field</span><span class="p">}</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;39.0.1&quot;</span><span class="p">,</span> <span class="s2">&quot;min_height&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">}}</span>
+</code></pre></div>
+<h3 id="tinymce">TinyMCE</h3>
+<p>Requires a free API key from <a href="https://www.tiny.cloud/auth/signup/">tiny.cloud</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinyMCEField</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">TinyMCEField</span><span class="p">}</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;your-api-key&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;plugins&quot;</span><span class="p">:</span> <span class="s2">&quot;lists link table code&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;toolbar&quot;</span><span class="p">:</span> <span class="s2">&quot;bold italic | link | code&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</code></pre></div>
+<h3 id="quill">Quill</h3>
+<p>No API key required.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuillField</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">QuillField</span><span class="p">}</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;theme&quot;</span><span class="p">:</span> <span class="s2">&quot;snow&quot;</span><span class="p">}}</span>
+</code></pre></div>
+<h3 id="summernote">Summernote</h3>
+<p>No API key required. Built on Bootstrap 4, so it matches the admin interface.
+Requires jQuery, which is loaded automatically unless you disable it.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummernoteField</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">SummernoteField</span><span class="p">}</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min_height&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">}}</span>
+</code></pre></div>
+<p>If jQuery is already loaded in your project:</p>
+<div class="highlight"><pre><span></span><code><span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;include_jquery&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}}</span>
+</code></pre></div>
+<h2 id="multiple-fields">Multiple fields</h2>
+<p>Use different editors on the same form. Each library is loaded only once even
+when several fields share it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">CKEditor5Field</span><span class="p">,</span> <span class="n">TinyMCEField</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">CKEditor5Field</span><span class="p">,</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">TinyMCEField</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min_height&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">},</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;your-key&quot;</span><span class="p">},</span>
+    <span class="p">}</span>
+</code></pre></div>
+<h2 id="pinning-a-version">Pinning a version</h2>
+<p>Editors load their assets from a CDN, so you can pin whichever version you
+want:</p>
+<div class="highlight"><pre><span></span><code><span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;43.0.0&quot;</span><span class="p">}}</span>
+</code></pre></div>
+<h2 id="how-asset-loading-works">How asset loading works</h2>
+<p>Each editor field exposes a <code>media</code> property listing its CSS and JS URLs.
+On the create and edit pages, SQLAdmin merges the media of every field
+(deduplicating shared libraries) and injects the CSS in <code>&lt;head&gt;</code> and the JS
+before <code>&lt;/body&gt;</code>. Each field also renders a small init script that wires the
+editor to its textarea.</p>
+<h2 id="writing-a-custom-editor">Writing a custom editor</h2>
+<p>A rich text editor is just a <code>TextAreaField</code> that declares its assets and an
+init template:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.editors</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldMedia</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wtforms.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextAreaField</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyEditorField</span><span class="p">(</span><span class="n">TextAreaField</span><span class="p">):</span>
+    <span class="n">editor_init_template</span> <span class="o">=</span> <span class="s2">&quot;myapp/editors/my_editor.html&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">min_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_height</span> <span class="o">=</span> <span class="n">min_height</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">media</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldMedia</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FieldMedia</span><span class="p">(</span>
+            <span class="n">css</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;https://example.com/my-editor.css&quot;</span><span class="p">],</span>
+            <span class="n">js</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;https://example.com/my-editor.js&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+</code></pre></div>
+<p>The init template receives the field instance as <code>field</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- myapp/editors/my_editor.html --&gt;</span>
 <span class="p">&lt;</span><span class="nt">script</span><span class="p">&gt;</span>
-<span class="w">    </span><span class="nx">ClassicEditor</span>
-<span class="w">        </span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nb">document</span><span class="p">.</span><span class="nx">querySelector</span><span class="p">(</span><span class="s1">&#39;#content&#39;</span><span class="p">))</span>
-<span class="w">        </span><span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
-<span class="w">        </span><span class="p">});</span>
+<span class="w">  </span><span class="p">(</span><span class="kd">function</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">el</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;{{ field.id }}&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">el</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">MyEditor</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">el</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">minHeight</span><span class="o">:</span><span class="w"> </span><span class="p">{{</span><span class="w"> </span><span class="nx">field</span><span class="p">.</span><span class="nx">min_height</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">})();</span>
 <span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
-{% endblock %}
-</code></pre></div></p>
-</li>
-<li>
-<p>Use the <code>custom_edit.html</code> template in your admin:</p>
-</li>
-</ul>
-<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
-    <span class="n">edit_template</span> <span class="o">=</span> <span class="s2">&quot;custom_edit.html&quot;</span>
 </code></pre></div>
-<p>Now whenever editing a Post object in admin, the CKEditor will be applied to the <code>content</code> field of the model.
-You can do the same thing with <code>create_template</code> field.</p>
+<p>Use it like any built-in editor:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PostAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Post</span><span class="p">):</span>
+    <span class="n">form_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">MyEditorField</span><span class="p">}</span>
+</code></pre></div>
 
 
 
@@ -1042,7 +1444,7 @@ You can do the same thing with <code>create_template</code> field.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.6e5f0216.min.js"></script>

@@ -2198,8 +2198,7 @@
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>sqladmin/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 196</span>
-<span class="normal"> 197</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 197</span>
 <span class="normal"> 198</span>
 <span class="normal"> 199</span>
 <span class="normal"> 200</span>
@@ -3427,7 +3426,77 @@
 <span class="normal">1422</span>
 <span class="normal">1423</span>
 <span class="normal">1424</span>
-<span class="normal">1425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ModelView</span><span class="p">(</span><span class="n">BaseView</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelViewMeta</span><span class="p">):</span>
+<span class="normal">1425</span>
+<span class="normal">1426</span>
+<span class="normal">1427</span>
+<span class="normal">1428</span>
+<span class="normal">1429</span>
+<span class="normal">1430</span>
+<span class="normal">1431</span>
+<span class="normal">1432</span>
+<span class="normal">1433</span>
+<span class="normal">1434</span>
+<span class="normal">1435</span>
+<span class="normal">1436</span>
+<span class="normal">1437</span>
+<span class="normal">1438</span>
+<span class="normal">1439</span>
+<span class="normal">1440</span>
+<span class="normal">1441</span>
+<span class="normal">1442</span>
+<span class="normal">1443</span>
+<span class="normal">1444</span>
+<span class="normal">1445</span>
+<span class="normal">1446</span>
+<span class="normal">1447</span>
+<span class="normal">1448</span>
+<span class="normal">1449</span>
+<span class="normal">1450</span>
+<span class="normal">1451</span>
+<span class="normal">1452</span>
+<span class="normal">1453</span>
+<span class="normal">1454</span>
+<span class="normal">1455</span>
+<span class="normal">1456</span>
+<span class="normal">1457</span>
+<span class="normal">1458</span>
+<span class="normal">1459</span>
+<span class="normal">1460</span>
+<span class="normal">1461</span>
+<span class="normal">1462</span>
+<span class="normal">1463</span>
+<span class="normal">1464</span>
+<span class="normal">1465</span>
+<span class="normal">1466</span>
+<span class="normal">1467</span>
+<span class="normal">1468</span>
+<span class="normal">1469</span>
+<span class="normal">1470</span>
+<span class="normal">1471</span>
+<span class="normal">1472</span>
+<span class="normal">1473</span>
+<span class="normal">1474</span>
+<span class="normal">1475</span>
+<span class="normal">1476</span>
+<span class="normal">1477</span>
+<span class="normal">1478</span>
+<span class="normal">1479</span>
+<span class="normal">1480</span>
+<span class="normal">1481</span>
+<span class="normal">1482</span>
+<span class="normal">1483</span>
+<span class="normal">1484</span>
+<span class="normal">1485</span>
+<span class="normal">1486</span>
+<span class="normal">1487</span>
+<span class="normal">1488</span>
+<span class="normal">1489</span>
+<span class="normal">1490</span>
+<span class="normal">1491</span>
+<span class="normal">1492</span>
+<span class="normal">1493</span>
+<span class="normal">1494</span>
+<span class="normal">1495</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ModelView</span><span class="p">(</span><span class="n">BaseView</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelViewMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for defining admnistrative behaviour for the model.</span>
 
 <span class="sd">    ???+ usage</span>
@@ -3501,7 +3570,7 @@
 <span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">column_formatters</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">MODEL_ATTR</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">type</span><span class="p">,</span> <span class="n">Column</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">column_formatters</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">MODEL_ATTR</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary of list view column formatters.</span>
 <span class="sd">    Columns can either be string names or SQLAlchemy columns.</span>
 
@@ -3514,9 +3583,10 @@
 <span class="sd">    The format function has the prototype:</span>
 <span class="sd">    ???+ formatter</span>
 <span class="sd">        ```python</span>
-<span class="sd">        def formatter(model, attribute):</span>
+<span class="sd">        def formatter(model, attribute, request):</span>
 <span class="sd">            # `model` is model instance</span>
 <span class="sd">            # `attribute` is a Union[ColumnProperty, RelationshipProperty]</span>
+<span class="sd">            # `request` is a starlette.requests.Request</span>
 <span class="sd">            pass</span>
 <span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3636,9 +3706,7 @@
 <span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">column_formatters_detail</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span>
-        <span class="n">Dict</span><span class="p">[</span><span class="n">MODEL_ATTR</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">type</span><span class="p">,</span> <span class="n">Column</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">column_formatters_detail</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">MODEL_ATTR</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary of details view column formatters.</span>
 <span class="sd">    Columns can either be string names or SQLAlchemy columns.</span>
 
@@ -3651,9 +3719,10 @@
 <span class="sd">    The format function has the prototype:</span>
 <span class="sd">    ???+ formatter</span>
 <span class="sd">        ```python</span>
-<span class="sd">        def formatter(model, attribute):</span>
+<span class="sd">        def formatter(model, attribute, request):</span>
 <span class="sd">            # `model` is model instance</span>
 <span class="sd">            # `attribute` is a Union[ColumnProperty, RelationshipProperty]</span>
+<span class="sd">            # `request` is a starlette.requests.Request</span>
 <span class="sd">            pass</span>
 <span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3966,6 +4035,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_detail_formatters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_column_pairs</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">column_formatters_detail</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_formatter_accepts_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_formatter_request_support</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_list_formatters</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detail_formatter_accepts_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_formatter_request_support</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_detail_formatters</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_form_prop_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_form_columns</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_form_relation_names</span> <span class="o">=</span> <span class="p">[</span>
@@ -4022,12 +4097,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="k">await</span> <span class="n">anyio</span><span class="o">.</span><span class="n">to_thread</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_run_query_sync</span><span class="p">,</span> <span class="n">stmt</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_identity_for_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">identity</span>
+        <span class="k">return</span> <span class="n">slugify_class_name</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_url_for_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">pk</span> <span class="o">=</span> <span class="n">get_object_identifier</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="n">query_params</span> <span class="o">=</span> <span class="n">urlencode</span><span class="p">({</span><span class="s2">&quot;pks&quot;</span><span class="p">:</span> <span class="n">pk</span><span class="p">})</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url_for</span><span class="p">(</span>
-            <span class="s2">&quot;admin:delete&quot;</span><span class="p">,</span> <span class="n">identity</span><span class="o">=</span><span class="n">slugify_class_name</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">url_for</span><span class="p">(</span><span class="s2">&quot;admin:delete&quot;</span><span class="p">,</span> <span class="n">identity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_identity_for_object</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;?&quot;</span> <span class="o">+</span> <span class="n">query_params</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_url_for_details_with_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">URL</span><span class="p">:</span>
@@ -4042,7 +4120,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_url_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">URL</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">url_for</span><span class="p">(</span>
             <span class="n">name</span><span class="p">,</span>
-            <span class="n">identity</span><span class="o">=</span><span class="n">slugify_class_name</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">),</span>
+            <span class="n">identity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_identity_for_object</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span>
             <span class="n">pk</span><span class="o">=</span><span class="n">get_object_identifier</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span>
         <span class="p">)</span>
 
@@ -4066,6 +4144,45 @@
             <span class="k">return</span> <span class="n">formatter</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_formatter_accepts_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formatter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">inspect_module</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">positional_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">inspect_module</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">{</span>
+                <span class="n">inspect_module</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">POSITIONAL_ONLY</span><span class="p">,</span>
+                <span class="n">inspect_module</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">POSITIONAL_OR_KEYWORD</span><span class="p">,</span>
+            <span class="p">}:</span>
+                <span class="n">positional_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">positional_count</span> <span class="o">&gt;=</span> <span class="mi">3</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_formatter_request_support</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">formatters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">prop</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formatter_accepts_request</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">prop</span><span class="p">,</span> <span class="n">formatter</span> <span class="ow">in</span> <span class="n">formatters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_call_formatter</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">formatter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">Request</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">accepts_request</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">request</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">accepts_request</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">formatter</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">formatter</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_page_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">number</span><span class="p">:</span>
@@ -4196,23 +4313,43 @@
                 <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
                 <span class="k">return</span> <span class="k">await</span> <span class="n">anyio</span><span class="o">.</span><span class="n">to_thread</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">))</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_list_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_list_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get tuple of (value, formatted_value) for the list view.&quot;&quot;&quot;</span>
 
         <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_prop_value</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
         <span class="n">formatter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_formatters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
         <span class="n">formatted_value</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">formatter</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="k">if</span> <span class="n">formatter</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_formatter</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_call_formatter</span><span class="p">(</span>
+                <span class="n">formatter</span><span class="p">,</span>
+                <span class="n">obj</span><span class="p">,</span>
+                <span class="n">prop</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_list_formatter_accepts_request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">formatter</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_formatter</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">formatted_value</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_detail_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_detail_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get tuple of (value, formatted_value) for the detail view.&quot;&quot;&quot;</span>
 
         <span class="n">value</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_prop_value</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
         <span class="n">formatter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detail_formatters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
         <span class="n">formatted_value</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">formatter</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="k">if</span> <span class="n">formatter</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_formatter</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_call_formatter</span><span class="p">(</span>
+                <span class="n">formatter</span><span class="p">,</span>
+                <span class="n">obj</span><span class="p">,</span>
+                <span class="n">prop</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_detail_formatter_accepts_request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">formatter</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_formatter</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">formatted_value</span>
 
@@ -4549,10 +4686,11 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
         <span class="n">export_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">Request</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamingResponse</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">export_type</span> <span class="o">==</span> <span class="s2">&quot;csv&quot;</span><span class="p">:</span>
             <span class="n">export_method</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">PrettyExport</span><span class="o">.</span><span class="n">pretty_export_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="n">PrettyExport</span><span class="o">.</span><span class="n">pretty_export_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_pretty_export</span>
                 <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_csv</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="p">)</span>
@@ -4900,9 +5038,10 @@ Columns can either be string names or SQLAlchemy columns.</p>
 <p>The format function has the prototype:</p>
 <details class="formatter" open="open">
 <summary>Formatter</summary>
-<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">formatter</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">formatter</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
     <span class="c1"># `model` is model instance</span>
     <span class="c1"># `attribute` is a Union[ColumnProperty, RelationshipProperty]</span>
+    <span class="c1"># `request` is a starlette.requests.Request</span>
     <span class="k">pass</span>
 </code></pre></div>
 </details>
@@ -4938,9 +5077,10 @@ Columns can either be string names or SQLAlchemy columns.</p>
 <p>The format function has the prototype:</p>
 <details class="formatter" open="open">
 <summary>Formatter</summary>
-<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">formatter</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">formatter</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
     <span class="c1"># `model` is model instance</span>
     <span class="c1"># `attribute` is a Union[ColumnProperty, RelationshipProperty]</span>
+    <span class="c1"># `request` is a starlette.requests.Request</span>
     <span class="k">pass</span>
 </code></pre></div>
 </details>
@@ -5789,9 +5929,10 @@ If not set, will use default Flask-Admin form rendering logic.</p>
 
         <p>Dictionary of value type formatters to be used in the list view.</p>
 <p>By default, two types are formatted:</p>
-<div class="highlight"><pre><span></span><code>- None will be displayed as an empty string
+<div class="codehilite"><pre><span></span><code>- None will be displayed as an empty string
 - bool will be displayed as a checkmark if it is True otherwise as an X.
 </code></pre></div>
+
 <p>If you don't like the default behavior and don't want any type formatters applied,
 just override this property with an empty dictionary:</p>
 <details class="example" open="open">
@@ -5887,23 +6028,23 @@ If you set <code>save_as_continue=False</code>, the redirect will be to the list
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1151</span>
-<span class="normal">1152</span>
-<span class="normal">1153</span>
-<span class="normal">1154</span>
-<span class="normal">1155</span>
-<span class="normal">1156</span>
-<span class="normal">1157</span>
-<span class="normal">1158</span>
-<span class="normal">1159</span>
-<span class="normal">1160</span>
-<span class="normal">1161</span>
-<span class="normal">1162</span>
-<span class="normal">1163</span>
-<span class="normal">1164</span>
-<span class="normal">1165</span>
-<span class="normal">1166</span>
-<span class="normal">1167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">search_placeholder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">search_placeholder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return search placeholder text.</span>
 
 <span class="sd">    ???+ example</span>
@@ -5944,17 +6085,17 @@ additional filters.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1256</span>
-<span class="normal">1257</span>
-<span class="normal">1258</span>
-<span class="normal">1259</span>
-<span class="normal">1260</span>
-<span class="normal">1261</span>
-<span class="normal">1262</span>
-<span class="normal">1263</span>
-<span class="normal">1264</span>
-<span class="normal">1265</span>
-<span class="normal">1266</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">form_edit_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span>
+<span class="normal">1330</span>
+<span class="normal">1331</span>
+<span class="normal">1332</span>
+<span class="normal">1333</span>
+<span class="normal">1334</span>
+<span class="normal">1335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">form_edit_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The SQLAlchemy select expression used for the edit form page which can be</span>
 <span class="sd">    customized. By default it will select the object by primary key(s) without any</span>
@@ -5988,13 +6129,13 @@ By default it will select all objects without any filters.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1222</span>
-<span class="normal">1223</span>
-<span class="normal">1224</span>
-<span class="normal">1225</span>
-<span class="normal">1226</span>
-<span class="normal">1227</span>
-<span class="normal">1228</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1291</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span>
+<span class="normal">1294</span>
+<span class="normal">1295</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The SQLAlchemy select expression used for the list page which can be customized.</span>
 <span class="sd">    By default it will select all objects without any filters.</span>
@@ -6025,14 +6166,14 @@ By default it will select all objects without any filters.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1268</span>
-<span class="normal">1269</span>
-<span class="normal">1270</span>
-<span class="normal">1271</span>
-<span class="normal">1272</span>
-<span class="normal">1273</span>
-<span class="normal">1274</span>
-<span class="normal">1275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1337</span>
+<span class="normal">1338</span>
+<span class="normal">1339</span>
+<span class="normal">1340</span>
+<span class="normal">1341</span>
+<span class="normal">1342</span>
+<span class="normal">1343</span>
+<span class="normal">1344</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The SQLAlchemy select expression used for the count query</span>
 <span class="sd">    which can be customized.</span>
@@ -6066,26 +6207,26 @@ It can be used for doing more complex queries like JSON objects. For example:</p
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1201</span>
-<span class="normal">1202</span>
-<span class="normal">1203</span>
-<span class="normal">1204</span>
-<span class="normal">1205</span>
-<span class="normal">1206</span>
-<span class="normal">1207</span>
-<span class="normal">1208</span>
-<span class="normal">1209</span>
-<span class="normal">1210</span>
-<span class="normal">1211</span>
-<span class="normal">1212</span>
-<span class="normal">1213</span>
-<span class="normal">1214</span>
-<span class="normal">1215</span>
-<span class="normal">1216</span>
-<span class="normal">1217</span>
-<span class="normal">1218</span>
-<span class="normal">1219</span>
-<span class="normal">1220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">search_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1270</span>
+<span class="normal">1271</span>
+<span class="normal">1272</span>
+<span class="normal">1273</span>
+<span class="normal">1274</span>
+<span class="normal">1275</span>
+<span class="normal">1276</span>
+<span class="normal">1277</span>
+<span class="normal">1278</span>
+<span class="normal">1279</span>
+<span class="normal">1280</span>
+<span class="normal">1281</span>
+<span class="normal">1282</span>
+<span class="normal">1283</span>
+<span class="normal">1284</span>
+<span class="normal">1285</span>
+<span class="normal">1286</span>
+<span class="normal">1287</span>
+<span class="normal">1288</span>
+<span class="normal">1289</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">search_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Specify the search query given the SQLAlchemy statement</span>
 <span class="sd">    and term to search for.</span>
 <span class="sd">    It can be used for doing more complex queries like JSON objects. For example:</span>
@@ -6130,37 +6271,37 @@ By default, sorting takes place by default fields.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1277</span>
-<span class="normal">1278</span>
-<span class="normal">1279</span>
-<span class="normal">1280</span>
-<span class="normal">1281</span>
-<span class="normal">1282</span>
-<span class="normal">1283</span>
-<span class="normal">1284</span>
-<span class="normal">1285</span>
-<span class="normal">1286</span>
-<span class="normal">1287</span>
-<span class="normal">1288</span>
-<span class="normal">1289</span>
-<span class="normal">1290</span>
-<span class="normal">1291</span>
-<span class="normal">1292</span>
-<span class="normal">1293</span>
-<span class="normal">1294</span>
-<span class="normal">1295</span>
-<span class="normal">1296</span>
-<span class="normal">1297</span>
-<span class="normal">1298</span>
-<span class="normal">1299</span>
-<span class="normal">1300</span>
-<span class="normal">1301</span>
-<span class="normal">1302</span>
-<span class="normal">1303</span>
-<span class="normal">1304</span>
-<span class="normal">1305</span>
-<span class="normal">1306</span>
-<span class="normal">1307</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sort_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1346</span>
+<span class="normal">1347</span>
+<span class="normal">1348</span>
+<span class="normal">1349</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span>
+<span class="normal">1354</span>
+<span class="normal">1355</span>
+<span class="normal">1356</span>
+<span class="normal">1357</span>
+<span class="normal">1358</span>
+<span class="normal">1359</span>
+<span class="normal">1360</span>
+<span class="normal">1361</span>
+<span class="normal">1362</span>
+<span class="normal">1363</span>
+<span class="normal">1364</span>
+<span class="normal">1365</span>
+<span class="normal">1366</span>
+<span class="normal">1367</span>
+<span class="normal">1368</span>
+<span class="normal">1369</span>
+<span class="normal">1370</span>
+<span class="normal">1371</span>
+<span class="normal">1372</span>
+<span class="normal">1373</span>
+<span class="normal">1374</span>
+<span class="normal">1375</span>
+<span class="normal">1376</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sort_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A method that is called every time the fields are sorted</span>
 <span class="sd">    and that can be customized.</span>
@@ -6214,13 +6355,13 @@ customized. By default it will select all objects without any filters.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1230</span>
-<span class="normal">1231</span>
-<span class="normal">1232</span>
-<span class="normal">1233</span>
-<span class="normal">1234</span>
-<span class="normal">1235</span>
-<span class="normal">1236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">details_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1299</span>
+<span class="normal">1300</span>
+<span class="normal">1301</span>
+<span class="normal">1302</span>
+<span class="normal">1303</span>
+<span class="normal">1304</span>
+<span class="normal">1305</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">details_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The SQLAlchemy select expression used for the details page which can be</span>
 <span class="sd">    customized. By default it will select all objects without any filters.</span>
@@ -6254,12 +6395,12 @@ By default does nothing.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1063</span>
-<span class="normal">1064</span>
-<span class="normal">1065</span>
-<span class="normal">1066</span>
-<span class="normal">1067</span>
-<span class="normal">1068</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_model_change</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_model_change</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">is_created</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform some actions before a model is created or updated.</span>
@@ -6297,17 +6438,17 @@ or updated and committed to the database.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span>
-<span class="normal">1074</span>
-<span class="normal">1075</span>
-<span class="normal">1076</span>
-<span class="normal">1077</span>
-<span class="normal">1078</span>
-<span class="normal">1079</span>
-<span class="normal">1080</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">after_model_change</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1139</span>
+<span class="normal">1140</span>
+<span class="normal">1141</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">after_model_change</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">is_created</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform some actions after a model was created</span>
@@ -6345,10 +6486,10 @@ By default does nothing.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1100</span>
-<span class="normal">1101</span>
-<span class="normal">1102</span>
-<span class="normal">1103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_model_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1169</span>
+<span class="normal">1170</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_model_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform some actions before a model is deleted.</span>
 <span class="sd">    By default does nothing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -6379,10 +6520,10 @@ By default do nothing.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>sqladmin/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1105</span>
-<span class="normal">1106</span>
-<span class="normal">1107</span>
-<span class="normal">1108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">after_model_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">after_model_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform some actions after a model is deleted.</span>
 <span class="sd">    By default do nothing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -6479,7 +6620,7 @@ By default do nothing.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.6e5f0216.min.js"></script>

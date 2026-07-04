@@ -137,20 +137,20 @@
                     </td>
                     <td class="text-end">
                       {% if model_view.check_can_view_details(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:details', request, row) }}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for_current_view('admin:details', request, row) }}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="View">
                         <span class="me-1"><i class="fa-solid fa-eye"></i></span>
                       </a>
                       {% endif %}
                       {% if model_view.check_can_edit(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for_current_view('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="Edit">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>
                       {% endif %}
                       {% if model_view.check_can_delete(request, row) %}
                       <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(row) }}"
-                        data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
+                        data-url="{{ model_view._url_for_delete_current_view(request, row) }}" data-bs-toggle="modal"
                         data-bs-target="#modal-delete">
                         <span data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
                           <span class="me-1"><i class="fa-solid fa-trash"></i></span>
@@ -159,7 +159,7 @@
                       {% endif %}
                     </td>
                     {% for name in model_view._list_prop_names %}
-                    {% set value, formatted_value = model_view.get_list_value(row, name) %}
+                    {% set value, formatted_value = model_view.get_list_value(row, name, request) %}
                     {% if name in model_view._relation_names %}
                     {% if is_list( value ) %}
                     <td>

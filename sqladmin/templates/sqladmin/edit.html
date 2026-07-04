@@ -8,34 +8,37 @@
     </div>
     <div class="card-body border-bottom py-3">
       {% block edit_form %}
-      <form action="{{ model_view._build_url_for('admin:edit', request, obj) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" method="POST"
-        enctype="multipart/form-data">
+      <form
+        action="{{ model_view._build_url_for_current_view('admin:edit', request, obj) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}"
+        method="POST" enctype="multipart/form-data">
         <div class="row">
           {% if error %}
           <div class="alert alert-danger" role="alert">{{ error }}</div>
           {% endif %}
         </div>
         <fieldset class="form-fieldset">
-          {{ render_form_fields(form, form_opts=form_opts, ajax_lookup_url=url_for('admin:ajax_lookup', identity=model_view.identity)) }}
+          {{ render_form_fields(form, form_opts=form_opts, ajax_lookup_url=url_for('admin:ajax_lookup',
+          identity=model_view.identity)) }}
         </fieldset>
         <div class="row">
           <div class="col-md-2">
-            <a href="{{ url_for('admin:list', identity=model_view.identity) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" class="btn">
+            <a href="{{ url_for('admin:list', identity=model_view.identity) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}"
+              class="btn">
               Cancel
             </a>
           </div>
           <div class="col-md-6">
             <div class="btn-group flex-wrap">
-              {% block submit_buttons_bottom  %}
-                <input type="submit" name="save" value="Save" class="btn">
-                <input type="submit" name="save" value="Save and continue editing" class="btn">
-                {% if model_view.can_create %}
-                {% if model_view.save_as %}
-                <input type="submit" name="save" value="Save as new" class="btn">
-                {% else %}
-                <input type="submit" name="save" value="Save and add another" class="btn">
-                {% endif %}
-                {% endif %}
+              {% block submit_buttons_bottom %}
+              <input type="submit" name="save" value="Save" class="btn">
+              <input type="submit" name="save" value="Save and continue editing" class="btn">
+              {% if model_view.can_create %}
+              {% if model_view.save_as %}
+              <input type="submit" name="save" value="Save as new" class="btn">
+              {% else %}
+              <input type="submit" name="save" value="Save and add another" class="btn">
+              {% endif %}
+              {% endif %}
               {% endblock %}
             </div>
           </div>
@@ -50,24 +53,24 @@
 {% block head_css %}
 {{ super() }}
 {% if form is defined %}
-  {% set form_media = collect_form_media(form) %}
-  {% for url in form_media.css %}
-  <link rel="stylesheet" href="{{ url }}">
-  {% endfor %}
+{% set form_media = collect_form_media(form) %}
+{% for url in form_media.css %}
+<link rel="stylesheet" href="{{ url }}">
+{% endfor %}
 {% endif %}
 {% endblock %}
 
-{% block tail %}
+{% block tail_js %}
 {{ super() }}
 {% if form is defined %}
-  {% set form_media = collect_form_media(form) %}
-  {% for url in form_media.js %}
-  <script src="{{ url }}"></script>
-  {% endfor %}
-  {% for field in form if field.editor_init_template is defined %}
-    {% with field = field %}
-      {% include field.editor_init_template %}
-    {% endwith %}
-  {% endfor %}
+{% set form_media = collect_form_media(form) %}
+{% for url in form_media.js %}
+<script src="{{ url }}"></script>
+{% endfor %}
+{% for field in form if field.editor_init_template is defined %}
+{% with field = field %}
+{% include field.editor_init_template %}
+{% endwith %}
+{% endfor %}
 {% endif %}
 {% endblock %}

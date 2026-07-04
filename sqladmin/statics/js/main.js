@@ -82,7 +82,7 @@ $(document).on('click', '#search-reset', function () {
 // Press enter to search
 $(document).on('keypress', '#search-input', function (e) {
   if (e.which === 13) {
-    $('#search-button').click();
+    $('#search-button').trigger('click');
   }
 });
 
@@ -96,7 +96,7 @@ $(document).on('keyup', '#search-input', function (e) {
   }
   // Make a new timeout set to go off in 1000ms (1 second)
   timeout = setTimeout(function () {
-    $('#search-button').click();
+    $('#search-button').trigger('click');
   }, 1000);
 });
 
@@ -122,7 +122,9 @@ $(':input[data-role="datetimepicker"]:not([readonly])').each(function () {
 
 // Ajax Refs
 $(':input[data-role="select2-ajax"]').each(function () {
-  $(this).select2({
+  var allowBlank = !!$(this).data("allowBlank");
+  var isMultiple = !!$(this).prop("multiple");
+  var select2AjaxOptions = {
     minimumInputLength: 1,
     ajax: {
       url: $(this).data("url"),
@@ -135,18 +137,25 @@ $(':input[data-role="select2-ajax"]').each(function () {
         return query;
       }
     }
-  });
+  };
 
-  existing_data = $(this).data("json") || [];
+  if (allowBlank && !isMultiple) {
+    select2AjaxOptions.allowClear = true;
+    select2AjaxOptions.placeholder = "";
+  }
+
+  $(this).select2(select2AjaxOptions);
+
+  var existing_data = $(this).data("json") || [];
   for (var i = 0; i < existing_data.length; i++) {
-    data = existing_data[i];
+    var data = existing_data[i];
     var option = new Option(data.text, data.id, true, true);
     $(this).append(option).trigger('change');
   }
 });
 
 // Checkbox select
-$("#select-all").click(function () {
+$("#select-all").on('click', function () {
   $('input.select-box:checkbox').prop('checked', this.checked);
 });
 
@@ -160,7 +169,7 @@ function showModal(modalId) {
 }
 
 // Bulk delete
-$("#action-delete").click(function () {
+$("#action-delete").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
     if ($(this).is(':checked')) {
@@ -173,7 +182,7 @@ $("#action-delete").click(function () {
   showModal('modal-delete');
 });
 
-$("[id^='action-custom-']").click(function () {
+$("[id^='action-custom-']").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
     if ($(this).is(':checked')) {

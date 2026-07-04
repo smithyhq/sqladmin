@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect as inspect_module
 import json
 import time
 import warnings
@@ -267,7 +268,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
-    column_formatters: ClassVar[Dict[MODEL_ATTR, Callable[[type, Column], Any]]] = {}
+    column_formatters: ClassVar[Dict[MODEL_ATTR, Callable[..., Any]]] = {}
     """Dictionary of list view column formatters.
     Columns can either be string names or SQLAlchemy columns.
 
@@ -280,9 +281,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     The format function has the prototype:
     ???+ formatter
         ```python
-        def formatter(model, attribute):
+        def formatter(model, attribute, request):
             # `model` is model instance
             # `attribute` is a Union[ColumnProperty, RelationshipProperty]
+            # `request` is a starlette.requests.Request
             pass
         ```
     """
@@ -402,9 +404,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
-    column_formatters_detail: ClassVar[
-        Dict[MODEL_ATTR, Callable[[type, Column], Any]]
-    ] = {}
+    column_formatters_detail: ClassVar[Dict[MODEL_ATTR, Callable[..., Any]]] = {}
     """Dictionary of details view column formatters.
     Columns can either be string names or SQLAlchemy columns.
 
@@ -417,9 +417,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     The format function has the prototype:
     ???+ formatter
         ```python
-        def formatter(model, attribute):
+        def formatter(model, attribute, request):
             # `model` is model instance
             # `attribute` is a Union[ColumnProperty, RelationshipProperty]
+            # `request` is a starlette.requests.Request
             pass
         ```
     """
@@ -732,6 +733,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._detail_formatters = self._build_column_pairs(
             self.column_formatters_detail
         )
+        self._list_formatter_accepts_request = self._build_formatter_request_support(
+            self._list_formatters
+        )
+        self._detail_formatter_accepts_request = self._build_formatter_request_support(
+            self._detail_formatters
+        )
 
         self._form_prop_names = self.get_form_columns()
         self._form_relation_names = [
@@ -796,6 +803,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         )
         return str(url) + "?" + query_params
 
+    # TODO: Merge current-view URL helpers into the legacy helpers in the next
+    # breaking-change window.
+    def _url_for_delete_current_view(self, request: Request, obj: Any) -> str:
+        pk = get_object_identifier(obj)
+        query_params = urlencode({"pks": pk})
+        url = request.url_for("admin:delete", identity=self.identity)
+        return str(url) + "?" + query_params
+
     def _url_for_details_with_prop(self, request: Request, obj: Any, prop: str) -> URL:
         target = getattr(obj, prop, None)
         if target is None:
@@ -804,6 +819,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     def _url_for_action(self, request: Request, action_name: str) -> str:
         return str(request.url_for(f"admin:action-{self.identity}-{action_name}"))
+
+    def _build_url_for_current_view(self, name: str, request: Request, obj: Any) -> URL:
+        return request.url_for(
+            name,
+            identity=self.identity,
+            pk=get_object_identifier(obj),
+        )
 
     def _build_url_for(self, name: str, request: Request, obj: Any) -> URL:
         return request.url_for(
@@ -832,6 +854,45 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             return formatter(value)
 
         return value
+
+    def _formatter_accepts_request(self, formatter: Callable[..., Any]) -> bool:
+        try:
+            parameters = inspect_module.signature(formatter).parameters.values()
+        except (TypeError, ValueError):
+            return False
+
+        positional_count = 0
+        for parameter in parameters:
+            if parameter.kind == inspect_module.Parameter.VAR_POSITIONAL:
+                return True
+            if parameter.kind in {
+                inspect_module.Parameter.POSITIONAL_ONLY,
+                inspect_module.Parameter.POSITIONAL_OR_KEYWORD,
+            }:
+                positional_count += 1
+
+        return positional_count >= 3
+
+    def _build_formatter_request_support(
+        self, formatters: Dict[str, Callable[..., Any]]
+    ) -> Dict[str, bool]:
+        return {
+            prop: self._formatter_accepts_request(formatter)
+            for prop, formatter in formatters.items()
+        }
+
+    def _call_formatter(
+        self,
+        formatter: Callable[..., Any],
+        obj: Any,
+        prop: str,
+        request: Request | None = None,
+        accepts_request: bool = False,
+    ) -> Any:
+        if request is not None and accepts_request:
+            return formatter(obj, prop, request)
+
+        return formatter(obj, prop)
 
     def validate_page_number(self, number: Union[str, None], default: int) -> int:
         if not number:
@@ -962,23 +1023,43 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 session.add(obj)
                 return await anyio.to_thread.run_sync(lambda: getattr(obj, prop))
 
-    async def get_list_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
+    async def get_list_value(
+        self, obj: Any, prop: str, request: Request | None = None
+    ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the list view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._list_formatters.get(prop)
         formatted_value = (
-            formatter(obj, prop) if formatter else self._default_formatter(value)
+            self._call_formatter(
+                formatter,
+                obj,
+                prop,
+                request,
+                self._list_formatter_accepts_request.get(prop, False),
+            )
+            if formatter
+            else self._default_formatter(value)
         )
         return value, formatted_value
 
-    async def get_detail_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
+    async def get_detail_value(
+        self, obj: Any, prop: str, request: Request | None = None
+    ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the detail view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._detail_formatters.get(prop)
         formatted_value = (
-            formatter(obj, prop) if formatter else self._default_formatter(value)
+            self._call_formatter(
+                formatter,
+                obj,
+                prop,
+                request,
+                self._detail_formatter_accepts_request.get(prop, False),
+            )
+            if formatter
+            else self._default_formatter(value)
         )
         return value, formatted_value
 
@@ -1315,10 +1396,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self,
         data: List[Any],
         export_type: str = "csv",
+        request: Request | None = None,
     ) -> StreamingResponse:
         if export_type == "csv":
             export_method = (
-                PrettyExport.pretty_export_csv(self, data)
+                PrettyExport.pretty_export_csv(self, data, request=request)
                 if self.use_pretty_export
                 else self._export_csv(data)
             )

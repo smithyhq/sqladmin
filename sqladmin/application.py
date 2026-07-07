@@ -36,6 +36,7 @@ from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
@@ -129,6 +130,7 @@ class BaseAdmin:
         templates.env.globals["get_object_identifier"] = get_object_identifier
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
         templates.env.globals["Secret"] = Secret
+        templates.env.globals["collect_form_media"] = collect_form_media
 
         return templates
 
@@ -220,7 +222,7 @@ class BaseAdmin:
             else:
                 view.identity = getattr(func, "_identity")
                 path = getattr(func, "_path")
-                name = getattr(func, "_identity")
+                name = f"view-{view.identity}"
 
             self.admin.add_route(
                 route=func,
@@ -418,6 +420,7 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        static_files_kwargs: dict[str, Any] | None = None,
     ) -> None:
         """
         Args:
@@ -430,6 +433,7 @@ class Admin(BaseAdminView):
             logo_width: Width of the logo image in pixels. Defaults to 64.
             logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
+            static_files_kwargs: Extra keyword arguments for Starlette StaticFiles.
         """
 
         super().__init__(
@@ -447,7 +451,8 @@ class Admin(BaseAdminView):
             authentication_backend=authentication_backend,
         )
 
-        statics = StaticFiles(packages=["sqladmin"])
+        static_files_kwargs = {**(static_files_kwargs or {}), "packages": ["sqladmin"]}
+        statics = StaticFiles(**static_files_kwargs)
 
         async def http_exception(
             request: Request, exc: Exception
@@ -624,6 +629,17 @@ class Admin(BaseAdminView):
         model_view = self._find_model_view(identity)
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
+
+        if request.method == "GET":
+            form = Form()
+            context = {
+                "model_view": model_view,
+                "form": form,
+            }
+            return await self.templates.TemplateResponse(
+                request, model_view.create_template, context
+            )
+
         form_data = await self._handle_form_data(request)
         form = Form(form_data)
 
@@ -631,11 +647,6 @@ class Admin(BaseAdminView):
             "model_view": model_view,
             "form": form,
         }
-
-        if request.method == "GET":
-            return await self.templates.TemplateResponse(
-                request, model_view.create_template, context
-            )
 
         if not form.validate():
             return await self.templates.TemplateResponse(
@@ -741,7 +752,9 @@ class Admin(BaseAdminView):
         rows = await model_view.get_model_objects(
             request=request, limit=model_view.export_max_rows
         )
-        return await model_view.export_data(rows, export_type=export_type)
+        return await model_view.export_data(
+            rows, export_type=export_type, request=request
+        )
 
     async def login(self, request: Request) -> Response:
         if self.authentication_backend is None:
@@ -814,7 +827,10 @@ class Admin(BaseAdminView):
         identifier = get_object_identifier(obj)
 
         if form.get("save") == "Save":
-            return request.url_for("admin:list", identity=identity)
+            url = URL(str(request.url_for("admin:list", identity=identity)))
+            if request.url.query:
+                url = url.replace(query=request.url.query)
+            return url
 
         if form.get("save") == "Save and continue editing" or (
             form.get("save") == "Save as new" and model_view.save_as_continue

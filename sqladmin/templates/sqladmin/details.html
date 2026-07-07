@@ -24,7 +24,7 @@
             {% set label = model_view._column_labels.get(name, name) %}
             <tr>
               <td>{{ label }}</td>
-              {% set value, formatted_value = model_view.get_detail_value(model, name) %}
+              {% set value, formatted_value = model_view.get_detail_value(model, name, request) %}
               {% if name in model_view._relation_names %}
               {% if is_list( value ) %}
               <td>

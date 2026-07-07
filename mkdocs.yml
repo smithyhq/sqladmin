@@ -4,6 +4,8 @@ site_url: https://smithyhq.github.io/sqladmin/
 
 theme:
   name: "zensical"
+  features:
+    - content.code.copy
   palette:
     - scheme: default
       toggle:

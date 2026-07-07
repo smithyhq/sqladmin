@@ -143,7 +143,6 @@ class ModelConverterBase:
         kwargs.setdefault("label", label)
         kwargs.setdefault("validators", [])
         kwargs.setdefault("filters", [])
-        kwargs.setdefault("default", None)
         kwargs.setdefault("description", prop.doc)
         kwargs.setdefault("render_kw", widget_args)
 
@@ -155,6 +154,10 @@ class ModelConverterBase:
             kwargs = await self._prepare_relationship(
                 prop=prop, session_maker=session_maker, kwargs=kwargs, loader=loader
             )
+
+        # Fallback so kwargs always has "default"; column defaults set above win.
+        if kwargs is not None:
+            kwargs.setdefault("default", None)
 
         return kwargs
 

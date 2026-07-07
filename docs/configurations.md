@@ -137,6 +137,17 @@ The options available are:
         column_filterable_list = [User.is_admin]
     ```
 
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: r.url_for(
+                "admin:details", identity="user", pk=m.id
+            )
+        }
+    ```
+
 !!! tip
 
     You can use the special keyword `"__all__"` in `column_list` or `column_details_list`
@@ -278,6 +289,8 @@ The options available are:
         column_details_list = [User.id, User.name, "address.zip_code"]
         column_formatters_detail = {User.name: lambda m, a: m.name[:10]}
     ```
+
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
 
 !!! tip
 

@@ -82,7 +82,7 @@ $(document).on('click', '#search-reset', function () {
 // Press enter to search
 $(document).on('keypress', '#search-input', function (e) {
   if (e.which === 13) {
-    $('#search-button').click();
+    $('#search-button').trigger('click');
   }
 });
 
@@ -96,7 +96,7 @@ $(document).on('keyup', '#search-input', function (e) {
   }
   // Make a new timeout set to go off in 1000ms (1 second)
   timeout = setTimeout(function () {
-    $('#search-button').click();
+    $('#search-button').trigger('click');
   }, 1000);
 });
 
@@ -122,18 +122,18 @@ $(':input[data-role="datetimepicker"]:not([readonly])').each(function () {
 
 // Ajax Refs
 $(':input[data-role="select2-ajax"]').each(function () {
+  var allowBlank = !!$(this).data("allowBlank");
+  var isMultiple = !!$(this).prop("multiple");
   var placeholderText = $(this).attr("placeholder") || "Search";
+  var originalName = $(this).attr("name");
 
-  var $select = $(this);
-  var originalName = $select.attr("name");
   var $hiddenInput = $('<input type="hidden">').attr("name", originalName);
-  $select.after($hiddenInput);
-  $select.removeAttr("name");
+  $(this).after($hiddenInput);
+  $(this).removeAttr("name");
 
-  $select.select2({
+  var select2AjaxOptions = {
     minimumInputLength: 1,
     placeholder: placeholderText,
-    allowClear: true,
     ajax: {
       url: $select.data("url"),
       dataType: 'json',
@@ -141,37 +141,59 @@ $(':input[data-role="select2-ajax"]').each(function () {
         return {
           name: originalName,
           term: params.term,
-        };
+        }
       }
     }
-  });
+  };
+
+  if (allowBlank && !isMultiple) {
+    select2AjaxOptions.allowClear = true;
+  }
 
   $select.on('change', function () {
     var val = $select.val();
     if (Array.isArray(val)) {
-    $hiddenInput.val(val.join(','));
+      $hiddenInput.val(val.join(','));
     } else {
-    $hiddenInput.val(val || '');
+      $hiddenInput.val(val || '');
     }
-});
-
-  var existing_data = $select.data("json") || [];
-  existing_data.forEach(function (data) {
-    var option = new Option(data.text, data.id, true, true);
-    $select.append(option);
   });
 
-  $select.trigger('change');
+  $(this).on('change', function () {
+    var val = $(this).val();
+    if (Array.isArray(val)) {
+      $hiddenInput.val(val.join(','));
+    } else {
+      $hiddenInput.val(val || '');
+    }
+  });
+
+  var existing_data = $(this).data("json") || [];
+  existing_data.forEach(function (data) {
+    var option = new Option(data.text, data.id, true, true);
+    $(this).append(option);
+  });
+
+  $(this).trigger('change');
 });
 
 
 // Checkbox select
-$("#select-all").click(function () {
+$("#select-all").on('click', function () {
   $('input.select-box:checkbox').prop('checked', this.checked);
 });
 
+function showModal(modalId) {
+  var modalElement = document.getElementById(modalId);
+  if (!modalElement) {
+    return;
+  }
+  // Use Tabler bundled Bootstrap.
+  window.tabler.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+}
+
 // Bulk delete
-$("#action-delete").click(function () {
+$("#action-delete").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
     if ($(this).is(':checked')) {
@@ -181,10 +203,10 @@ $("#action-delete").click(function () {
 
   $('#action-delete').data("pk", pks);
   $('#action-delete').data("url", $(this).data('url') + '?pks=' + pks.join(","));
-  $('#modal-delete').modal('show');
+  showModal('modal-delete');
 });
 
-$("[id^='action-custom-']").click(function () {
+$("[id^='action-custom-']").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
     if ($(this).is(':checked')) {

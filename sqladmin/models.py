@@ -1186,7 +1186,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     ) -> Response | None:
         """Perform some actions after a model was created
         or updated and committed to the database.
-        By default does nothing.
+
+        The return value controls the HTTP response:
+
+        * ``None`` (default) -- redirect as usual.
+        * ``Response`` -- return a custom Starlette ``Response`` directly.
         """
 
     def _build_column_pairs(

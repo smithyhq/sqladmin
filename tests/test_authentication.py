@@ -100,6 +100,22 @@ def test_logout(client: TestClient) -> None:
     assert response.url == "http://testserver/admin/login"
 
 
+def test_logout_failure_redirects_to_login() -> None:
+    class LogoutFailureBackend(CustomBackend):
+        async def logout(self, request: Request) -> bool:
+            return False
+
+    app = Starlette()
+    backend = LogoutFailureBackend(secret_key="sqladmin")
+    Admin(app=app, engine=engine, authentication_backend=backend)
+
+    with TestClient(app=app, base_url="http://testserver") as client:
+        response = client.get("/admin/logout")
+
+    assert response.status_code == 200
+    assert response.url == "http://testserver/admin/login"
+
+
 def test_expose_access_login_required_views(client: TestClient) -> None:
     response = client.get("/admin/custom")
     assert response.url == "http://testserver/admin/login"

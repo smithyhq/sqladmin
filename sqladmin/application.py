@@ -788,6 +788,9 @@ class Admin(BaseAdminView):
 
         response = await self.authentication_backend.logout(request)
 
+        if not response:
+            return RedirectResponse(request.url_for("admin:login"), status_code=302)
+
         if isinstance(response, Response):
             return response
 

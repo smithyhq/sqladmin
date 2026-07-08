@@ -1,18 +1,42 @@
+import datetime
 import re
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Type
 
-from sqlalchemy import Integer
+from sqlalchemy import (
+    BigInteger,
+    Date,
+    DateTime,
+    Float,
+    Integer,
+    Numeric,
+    SmallInteger,
+    String,
+    Text,
+)
 from sqlalchemy.sql.expression import Select, select
+from sqlalchemy.sql.sqltypes import TypeEngine, _Binary
 from starlette.requests import Request
 
 from sqladmin._types import MODEL_ATTR
+
+# Try to import UUID type for SQLAlchemy 2.0+
+try:
+    import uuid
+
+    from sqlalchemy import Uuid  # type: ignore[attr-defined]
+
+    HAS_UUID_SUPPORT = True
+except ImportError:
+    # Fallback for SQLAlchemy < 2.0
+    HAS_UUID_SUPPORT = False
+    Uuid = None  # type: ignore[misc, assignment]
 
 
 def get_parameter_name(column: MODEL_ATTR) -> str:
     if isinstance(column, str):
         return column
-    else:
-        return column.key
+
+    return column.key
 
 
 def prettify_attribute_name(name: str) -> str:
@@ -42,6 +66,9 @@ def get_model_from_column(column: Any) -> Any:
 
 
 class BooleanFilter:
+    has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
+
     def __init__(
         self,
         column: MODEL_ATTR,
@@ -53,7 +80,10 @@ class BooleanFilter:
         self.parameter_name = parameter_name or get_parameter_name(column)
 
     async def lookups(
-        self, request: Request, model: Any, run_query: Callable[[Select], Any]
+        self,
+        request: Request,
+        model: Any,
+        run_query: Callable[[Select], Any],
     ) -> List[Tuple[str, str]]:
         return [
             ("all", "All"),
@@ -65,13 +95,17 @@ class BooleanFilter:
         column_obj = get_column_obj(self.column, model)
         if value == "true":
             return query.filter(column_obj.is_(True))
-        elif value == "false":
+
+        if value == "false":
             return query.filter(column_obj.is_(False))
-        else:
-            return query
+
+        return query
 
 
 class AllUniqueStringValuesFilter:
+    has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
+
     def __init__(
         self,
         column: MODEL_ATTR,
@@ -83,7 +117,10 @@ class AllUniqueStringValuesFilter:
         self.parameter_name = parameter_name or get_parameter_name(column)
 
     async def lookups(
-        self, request: Request, model: Any, run_query: Callable[[Select], Any]
+        self,
+        request: Request,
+        model: Any,
+        run_query: Callable[[Select], Any],
     ) -> List[Tuple[str, str]]:
         column_obj = get_column_obj(self.column, model)
 
@@ -101,6 +138,9 @@ class AllUniqueStringValuesFilter:
 
 
 class StaticValuesFilter:
+    has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
+
     def __init__(
         self,
         column: MODEL_ATTR,
@@ -114,7 +154,10 @@ class StaticValuesFilter:
         self.values = values
 
     async def lookups(
-        self, request: Request, model: Any, run_query: Callable[[Select], Any]
+        self,
+        request: Request,
+        model: Any,
+        run_query: Callable[[Select], Any],
     ) -> List[Tuple[str, str]]:
         return [("", "All")] + self.values
 
@@ -126,6 +169,9 @@ class StaticValuesFilter:
 
 
 class ForeignKeyFilter:
+    has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
+
     def __init__(
         self,
         foreign_key: MODEL_ATTR,
@@ -141,13 +187,18 @@ class ForeignKeyFilter:
         self.parameter_name = parameter_name or get_parameter_name(foreign_key)
 
     async def lookups(
-        self, request: Request, model: Any, run_query: Callable[[Select], Any]
+        self,
+        request: Request,
+        model: Any,
+        run_query: Callable[[Select], Any],
     ) -> List[Tuple[str, str]]:
         foreign_key_obj = get_column_obj(self.foreign_key, model)
         if self.foreign_model is None and isinstance(self.foreign_display_field, str):
             raise ValueError("foreign_model is required for string foreign key filters")
         if self.foreign_model is None:
-            assert not isinstance(self.foreign_display_field, str)
+            if isinstance(self.foreign_display_field, str):
+                raise ValueError("foreign_model should not be string")
+
             foreign_display_field_obj = self.foreign_display_field
         else:
             foreign_display_field_obj = get_column_obj(
@@ -172,3 +223,167 @@ class ForeignKeyFilter:
             value = int(value)
 
         return query.filter(foreign_key_obj == value)
+
+
+class OperationColumnFilter:
+    """Universal filter that provides appropriate filter types based on column type"""
+
+    has_operator = True
+    template = "sqladmin/filters/operation_filter.html"
+
+    def __init__(
+        self,
+        column: MODEL_ATTR,
+        title: Optional[str] = None,
+        parameter_name: Optional[str] = None,
+    ):
+        self.column = column
+        self.title = title or get_title(column)
+        self.parameter_name = parameter_name or get_parameter_name(column)
+
+    def get_operation_options(self, column_obj: Any) -> List[Tuple[str, str]]:
+        """Return operation options based on column type"""
+        if self._is_string_type(column_obj):
+            return [
+                ("contains", "Contains"),
+                ("equals", "Equals"),
+                ("starts_with", "Starts with"),
+                ("ends_with", "Ends with"),
+            ]
+
+        if self._is_numeric_type(column_obj):
+            return [
+                ("equals", "Equals"),
+                ("greater_than", "Greater than"),
+                ("less_than", "Less than"),
+            ]
+
+        if self._is_date_type(column_obj):
+            return [
+                ("equals", "Equals"),
+                ("greater_than", "Greater than"),
+                ("less_than", "Less than"),
+            ]
+
+        if self._is_uuid_type(column_obj):
+            return [
+                ("equals", "Equals"),
+                ("contains", "Contains"),
+                ("starts_with", "Starts with"),
+            ]
+
+        return [
+            ("equals", "Equals"),
+        ]
+
+    def get_operation_options_for_model(self, model: Any) -> List[Tuple[str, str]]:
+        """Return operation options based on column type for given model"""
+        column_obj = get_column_obj(self.column, model)
+        return self.get_operation_options(column_obj)
+
+    def _is_string_type(self, column_obj: Any) -> bool:
+        return isinstance(column_obj.type, (String, Text, _Binary))
+
+    def _is_numeric_type(self, column_obj: Any) -> bool:
+        return isinstance(
+            column_obj.type, (Integer, Numeric, Float, BigInteger, SmallInteger)
+        )
+
+    def _is_date_type(self, column_obj: Any) -> bool:
+        return isinstance(column_obj.type, (Date, DateTime))
+
+    def _is_uuid_type(self, column_obj: Any) -> bool:
+        # Check if UUID support is available and column is UUID type
+        return HAS_UUID_SUPPORT and isinstance(column_obj.type, Uuid)
+
+    def _convert_value_for_column(
+        self, value: str, column_obj: Any, operation: str = "equals"
+    ) -> Any:
+        if not value:
+            return None
+
+        column_type = column_obj.type
+
+        converters: List[Tuple[Tuple[Type[TypeEngine], ...], Callable[[str], Any]]] = [
+            ((String, Text, _Binary), str),
+            ((Integer, BigInteger, SmallInteger), int),
+            ((Numeric, Float), float),
+            ((DateTime,), datetime.datetime.fromisoformat),
+            ((Date,), datetime.date.fromisoformat),
+        ]
+
+        try:
+            for types, converter in converters:
+                if isinstance(column_type, types):
+                    return converter(value)
+
+            if HAS_UUID_SUPPORT and isinstance(column_type, Uuid):
+                return (
+                    str(value.strip())
+                    if operation in ("contains", "starts_with")
+                    else uuid.UUID(value.strip())
+                )
+
+        except (ValueError, TypeError):
+            return None
+
+        return value
+
+    async def lookups(
+        self,
+        request: Request,
+        model: Any,
+        run_query: Callable[[Select], Any],
+    ) -> List[Tuple[str, str]]:
+        # This method is not used for has_operator=True filters
+        # The UI uses get_operation_options_for_model instead
+        return []
+
+    async def get_filtered_query(
+        self,
+        query: Select,
+        operation: str,
+        value: Any,
+        model: Any,
+    ) -> Select:
+        """Handle filtering with separate operation and value parameters"""
+        if not value or value == "" or not operation:
+            return query
+
+        column_obj = get_column_obj(self.column, model)
+        converted_value = self._convert_value_for_column(
+            str(value).strip(),
+            column_obj,
+            operation,
+        )
+
+        if converted_value is None:
+            return query
+
+        if operation == "contains":
+            if self._is_uuid_type(column_obj):
+                # For UUID, cast to text for LIKE operations
+                search_value = f"%{str(value).strip()}%"
+                return query.filter(column_obj.cast(String).ilike(search_value))
+
+            return query.filter(column_obj.ilike(f"%{str(value).strip()}%"))
+
+        if operation == "equals":
+            return query.filter(column_obj == converted_value)
+
+        if operation == "starts_with":
+            if self._is_uuid_type(column_obj):
+                # For UUID, cast to text for LIKE operations
+                search_value = f"{str(value).strip()}%"
+                return query.filter(column_obj.cast(String).ilike(search_value))
+
+            return query.filter(column_obj.startswith(str(value).strip()))
+
+        if operation == "ends_with":
+            return query.filter(column_obj.endswith(str(value).strip()))
+        if operation == "greater_than":
+            return query.filter(column_obj > converted_value)
+        if operation == "less_than":
+            return query.filter(column_obj < converted_value)
+
+        return query

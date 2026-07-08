@@ -28,6 +28,7 @@
         - is_visible
         - is_accessible
         - column_searchable_list
+        - search_auto_submit
         - search_placeholder
         - column_sortable_list
         - column_default_sort

@@ -38,7 +38,7 @@ class Hero(SQLModel, table=True):
 
 
 @pytest.fixture(autouse=True)
-def prepare_database() -> AsyncGenerator[None, None]:
+async def prepare_database() -> AsyncGenerator[None, None]:
     SQLModel.metadata.create_all(engine)
     yield
     SQLModel.metadata.drop_all(engine)

@@ -1,8 +1,12 @@
+# mypy: disable-error-code="override"
+
 from __future__ import annotations
 
 import json
 import operator
+from enum import Enum
 from typing import Any, Callable, Generator
+from uuid import UUID
 
 from wtforms import Form, ValidationError, fields, widgets
 
@@ -29,7 +33,7 @@ class DateField(fields.DateField):
     Add custom DatePickerWidget for data-format and data-date-format fields
     """
 
-    widget = sqladmin_widgets.DatePickerWidget()
+    widget = sqladmin_widgets.DatePickerWidget()  # type: ignore[assignment]
 
 
 class DateTimeField(fields.DateTimeField):
@@ -37,7 +41,7 @@ class DateTimeField(fields.DateTimeField):
     Allows modifying the datetime format of a DateTimeField using form_args.
     """
 
-    widget = sqladmin_widgets.DateTimePickerWidget()
+    widget = sqladmin_widgets.DateTimePickerWidget()  # type: ignore[assignment]
 
 
 class IntervalField(fields.StringField):
@@ -53,7 +57,7 @@ class IntervalField(fields.StringField):
         if not interval:
             raise ValueError("Invalide timedelta format.")
 
-        self.data = interval
+        self.data = interval  # type: ignore[assignment]
 
 
 class SelectField(fields.SelectField):
@@ -80,13 +84,15 @@ class SelectField(fields.SelectField):
         for choice in choices:
             if isinstance(choice, tuple):
                 yield (choice[0], choice[1], self.coerce(choice[0]) == self.data, {})
-            else:
+            elif isinstance(choice, Enum):
                 yield (
                     choice.value,
                     choice.name,
                     self.coerce(choice.value) == self.data,
                     {},
                 )
+            else:
+                yield (str(choice), str(choice), self.coerce(choice) == self.data, {})
 
     def process_formdata(self, valuelist: list[str]) -> None:
         if valuelist:
@@ -95,8 +101,10 @@ class SelectField(fields.SelectField):
             else:
                 try:
                     self.data = self.coerce(valuelist[0])
-                except ValueError:
-                    raise ValueError(self.gettext("Invalid Choice: could not coerce"))
+                except ValueError as exc:
+                    raise ValueError(
+                        self.gettext("Invalid Choice: could not coerce")
+                    ) from exc
 
     def pre_validate(self, form: Form) -> None:
         if self.allow_blank and self.data is None:
@@ -109,10 +117,11 @@ class JSONField(fields.TextAreaField):
     def _value(self) -> str:
         if self.raw_data:
             return self.raw_data[0]
-        elif self.data:
+
+        if self.data:
             return str(json.dumps(self.data, ensure_ascii=False))
-        else:
-            return "{}"
+
+        return "{}"
 
     def process_formdata(self, valuelist: list[str]) -> None:
         if valuelist:
@@ -125,8 +134,8 @@ class JSONField(fields.TextAreaField):
 
             try:
                 self.data = json.loads(valuelist[0])
-            except ValueError:
-                raise ValueError(self.gettext("Invalid JSON"))
+            except ValueError as exc:
+                raise ValueError(self.gettext("Invalid JSON")) from exc
 
 
 class QuerySelectField(fields.SelectFieldBase):
@@ -168,7 +177,7 @@ class QuerySelectField(fields.SelectFieldBase):
         return self._data
 
     @data.setter
-    def data(self, data: tuple) -> None:
+    def data(self, data: tuple | None) -> None:
         self._data = data
         self._formdata = None
 
@@ -251,7 +260,8 @@ class QuerySelectMultipleField(QuerySelectField):
             for pk, _ in self._select_data:
                 if not formdata:
                     break
-                elif pk in formdata:
+
+                if pk in formdata:
                     formdata.remove(pk)
                     data.append(pk)
             if formdata:
@@ -260,7 +270,7 @@ class QuerySelectMultipleField(QuerySelectField):
         return self._data
 
     @data.setter
-    def data(self, data: tuple) -> None:
+    def data(self, data: tuple | None) -> None:
         self._data = data
         self._formdata = None
 
@@ -280,7 +290,8 @@ class QuerySelectMultipleField(QuerySelectField):
     def pre_validate(self, form: Form) -> None:
         if self._invalid_formdata:
             raise ValidationError(self.gettext("Not a valid choice"))
-        elif self.data:
+
+        if self.data:
             pk_list = [x[0] for x in self._select_data]
             for v in self.data:
                 if v not in pk_list:  # pragma: no cover
@@ -330,7 +341,7 @@ class AjaxSelectField(fields.SelectFieldBase):
 
 
 class AjaxSelectMultipleField(fields.SelectFieldBase):
-    widget = sqladmin_widgets.AjaxSelect2Widget(multiple=True)
+    widget = sqladmin_widgets.AjaxSelect2Widget(multiple=True)  # type: ignore[assignment]
     separator = ","
 
     def __init__(
@@ -371,10 +382,9 @@ class AjaxSelectMultipleField(fields.SelectFieldBase):
 
 
 class Select2TagsField(fields.SelectField):
-    widget = sqladmin_widgets.Select2TagsWidget()
+    widget = sqladmin_widgets.Select2TagsWidget()  # type: ignore[assignment]
 
-    def pre_validate(self, form: Form) -> None:
-        ...
+    def pre_validate(self, form: Form) -> None: ...
 
     def process_formdata(self, valuelist: list) -> None:
         self.data = valuelist
@@ -389,3 +399,43 @@ class FileField(fields.FileField):
     """
 
     widget = sqladmin_widgets.FileInputWidget()
+
+
+class BooleanField(fields.BooleanField):
+    """
+    Boolean checkbox field.
+    """
+
+    widget = sqladmin_widgets.BooleanInputWidget()
+
+
+class UuidField(fields.StringField):
+    def process_formdata(self, valuelist: list) -> None:
+        """Convert submitted string to UUID object."""
+        if valuelist:
+            value = valuelist[0]
+            if not value:  # Empty string
+                self.data = None
+                return
+
+            try:
+                self.data = UUID(value)  # type: ignore[assignment]
+            except (ValueError, AttributeError, TypeError) as e:
+                self.data = None
+                raise ValidationError(f"Invalid UUID format. {e}")
+        else:
+            self.data = None
+
+    def process_data(self, value: str | UUID | None) -> None:
+        """Handle initial data (from object or default)."""
+        if value is None:
+            self.data = None
+        elif isinstance(value, UUID):
+            self.data = value  # type: ignore[assignment]
+        elif isinstance(value, str):
+            try:
+                self.data = UUID(value)  # type: ignore[assignment]
+            except (ValueError, AttributeError, TypeError):
+                self.data = None
+        else:
+            self.data = None

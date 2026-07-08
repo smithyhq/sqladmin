@@ -1,0 +1,29 @@
+repos:
+  - repo: local
+    hooks:
+      - id: format
+        name: format
+        language: system
+        files: \.py
+        entry: make format
+        pass_filenames: false
+      - id: lint
+        name: lint
+        language: system
+        files: \.py
+        entry: make lint
+      - id: secure
+        name: secure
+        language: system
+        entry: make secure
+        pass_filenames: false
+      - id: docs
+        name: docs
+        entry: make docs-build
+        language: system
+        pass_filenames: false
+      - id: test
+        name: test
+        entry: make test
+        language: system
+        pass_filenames: false

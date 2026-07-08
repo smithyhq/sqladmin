@@ -2,10 +2,11 @@ import enum
 from typing import Any, AsyncGenerator
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     Column,
     Date,
     Enum,
@@ -15,8 +16,9 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import declarative_base, relationship, selectinload
 from starlette.applications import Starlette
 from starlette.requests import Request
 
@@ -25,8 +27,10 @@ from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
 
-Base = declarative_base()  # type: Any
-session_maker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+Base = declarative_base()
+session_maker = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 app = Starlette()
 admin = Admin(app=app, engine=engine)
@@ -76,6 +80,7 @@ class Profile(Base):
 
     id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -107,6 +112,33 @@ class ProfileFormattable(Base):
         return f"Profile {self.id}"
 
 
+class Person(Base):
+    __tablename__ = "person"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    worker = relationship("Worker", back_populates="person")
+
+
+class Worker(Base):
+    __tablename__ = "worker"
+    id = Column(Integer, primary_key=True)
+    person_id = Column(Integer, ForeignKey("person.id"))
+    person = relationship(Person, back_populates="worker", lazy="immediate")
+
+    @hybrid_property
+    def person_name(self):
+        return self.person.name
+
+    @person_name.inplace.expression
+    def _person_name_expression(cls):
+        return (
+            select(Person.name).where(Person.id == cls.person_id).label("person_name")
+        )
+
+    def __str__(self):
+        return f"{self.person_name}"
+
+
 class Movie(Base):
     __tablename__ = "movies"
 
@@ -119,13 +151,35 @@ class Product(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     price = Column(BigInteger)
+    is_sold = Column(Boolean, nullable=False)
 
 
-@pytest.fixture
+class EachRowAction(Base):
+    __tablename__ = "each_row_actions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, default="Name")
+    can_view_details = Column(Boolean, nullable=True, default=True)
+    can_edit = Column(Boolean, nullable=True, default=True)
+    can_delete = Column(Boolean, nullable=True, default=True)
+
+
+class WithDefaults(Base):
+    __tablename__ = "with_defaults"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, default="untitled")
+    priority = Column(Integer, default=5)
+    is_active = Column(Boolean, nullable=False, default=True)
+
+
+@pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
     yield
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
@@ -134,8 +188,9 @@ async def prepare_database() -> AsyncGenerator[None, None]:
 
 @pytest.fixture
 async def client(prepare_database: Any) -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(app=app, base_url="http://testserver") as c:
-        yield c
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        yield client
 
 
 class UserAdmin(ModelView, model=User):
@@ -150,8 +205,8 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
-    column_sortable_list = [User.id]
+    column_searchable_list = [User.name, User.status]
+    column_sortable_list = [User.id, User.name]
     column_export_list = [User.name, User.status]
     column_formatters = {
         User.addresses_formattable: lambda m, a: [
@@ -165,11 +220,18 @@ class UserAdmin(ModelView, model=User):
         ],
         User.profile_formattable: lambda m, a: f"Formatted {m.profile_formattable}",
     }
+    form_args = {
+        "profile": {
+            "allow_blank": True,
+        },
+    }
     save_as = True
 
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
+    column_searchable_list = [Address.id]
+    search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
 
@@ -190,7 +252,35 @@ class MovieAdmin(ModelView, model=Movie):
         return False
 
 
+class EachRowActionAdmin(ModelView, model=EachRowAction):
+    column_list = [
+        "name",
+        "can_view_details",
+        "can_edit",
+        "can_delete",
+    ]
+
+    async def check_can_view_details(
+        self, request: Request, model: EachRowAction
+    ) -> bool:
+        return model.can_view_details
+
+    async def check_can_edit(self, request: Request, model: EachRowAction) -> bool:
+        return model.can_edit
+
+    async def check_can_delete(self, request: Request, model: EachRowAction) -> bool:
+        return model.can_delete
+
+
 class ProductAdmin(ModelView, model=Product):
+    pass
+
+
+class PersonAdmin(ModelView, model=Person):
+    form_columns = [Person.name]
+
+
+class WithDefaultsAdmin(ModelView, model=WithDefaults):
     pass
 
 
@@ -198,7 +288,10 @@ admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
+admin.add_view(EachRowActionAdmin)
 admin.add_view(ProductAdmin)
+admin.add_view(PersonAdmin)
+admin.add_view(WithDefaultsAdmin)
 
 
 async def test_root_view(client: AsyncClient) -> None:
@@ -422,7 +515,8 @@ async def test_delete_endpoint_unauthorized_response(client: AsyncClient) -> Non
 async def test_delete_endpoint_not_found_response(client: AsyncClient) -> None:
     response = await client.delete("/admin/user/delete?pks=1")
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert "error=404%3A+Object+not+found" in response.text
 
     stmt = select(func.count(User.id))
     async with session_maker() as s:
@@ -489,6 +583,143 @@ async def test_create_endpoint_with_required_fields(client: AsyncClient) -> None
         '<label class="form-label col-sm-2 col-form-label" for="price">Price</label>'
         in response.text
     )
+
+
+async def test_create_endpoint_renders_column_defaults(client: AsyncClient) -> None:
+    response = await client.get("/admin/with-defaults/create")
+
+    assert response.status_code == 200
+    assert (
+        '<input class="form-control" id="name" name="name" type="text"'
+        ' value="untitled">' in response.text
+    )
+    assert (
+        '<input class="form-control" id="priority" name="priority" type="number"'
+        ' value="5">' in response.text
+    )
+    assert (
+        '<input checked class="form-check-input" id="is_active" name="is_active"'
+        ' type="checkbox" value="y">' in response.text
+    )
+
+
+async def test_create_endpoint_post_unchecked_overrides_default(
+    client: AsyncClient,
+) -> None:
+    data = {"name": "foo", "priority": "3"}
+    response = await client.post(
+        "/admin/with-defaults/create", data=data, follow_redirects=False
+    )
+
+    assert response.status_code == 302
+
+    async with session_maker() as session:
+        result = await session.execute(select(WithDefaults))
+        row = result.scalars().one()
+    assert row.is_active is False
+    assert row.name == "foo"
+    assert row.priority == 3
+
+
+async def test_check_can_view_details(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        session.add_all(
+            [
+                EachRowAction(
+                    name="Cannot view details",
+                    can_view_details=False,
+                ),
+                EachRowAction(
+                    name="Cannot edit",
+                    can_edit=False,
+                ),
+                EachRowAction(
+                    name="Cannot delete",
+                    can_delete=False,
+                ),
+            ]
+        )
+        await session.commit()
+
+    stmt = select(func.count(EachRowAction.id))
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    assert result.scalar_one() == 3
+
+    response = await client.get("admin/each-row-action/list")
+
+    assert 'href="http://testserver/admin/each-row-action/edit/1"' in response.text
+    assert (
+        'data-url="http://testserver/admin/each-row-action/delete?pks=1"'
+        in response.text
+    )
+
+    assert 'href="http://testserver/admin/each-row-action/details/2"' in response.text
+    assert (
+        'data-url="http://testserver/admin/each-row-action/delete?pks=2"'
+        in response.text
+    )
+
+    assert 'href="http://testserver/admin/each-row-action/details/3"' in response.text
+    assert 'href="http://testserver/admin/each-row-action/edit/3"' in response.text
+
+    assert response.status_code == 200
+
+    response = await client.get("admin/each-row-action/details/1")
+    assert response.status_code == 403
+
+    response = await client.get("admin/each-row-action/edit/2")
+    assert response.status_code == 403
+
+    response = await client.delete("admin/each-row-action/delete?pks=3")
+    assert response.status_code == 403
+
+
+@pytest.mark.anyio
+async def test_update_endpoint_with_checkbox_widget(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        session.add_all(
+            [
+                Product(
+                    id=1,
+                    name="RAM",
+                    price=99_999,
+                    is_sold=False,
+                ),
+                Product(
+                    id=2,
+                    name="RAM second",
+                    price=12421,
+                    is_sold=True,
+                ),
+            ]
+        )
+        await session.commit()
+
+    stmt = select(func.count(Product.id))
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    assert result.scalar_one() == 2
+
+    response = await client.get("/admin/product/edit/1")
+
+    assert response.status_code == 200
+
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+    assert "checked" not in response.text
+
+    response = await client.get("/admin/product/edit/2")
+
+    assert response.status_code == 200
+
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+    assert "checked" in response.text
 
 
 async def test_create_endpoint_post_form(client: AsyncClient) -> None:
@@ -739,6 +970,28 @@ async def test_update_submit_form(client: AsyncClient) -> None:
         assert address[0].user_id == 1
 
 
+async def test_update_wtforms_reserved_filed_names(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        await session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        await session.commit()
+
+    data = {"data": "new_data"}
+    response = await client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 302
+
+    stmt = select(Profile).limit(1)
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    profile = result.scalar_one()
+    assert profile.data == "new_data"
+
+
 async def test_searchable_list(client: AsyncClient) -> None:
     async with session_maker() as session:
         user = User(name="Ross")
@@ -749,7 +1002,11 @@ async def test_searchable_list(client: AsyncClient) -> None:
 
     response = await client.get("/admin/user/list")
     assert "Search: name" in response.text
+    assert 'data-search-auto-submit="true"' in response.text
     assert "/admin/user/details/1" in response.text
+
+    response = await client.get("/admin/address/list")
+    assert 'data-search-auto-submit="false"' in response.text
 
     response = await client.get("/admin/user/list?search=ro")
     assert "/admin/user/details/1" in response.text
@@ -868,3 +1125,16 @@ async def test_export_permission_csv(client: AsyncClient) -> None:
 async def test_export_permission_json(client: AsyncClient) -> None:
     response = await client.get("/admin/movie/export/json")
     assert response.status_code == 403
+
+
+async def test_hybrid_property(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        person = Person(name="Daniel")
+        session.add(person)
+        await session.flush()
+        worker = Worker(person_id=person.id)
+        session.add(worker)
+        await session.commit()
+
+    response = await client.get("/admin/person/details/1")
+    assert response.status_code == 200

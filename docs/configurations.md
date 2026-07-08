@@ -114,6 +114,7 @@ The options available are:
 - `column_exclude_list`: List of columns or column names to be excluded in the list page.
 - `column_formatters`: Dictionary of column formatters in the list page.
 - `column_searchable_list`: List of columns or column names to be searchable in the list page.
+- `search_auto_submit`: Enable or disable automatic search submit while typing in the list page search input. Default is `True`.
 - `column_sortable_list`: List of columns or column names to be sortable in the list page.
 - `column_default_sort`: Default sorting if no sorting is applied, tuple of (column, is_descending)
   or list of the tuple for multiple columns.
@@ -129,10 +130,22 @@ The options available are:
     class UserAdmin(ModelView, model=User):
         column_list = [User.id, User.name, "address.zip_code"]
         column_searchable_list = [User.name]
+        search_auto_submit = False
         column_sortable_list = [User.id]
         column_formatters = {User.name: lambda m, a: m.name[:10]}
         column_default_sort = [(User.email, True), (User.name, False)]
         column_filterable_list = [User.is_admin]
+    ```
+
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: r.url_for(
+                "admin:details", identity="user", pk=m.id
+            )
+        }
     ```
 
 !!! tip
@@ -141,8 +154,10 @@ The options available are:
     if you don't want to specify all the columns manually. For example: `column_list = "__all__"`
 
 ### ColumnFilter
- 
-A ColumnFilter is a class that defines a filter for a column. A few standard filters are implemented in `sqladmin.filters` module. Here is an example of a generic ColumnFilter. Note that the fields `title`, `parameter_name`, `lookups` and `get_filtered_query` are required.
+A ColumnFilter is a class that defines a filter for a column. A few standard filters are
+implemented in the `sqladmin.filters` module. Below is an example of a generic ColumnFilter. Note
+that the fields `title` and `parameter_name`, and the methods `lookups` and `get_filtered_query`
+are all required in a filter class.
 
 ```python
 class IsAdminFilter:
@@ -153,7 +168,7 @@ class IsAdminFilter:
     # Parameter for the filter that will be used in the URL query.
     parameter_name = "is_admin"
 
-    def lookups(self, request, model) -> list[tuple[str, str]]:
+    def lookups(self, request, model, run_query) -> list[tuple[str, str]]:
         """
         Returns a list of tuples with the filter key and the human-readable label.
         """
@@ -163,7 +178,7 @@ class IsAdminFilter:
             ("false", "No"),
         ]
 
-    def get_filtered_query(self, query, value):
+    def get_filtered_query(self, query, value, model):
         """
         Returns a filtered query based on the filter value.
         """
@@ -183,10 +198,16 @@ The following built in column filters are available. All filters have a default 
 * AllUniqueStringValuesFilter - A filter for string columns, with the values of all unique values in the column
 * StaticValuesFilter - A filter for string columns, with the values of a static list of values. This is similar to AllUniqueStringValuesFilter, but instead of getting the list of possible values from the database, you can provide a static list of values.
 * ForeignKeyFilter - A filter for foreign key columns, with the values of all unique values in the foreign key column. To make this filter readable, you need to provide the field name from the foreign model that you want to display as the name of the filter.
-  
-Here is an example of how to use BooleanFilter, AllUniqueStringValuesFilter and ForeignKeyFilter:
+* OperationColumnFilter - A flexible filter that automatically detects column types and provides appropriate operations.
+    - For string columns, it offers Contains, Equals, StartsWith, and EndsWith operations.
+    - For numeric columns (integer, float), it offers Equals, GreaterThan, and LessThan operations.
+    - For date columns (Date, DateTime), it offers Equals, GreaterThan, and LessThan operations.
+    - For UUID columns (SQLAlchemy 2.0+), it offers Contains, Equals, and StartsWith operations.
+
+Here is an example of how to use BooleanFilter, AllUniqueStringValuesFilter, ForeignKeyFilter, and OperationColumnFilter:
 
 ```python
+from sqladmin.filters import BooleanFilter, AllUniqueStringValuesFilter, ForeignKeyFilter, OperationColumnFilter
 
 class User(Base):
     __tablename__ = "users"
@@ -196,7 +217,11 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, nullable=False, index=True, unique=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     site_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("sites.id"), nullable=True, default=None)
+    age: Mapped[int] = mapped_column(Integer, nullable=False)
+    salary: Mapped[float] = mapped_column(Float, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=True)
     site: Mapped[Optional["Site"]] = relationship(back_populates="users")
+    created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
 
 class Site(Base):
     __tablename__ = "sites"
@@ -208,11 +233,15 @@ class Site(Base):
 
 # Define User Admin View
 class UserAdmin(ModelView, model=User):
-    column_list = ["id", "name", "email", "is_admin"]
+    column_list = ["id", "name", "email", "is_admin", "age", "created_at"]
     column_filters = [
-        BooleanFilter(User.is_admin), 
+        BooleanFilter(User.is_admin),
         AllUniqueStringValuesFilter(User.name),
-        ForeignKeyFilter(User.site_id, Site.name, title="Site")
+        ForeignKeyFilter(User.site_id, Site.name, title="Site"),
+        # OperationColumnFilter provides dropdown UI with multiple operations
+        OperationColumnFilter(User.email),        # String operations: Contains, Equals, Starts with, Ends with
+        OperationColumnFilter(User.age),          # Numeric operations: Equals, Greater than, Less than
+        OperationColumnFilter(User.created_at),   # DateTime operations: Equals, Greater than, Less than
     ]
     can_create = True
     can_edit = True
@@ -222,8 +251,24 @@ class UserAdmin(ModelView, model=User):
     name_plural = "Users"
     icon = "fa-solid fa-user"
     identity = "user"
-
 ```
+
+OperationColumnFilter automatically detects the column type and provides appropriate filtering operations:
+
+- **String columns** (name, email, description): Users can select from Contains, Equals, Starts with, and Ends with operations via a dropdown menu
+- **Numeric columns** (age, salary): Users can select from Equals, Greater than, and Less than operations via a dropdown menu
+- **UUID columns** (SQLAlchemy 2.0+): Users can select from Contains, Equals, and Starts with operations via a dropdown menu
+
+The filter UI provides a dropdown for operation selection and a text input for the filter value, making it user-friendly and intuitive.
+
+!!! tip "OperationColumnFilter vs Other Filters"
+
+    OperationColumnFilter provides a more flexible interface compared to other filter types:
+
+    - **AllUniqueStringValuesFilter/StaticValuesFilter/ForeignKeyFilter**: Shows all possible values as links (good for columns with few unique values)
+    - **OperationColumnFilter**: Provides operation dropdown + text input (good for columns with many possible values or numeric/date operations)
+    
+    Choose OperationColumnFilter when you want users to type custom search terms with operation flexibility, and AllUniqueStringValuesFilter when you want to show all available options as clickable links.
 
 
 ## Details page
@@ -244,6 +289,8 @@ The options available are:
         column_details_list = [User.id, User.name, "address.zip_code"]
         column_formatters_detail = {User.name: lambda m, a: m.name[:10]}
     ```
+
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
 
 !!! tip
 
@@ -342,6 +389,54 @@ The export options can be set per model and includes the following options:
 - `export_max_rows`: Maximum number of rows to be exported. Default value is `0` which means unlimited.
 - `export_types`: List of export types to be enabled. Default value is `["csv","json"]`.
 
+## Pretty CSV Export
+- `ModelView.use_pretty_export`: Default value is `False`
+
+Enables exporting CSV files with user-friendly column labels and formatted cell values 
+matching the UI list view. 
+When enabled, exports utilize the `column_formatters` and `column_labels` defined in the admin view, 
+improving readability and ensuring consistency between the UI and exported data.  
+
+Custom cell formatting can be implemented in the ModelView class by overriding the async method 
+`custom_export_cell`, otherwise basic cell formatting is used by default.
+
+Example of usage:
+```python
+class ExamResultAdmin(ModelView, model=ExamResult):
+    use_pretty_export = True  # Enable pretty export
+
+    column_list = ["score", "instructors", "course.title", "course.instructors", "created_at"]
+    column_labels = {
+        "score": "Score", 
+        "instructors": "Exam Instructors", 
+        "course.title": "Course Title", 
+        "course.instructors": "Course Instructors", 
+        "created_at": "Exam Time",
+    }
+    column_formatters = {
+        "score": lambda obj, _: f"{obj.score} / 100" if obj.score else "",
+        "instructors": lambda obj, _: [instructor.full_name for instructor in obj.instructors],
+        "course.title": lambda obj, _: obj.course.title if obj.course else "",
+        "course.instructors": lambda obj, _: [instructor.full_name for instructor in obj.course.instructors],
+        "created_at": lambda obj, _: obj.created_at.strftime("%m/%d/%Y %H:%M"),
+    }
+
+    # custom cell formatter on ModelView layer
+    async def custom_export_cell(
+        self,
+        row: Any,
+        name: str,
+        value: Any,
+    ) -> Optional[str]:
+        if name == "course.instructors" and value:
+            course_instructors_list =  [f"{instructor.id}: {instructor.full_name}" for instructor in value]
+            return ",".join(course_instructors_list)
+        return None
+```
+
+
+
+
 ## Templates
 
 The template files are built using Jinja2 and can be completely overridden in the configurations.
@@ -381,6 +476,14 @@ There are four methods you can override to achieve this:
 
 By default these methods do nothing.
 
+### Controlling the response with `after_model_change`
+
+`after_model_change` can optionally return a value to control the HTTP response
+after a successful create or edit:
+
+- **`None`** (default) – the normal redirect happens.
+- **`Response`** – a custom Starlette `Response` is returned directly.
+
 !!! example
 
     ```python
@@ -394,6 +497,12 @@ By default these methods do nothing.
             ...
     ```
 
+!!! tip
+
+    See the [Displaying one-time secrets](cookbook/displaying_one_time_secrets.md)
+    cookbook for a practical example of returning a custom `Response` to show a
+    secret on the create page after generating a token.
+
 ## Custom Action
 
 To add custom action on models to the Admin, you can use the `action` decorator.
@@ -401,7 +510,8 @@ To add custom action on models to the Admin, you can use the `action` decorator.
 !!! example
 
     ```python
-    from sqladmin import BaseView, action
+    from sqladmin import BaseView, action, Flash
+    from starlette.responses import RedirectResponse
 
     class UserAdmin(ModelView, model=User):
         @action(
@@ -419,6 +529,7 @@ To add custom action on models to the Admin, you can use the `action` decorator.
                     ...
 
             referer = request.headers.get("Referer")
+            Flash.success(request, "Users approved successfully")
             if referer:
                 return RedirectResponse(referer)
             else:
@@ -434,3 +545,68 @@ The available options for `action` are:
 - `add_in_list`: A boolean indicating if this action should be available in list page.
 - `add_in_detail`: A boolean indicating if this action should be available in detail page.
 - `confirmation_message`: A string message that if defined, will open a modal to ask for confirmation before calling the action method.
+
+
+### Toast Notifications
+
+You can display toast notifications after a custom action completes using
+either the `Flash` utility class or the low-level `flash()` function.
+
+#### Using the `Flash` class (recommended)
+
+`Flash` provides convenience class methods that set the severity level automatically.
+Import it directly from `sqladmin`:
+
+```python
+from sqladmin import BaseView, action, Flash
+from starlette.responses import RedirectResponse
+
+class UserAdmin(ModelView, model=User):
+    @action(name="approve_users", label="Approve", add_in_list=True)
+    async def approve_users(self, request: Request):
+        pks = request.query_params.get("pks", "").split(",")
+        if pks:
+            for pk in pks:
+                model: User = await self.get_object_for_edit(pk)
+                ...
+
+        Flash.success(request, "Users approved successfully")
+        referer = request.headers.get("Referer")
+        if referer:
+            return RedirectResponse(referer)
+        else:
+            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+```
+
+The available convenience methods are:
+
+* `Flash.info(request, message, title="")` — informational message (blue)
+* `Flash.success(request, message, title="")` — success message (green)
+* `Flash.warning(request, message, title="")` — warning message (yellow)
+* `Flash.error(request, message, title="")` — error message (red)
+
+For custom levels use `Flash.flash()` with an explicit `FlashLevel`:
+
+```python
+from sqladmin import Flash, FlashLevel
+
+Flash.flash(request, "Server process started.", FlashLevel.warning, "System Alert")
+```
+
+#### Using the `flash()` function
+
+For cases where you want to pass a raw Bootstrap color class string directly,
+use the low-level `flash()` function from `sqladmin.flash`:
+
+```python
+from sqladmin.flash import flash
+
+flash(request, "Operation completed.", category="success", title="Done")
+flash(request, "Something went wrong.", category="danger")
+flash(request, "Process started.")  # defaults to "primary" (blue)
+```
+
+!!! note
+    Flash messages are stored in the session and displayed as Bootstrap toast
+    notifications on the next page render. They are automatically cleared after
+    being displayed. If no session is available, messages are silently ignored.

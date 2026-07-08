@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import String, and_, cast, inspect, or_, select
+from sqlalchemy import String, cast, inspect, or_, select
 
-from sqladmin.helpers import get_object_identifier, get_primary_keys
+from sqladmin.helpers import (
+    get_object_identifier,
+    get_primary_keys,
+    object_identifier_values,
+)
 
 if TYPE_CHECKING:
     from sqladmin.models import ModelView
@@ -62,11 +66,22 @@ class QueryAjaxModelLoader:
         return {"id": str(get_object_identifier(model)), "text": str(model)}
 
     async def format_by_pk(self, pk: Any) -> dict[str, Any]:
+        if pk is None:
+            return {}
+
         stmt = select(self.model)
+        primary_keys = tuple(inspect(self.model).primary_key)
 
-        filters = [field == pk for field in inspect(self.model).primary_key]
+        try:
+            values = object_identifier_values(str(pk), self.model)
+        except (TypeError, ValueError):
+            return {}
 
-        stmt = stmt.filter(and_(*filters))
+        if len(values) != len(primary_keys):
+            return {}
+
+        conditions = [field == value for field, value in zip(primary_keys, values)]
+        stmt = stmt.where(*conditions)
 
         if self.order_by:
             if isinstance(self.order_by, list):

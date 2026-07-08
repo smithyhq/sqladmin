@@ -8,7 +8,7 @@ from sqlalchemy.orm import declarative_base, relationship, selectinload
 from starlette.applications import Starlette
 
 from sqladmin import Admin, ModelView
-from sqladmin.ajax import create_ajax_loader
+from sqladmin.ajax import QueryAjaxModelLoader, create_ajax_loader
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -77,6 +77,40 @@ class Room(Base):
         return f"Room {self.id}"
 
 
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=32), nullable=False)
+
+    def __str__(self) -> str:
+        return f"Team {self.id}"
+
+
+class Member(Base):
+    __tablename__ = "members"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=32), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.id"))
+
+    team = relationship("Team")
+
+    def __str__(self) -> str:
+        return f"Member {self.id}"
+
+
+class CompositeTag(Base):
+    __tablename__ = "composite_tags"
+
+    key = Column(String(length=16), primary_key=True)
+    locale = Column(String(length=8), primary_key=True)
+    label = Column(String(length=32), nullable=False)
+
+    def __str__(self) -> str:
+        return f"{self.label}:{self.key}:{self.locale}"
+
+
 class UserAdmin(ModelView, model=User):
     form_ajax_refs = {
         "addresses": {
@@ -110,9 +144,18 @@ class RoomAdmin(ModelView, model=Room):
     }
 
 
+class MemberAdmin(ModelView, model=Member):
+    form_ajax_refs = {
+        "team": {
+            "fields": ("name",),
+        }
+    }
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(RoomAdmin)
+admin.add_view(MemberAdmin)
 
 
 @pytest.fixture(autouse=True)
@@ -330,3 +373,73 @@ async def test_create_and_edit_forms(client: AsyncClient) -> None:
 
     user = result.scalar_one()
     assert len(user.addresses) == 2
+
+
+async def test_edit_validation_error_preserves_selected_ajax_value(
+    client: AsyncClient,
+) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(name="A"), Team(name="B")])
+        await s.commit()
+
+    async with session_maker() as s:
+        member = Member(name="John", team_id=1)
+        s.add(member)
+        await s.commit()
+
+    response = await client.post(
+        "/admin/member/edit/1",
+        data={"name": "", "team": "2"},
+    )
+
+    assert response.status_code == 400
+    assert (
+        'data-json="[{&#34;id&#34;: &#34;2&#34;, &#34;text&#34;: &#34;Team 2&#34;}]"'
+        in response.text
+    )
+
+
+async def test_format_by_pk_single_pk() -> None:
+    async with session_maker() as s:
+        user = User(name="Arya")
+        s.add(user)
+        await s.commit()
+
+    loader = QueryAjaxModelLoader(
+        name="user",
+        model=User,
+        model_admin=UserAdmin(),
+        fields=("name",),
+    )
+
+    assert await loader.format_by_pk(1) == {"id": "1", "text": "User 1"}
+
+
+async def test_format_by_pk_composite_pk_identifier() -> None:
+    async with session_maker() as s:
+        tag = CompositeTag(key="greeting", locale="en", label="Hello")
+        s.add(tag)
+        await s.commit()
+
+    loader = QueryAjaxModelLoader(
+        name="composite",
+        model=CompositeTag,
+        model_admin=UserAdmin(),
+        fields=("label",),
+    )
+
+    assert await loader.format_by_pk("greeting;en") == {
+        "id": "greeting;en",
+        "text": "Hello:greeting:en",
+    }
+
+
+async def test_format_by_pk_returns_empty_for_missing_record() -> None:
+    loader = QueryAjaxModelLoader(
+        name="user",
+        model=User,
+        model_admin=UserAdmin(),
+        fields=("name",),
+    )
+
+    assert await loader.format_by_pk("999") == {}

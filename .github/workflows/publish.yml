@@ -31,6 +31,9 @@ jobs:
           make build
           make docs-build
       - name: "Publish"
-        run: |
-          make publish
-          make docs-deploy
+        run: make publish
+      - name: "Deploy docs"
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site

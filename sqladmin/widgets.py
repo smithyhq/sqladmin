@@ -49,7 +49,7 @@ class AjaxSelect2Widget(widgets.Select):
 
         allow_blank = getattr(field, "allow_blank", False)
         if allow_blank and not self.multiple:
-            kwargs["data-allow-blank"] = "1"
+            kwargs.setdefault("data-allow-blank", "1")
 
         kwargs.setdefault("id", field.id)
         kwargs.setdefault("type", "hidden")
@@ -72,8 +72,8 @@ class AjaxSelect2Widget(widgets.Select):
                 except Exception:  # nosec B110
                     pass
 
-            kwargs["data-json"] = json.dumps(result)
-            kwargs["multiple"] = "1"
+            kwargs.setdefault("data-json", json.dumps(result))
+            kwargs.setdefault("multiple", "1")
 
         else:
             try:
@@ -87,7 +87,7 @@ class AjaxSelect2Widget(widgets.Select):
                     data = None
 
             if data:
-                kwargs["data-json"] = json.dumps([data])
+                kwargs.setdefault("data-json", json.dumps([data]))
 
         return Markup(f"<select {html_params(name=field.name, **kwargs)}></select>")  # nosec: markupsafe_markup_xss
 
@@ -140,8 +140,10 @@ class BooleanInputWidget(widgets.Input):
 
     def __call__(self, field: Field, **kwargs: Any) -> Markup:
         if field.data:
-            kwargs["checked"] = True
+            kwargs.setdefault("checked", True)
 
-        return Markup(
-            '<div class="form-switch d-flex align-items-center h-100">%s</div>'
-        ) % Markup.escape(super().__call__(field, **kwargs))
+        return Markup(  # nosec B704
+            '<div class="form-switch d-flex align-items-center h-100">'
+            + str(Markup.escape(super().__call__(field, **kwargs)))
+            + "</div>"
+        )

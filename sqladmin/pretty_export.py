@@ -5,6 +5,8 @@ from starlette.responses import StreamingResponse
 from sqladmin.helpers import Writer, secure_filename, stream_to_csv
 
 if TYPE_CHECKING:
+    from starlette.requests import Request
+
     from .models import ModelView
 
 
@@ -35,11 +37,15 @@ class PrettyExport:
 
     @classmethod
     async def _get_export_row_values(
-        cls, model_view: "ModelView", row: Any, column_names: List[str]
+        cls,
+        model_view: "ModelView",
+        row: Any,
+        column_names: List[str],
+        request: "Request | None" = None,
     ) -> List[Any]:
         row_values = []
         for name in column_names:
-            value, formatted_value = await model_view.get_list_value(row, name)
+            value, formatted_value = await model_view.get_list_value(row, name, request)
             custom_value = await model_view.custom_export_cell(row, name, value)
             if custom_value is None:
                 cell_value = await cls._base_export_cell(
@@ -52,7 +58,10 @@ class PrettyExport:
 
     @classmethod
     async def pretty_export_csv(
-        cls, model_view: "ModelView", rows: List[Any]
+        cls,
+        model_view: "ModelView",
+        rows: List[Any],
+        request: "Request | None" = None,
     ) -> StreamingResponse:
         async def generate(writer: Writer) -> AsyncGenerator[Any, None]:
             column_names = model_view.get_export_columns()
@@ -63,7 +72,9 @@ class PrettyExport:
             yield writer.writerow(headers)
 
             for row in rows:
-                vals = await cls._get_export_row_values(model_view, row, column_names)
+                vals = await cls._get_export_row_values(
+                    model_view, row, column_names, request
+                )
                 yield writer.writerow(vals)
 
         filename = secure_filename(model_view.get_export_name(export_type="csv"))

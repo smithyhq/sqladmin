@@ -3,11 +3,20 @@ site_description: Flexible admin dashboard for SQLAlchemy.
 site_url: https://smithyhq.github.io/sqladmin/
 
 theme:
-  name: "material"
-  palette:
-    primary: white
+  name: "zensical"
   features:
     - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: lucide/sun
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: lucide/moon
+        name: Switch to light mode
+  icon:
+    repo: simple/github
 
 repo_name: smithyhq/sqladmin
 repo_url: https://github.com/smithyhq/sqladmin
@@ -29,11 +38,13 @@ nav:
       - Multiple databases: "cookbook/multiple_databases.md"
       - Using rich text editor: "cookbook/using_wysiwyg.md"
       - Working with Passwords: "cookbook/working_with_passwords.md"
+      - Displaying one-time secrets: "cookbook/displaying_one_time_secrets.md"
   - API Reference:
       - Application: "api_reference/application.md"
       - ModelView: "api_reference/model_view.md"
       - BaseView: "api_reference/base_view.md"
       - Authentication: "api_reference/authentication.md"
+  - Contributing: "contributing.md"
 
 markdown_extensions:
   - markdown.extensions.codehilite:
@@ -44,9 +55,6 @@ markdown_extensions:
   - pymdownx.tabbed
   - pymdownx.superfences
 
-extra_css:
-  - stylesheets/extra.css
-
 watch:
   - sqladmin/
 
@@ -54,11 +62,6 @@ plugins:
   - search
   - mkdocstrings:
       default_handler: python
-      handlers:
-        python:
-          options:
-            show_root_heading: true
-            show_source: false
 
 extra:
   analytics:

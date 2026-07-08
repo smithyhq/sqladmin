@@ -189,6 +189,7 @@ class UserAdmin(ModelView, model=User):
         ],
         User.profile_formattable: lambda m, a: f"Formatted {m.profile_formattable}",
     }
+    non_link_related_fields = [User.addresses_formattable, User.profile_formattable]
     save_as = True
     form_create_rules = ["name", "email", "addresses", "profile", "birthdate", "status"]
     form_edit_rules = ["name", "email", "addresses", "profile", "birthdate"]

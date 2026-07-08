@@ -25,33 +25,28 @@
             <tr>
               <td>{{ label }}</td>
               {% set value, formatted_value = model_view.get_detail_value(model, name, request) %}
+              {% set render_as_link = name not in model_view._non_link_related_fields %}
               {% if name in model_view._relation_names %}
               {% if is_list( value ) %}
               <td>
-                {% if name in model_view._non_link_related_fields %}
                 {% for elem, formatted_elem in zip(value, formatted_value) %}
-                {% if model_view.show_compact_lists %}
+                {% if render_as_link and model_view.show_compact_lists %}
+                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
+                {% elif model_view.show_compact_lists %}
                 ({{ formatted_elem }})
+                {% elif render_as_link %}
+                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br />
                 {% else %}
                 {{ formatted_elem }}<br />
                 {% endif %}
                 {% endfor %}
-                {% else %}
-                {% for elem, formatted_elem in zip(value, formatted_value) %}
-                {% if model_view.show_compact_lists %}
-                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem }})</a>
-                {% else %}
-                <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem }}</a><br />
-                {% endif %}
-                {% endfor %}
-                {% endif %}
               </td>
               {% else %}
-              {% if name in model_view._non_link_related_fields %}
-              <td>{{ formatted_value }}</td>
-              {% else %}
+              {% if render_as_link %}
               <td><a href="{{ model_view._url_for_details_with_prop(request, model, name) }}">{{ formatted_value }}</a>
               </td>
+              {% else %}
+              <td>{{ formatted_value }}</td>
               {% endif %}
               {% endif %}
               {% else %}

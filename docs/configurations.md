@@ -461,6 +461,14 @@ For more information about working with template see [Working with Templates](./
 The following options are available to configure the templates:
 
 * `show_compact_lists`: If `False`, the list of objects will be displayed in a separate line for each object. Default is `True`.
+* `non_link_related_fields`: Relationship fields to render as plain text (no link) in list and details pages.
+
+!!! example
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        non_link_related_fields = [User.profile, "addresses"]
+    ```
 
 ## Events
 

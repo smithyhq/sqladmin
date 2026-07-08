@@ -700,6 +700,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
+    non_link_related_fields: ClassVar[List[MODEL_ATTR]] = []
+    """Relationship fields that should be rendered as plain text instead of links.
+
+    Values can be relationship attributes or string field names.
+
+    ???+ example
+        ```python
+        class UserAdmin(ModelView, model=User):
+            non_link_related_fields = [User.profile, "addresses"]
+        ```
+    """
+
     def __init__(self) -> None:
         self._mapper = inspect(self.model)
         self._prop_names = [attr.key for attr in self._mapper.attrs]
@@ -708,7 +720,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
         self._relation_names = [relation.key for relation in self._mapper.relationships]
 
-        self._non_link_related_fields: Union[List[str], None] = None
+        self._non_link_related_fields = [
+            self._get_prop_name(item) for item in self.non_link_related_fields
+        ]
 
         self._column_labels = self._build_column_pairs(self.column_labels)
         self._column_labels_value_by_key = {

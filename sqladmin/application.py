@@ -533,8 +533,6 @@ class Admin(BaseAdminView):
                 request.url.include_query_params(page=pagination.page), status_code=302
             )
 
-        await self._set_non_link_related_fields(model_view)
-
         context = {"model_view": model_view, "pagination": pagination}
 
         if request.query_params.get("error"):
@@ -554,8 +552,6 @@ class Admin(BaseAdminView):
 
         if not model:
             raise HTTPException(status_code=404)
-
-        await self._set_non_link_related_fields(model_view)
 
         context = {
             "model_view": model_view,
@@ -890,19 +886,6 @@ class Admin(BaseAdminView):
             ):
                 data[reserved_field_name] = data.pop(field_name)
         return data
-
-    async def _set_non_link_related_fields(self, model_view: ModelView) -> None:
-        if model_view._non_link_related_fields is not None:
-            return
-
-        models_with_views = [
-            view.model for view in self.views if isinstance(view, ModelView)
-        ]
-        model_view._non_link_related_fields = [
-            model_view._get_prop_name(relationship.class_attribute)
-            for relationship in model_view._mapper.relationships
-            if relationship.entity.class_ not in models_with_views
-        ]
 
 
 def expose(

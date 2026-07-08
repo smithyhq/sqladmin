@@ -933,8 +933,8 @@ def action(
         label: Human-readable text describing action
         confirmation_message: Message to show before confirming action
         include_in_schema: Indicating if the endpoint be included in the schema
-        add_in_detail: Indicating if action should be dispalyed on model detail page
-        add_in_list: Indicating if action should be dispalyed on model list page
+        add_in_detail: Indicating if action should be displayed on model detail page
+        add_in_list: Indicating if action should be displayed on model list page
     """
 
     @no_type_check

@@ -1,0 +1,36 @@
+<style>
+  :root {
+    --ck-z-default: 100;
+    --ck-z-panel: calc(var(--ck-z-default) + 999);
+  }
+  .ck-content .table {
+    width: auto;
+  }
+</style>
+<script>
+  (function () {
+    var fieldId = "{{ field.id }}";
+    var minHeight = {{ field.min_height }};
+
+    var el = document.getElementById(fieldId);
+    if (!el || el.dataset.ckInitialized === "1") {
+      return;
+    }
+    el.dataset.ckInitialized = "1";
+    el.style.resize = "none";
+
+    ClassicEditor.create(el)
+      .then(function (editor) {
+        editor.editing.view.change(function (writer) {
+          writer.setStyle(
+            "min-height",
+            minHeight + "px",
+            editor.editing.view.document.getRoot()
+          );
+        });
+      })
+      .catch(function (err) {
+        console.error("CKEditor5 init error for", fieldId, err);
+      });
+  })();
+</script>

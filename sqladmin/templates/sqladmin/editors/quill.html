@@ -1,0 +1,31 @@
+<script>
+  (function () {
+    var fieldId = "{{ field.id }}";
+    var theme = "{{ field.theme }}";
+    var minHeight = {{ field.min_height }};
+
+  var textarea = document.getElementById(fieldId);
+  if (!textarea || textarea.dataset.quillInitialized === "1") {
+    return;
+  }
+  textarea.dataset.quillInitialized = "1";
+
+  var container = document.createElement("div");
+  container.style.minHeight = minHeight + "px";
+  textarea.parentNode.insertBefore(container, textarea);
+  textarea.style.display = "none";
+
+  var quill = new Quill(container, { theme: theme });
+  if (textarea.value) {
+    var delta = quill.clipboard.convert({ html: textarea.value });
+    quill.setContents(delta);
+  }
+
+  var form = textarea.closest("form");
+  if (form) {
+    form.addEventListener("submit", function () {
+      textarea.value = quill.root.innerHTML;
+    });
+  }
+  })();
+</script>

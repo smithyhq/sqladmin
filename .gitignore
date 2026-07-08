@@ -10,8 +10,11 @@ htmlcov/
 .mypy_cache/
 coverage.xml
 examples/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .uploads
 test.db
 coverage.xml
 dist/
+site/
+.idea/

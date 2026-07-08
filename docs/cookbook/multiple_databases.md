@@ -4,8 +4,8 @@ An example from the SQLAlchemy docs is:
 ```py
 from sqlalchemy.orm.session import sessionmaker, Session
 
-engine1 = create_engine("postgresql+psycopg2://db1")
-engine2 = create_engine("postgresql+psycopg2://db2")
+engine1 = create_engine("postgresql+psycopg://db1")
+engine2 = create_engine("postgresql+psycopg://db2")
 
 Session = sessionmaker()
 

@@ -1,0 +1,38 @@
+<script>
+  (function () {
+    var fieldId = "{{ field.id }}";
+    var height = {{ field.min_height }};
+
+    function init() {
+      var $el = $("#" + fieldId);
+      if ($el.data("summernoteInitialized")) {
+        return;
+      }
+      $el.data("summernoteInitialized", true);
+      $el.summernote({
+        height: height,
+        disableDragAndDrop: true,
+        toolbar: [
+          ["style", ["bold", "italic", "underline", "clear"]],
+          ["para", ["ul", "ol", "paragraph"]],
+          ["insert", ["link"]],
+          ["view", ["codeview"]],
+        ],
+      });
+
+      // Summernote injects a hidden <input type="file" name="files"> for its
+      // image dialog. Left as-is it is submitted as an empty "files" field,
+      // which the backend tries to map onto the model and fails. Remove its
+      // name so it never becomes part of the submitted form data.
+      $el.closest("form")
+        .find('input[type="file"][name="files"]')
+        .removeAttr("name");
+    }
+
+    if (window.jQuery) {
+      jQuery(init);
+    } else {
+      document.addEventListener("DOMContentLoaded", init);
+    }
+  })();
+</script>

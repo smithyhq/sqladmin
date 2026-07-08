@@ -1,4 +1,5 @@
-from typing import Any, Generator
+from pathlib import Path
+from typing import Generator
 
 import pytest
 from fastapi_storages import FileSystemStorage, StorageFile
@@ -26,7 +27,7 @@ class User(Base):
     optional_file = Column(FileType(FileSystemStorage(".uploads")), nullable=True)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
     yield
@@ -34,13 +35,12 @@ def prepare_database() -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def client(prepare_database: Any) -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient, None, None]:
     with TestClient(app=app, base_url="http://testserver") as c:
         yield c
 
 
-class UserAdmin(ModelView, model=User):
-    ...
+class UserAdmin(ModelView, model=User): ...
 
 
 admin.add_view(UserAdmin)
@@ -77,10 +77,10 @@ def test_create_form_post(client: TestClient) -> None:
 
     assert isinstance(user.file, StorageFile) is True
     assert user.file.name == "file.txt"
-    assert user.file.path == ".uploads/file.txt"
+    assert Path(user.file.path).as_posix() == ".uploads/file.txt"
     assert user.file.open().read() == b"abc"
     assert user.optional_file.name == "optional_file.txt"
-    assert user.optional_file.path == ".uploads/optional_file.txt"
+    assert Path(user.optional_file.path).as_posix() == ".uploads/optional_file.txt"
     assert user.optional_file.open().read() == b"cdb"
 
 
@@ -99,10 +99,10 @@ def test_create_form_update(client: TestClient) -> None:
 
     user = _query_user()
     assert user.file.name == "new_file.txt"
-    assert user.file.path == ".uploads/new_file.txt"
+    assert Path(user.file.path).as_posix() == ".uploads/new_file.txt"
     assert user.file.open().read() == b"xyz"
     assert user.optional_file.name == "new_optional_file.txt"
-    assert user.optional_file.path == ".uploads/new_optional_file.txt"
+    assert Path(user.optional_file.path).as_posix() == ".uploads/new_optional_file.txt"
     assert user.optional_file.open().read() == b"zyx"
 
     files = {"file": ("file.txt", b"abc")}
@@ -112,7 +112,7 @@ def test_create_form_update(client: TestClient) -> None:
 
     user = _query_user()
     assert user.file.name == "file.txt"
-    assert user.file.path == ".uploads/file.txt"
+    assert Path(user.file.path).as_posix() == ".uploads/file.txt"
     assert user.file.open().read() == b"abc"
     assert user.optional_file is None
 

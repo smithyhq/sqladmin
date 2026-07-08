@@ -2,8 +2,6 @@ from typing import (
     Any,
     Callable,
     List,
-    Literal,
-    Optional,
     Protocol,
     Tuple,
     TypeVar,
@@ -29,10 +27,16 @@ SESSION_MAKER = Union[sessionmaker, async_sessionmaker]
 
 T = TypeVar("T")
 
-_UNSET = "_UNSET"
 
-Unset = Union[T, Literal["_UNSET"]]
-UnsetN = Union[T, Literal["_UNSET"], None]
+class _UnsetType:
+    def __repr__(self) -> str:
+        return "_UNSET"
+
+
+_UNSET = _UnsetType()
+
+Unset = Union[T, _UnsetType]
+UnsetN = Union[T, _UnsetType, None]
 
 UnsetAny = UnsetN[Any]
 UnsetBool = UnsetN[bool]
@@ -44,7 +48,7 @@ class SimpleColumnFilter(Protocol):
 
     title: str
     parameter_name: str
-    default_value: Optional[UnsetAny] = _UNSET
+    default_value: UnsetAny = _UNSET
     template: str
 
     async def lookups(

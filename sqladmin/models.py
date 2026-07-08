@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect as inspect_module
 import json
 import time
 import warnings
@@ -14,6 +15,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     Union,
@@ -23,16 +25,16 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, asc, cast, desc, func, inspect, or_
+from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
-from sqlalchemy.orm import selectinload, sessionmaker
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import Select, select
 from starlette.datastructures import URL
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response, StreamingResponse
 from wtforms import Field, Form
 from wtforms.fields.core import UnboundField
 
@@ -40,6 +42,7 @@ from sqladmin._queries import Query
 from sqladmin._types import (
     _UNSET,
     MODEL_ATTR,
+    SESSION_MAKER,
     ColumnFilter,
     OperationColumnFilter,
     SimpleColumnFilter,
@@ -50,6 +53,7 @@ from sqladmin.formatters import BASE_FORMATTERS
 from sqladmin.forms import ModelConverter, ModelConverterBase, get_model_form
 from sqladmin.helpers import (
     Writer,
+    default_encoder,
     get_object_identifier,
     get_primary_keys,
     object_identifier_values,
@@ -65,8 +69,6 @@ from sqladmin.pretty_export import PrettyExport
 from sqladmin.templating import Jinja2Templates
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import async_sessionmaker  # type: ignore[attr-defined]
-
     from sqladmin.application import BaseAdmin
 
 __all__ = [
@@ -211,12 +213,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Internals
     pk_columns: ClassVar[Tuple[Column]]
-    session_maker: ClassVar[  # type: ignore[no-any-unimported]
-        Union[
-            sessionmaker,
-            "async_sessionmaker",
-        ]
-    ]
+    session_maker: ClassVar[SESSION_MAKER]
     is_async: ClassVar[bool] = False
     is_model: ClassVar[bool] = True
     ajax_lookup_url: ClassVar[str] = ""
@@ -272,7 +269,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
-    column_formatters: ClassVar[Dict[MODEL_ATTR, Callable[[type, Column], Any]]] = {}
+    column_formatters: ClassVar[Dict[MODEL_ATTR, Callable[..., Any]]] = {}
     """Dictionary of list view column formatters.
     Columns can either be string names or SQLAlchemy columns.
 
@@ -285,9 +282,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     The format function has the prototype:
     ???+ formatter
         ```python
-        def formatter(model, attribute):
+        def formatter(model, attribute, request):
             # `model` is model instance
             # `attribute` is a Union[ColumnProperty, RelationshipProperty]
+            # `request` is a starlette.requests.Request
             pass
         ```
     """
@@ -407,9 +405,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
-    column_formatters_detail: ClassVar[
-        Dict[MODEL_ATTR, Callable[[type, Column], Any]]
-    ] = {}
+    column_formatters_detail: ClassVar[Dict[MODEL_ATTR, Callable[..., Any]]] = {}
     """Dictionary of details view column formatters.
     Columns can either be string names or SQLAlchemy columns.
 
@@ -422,9 +418,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     The format function has the prototype:
     ???+ formatter
         ```python
-        def formatter(model, attribute):
+        def formatter(model, attribute, request):
             # `model` is model instance
             # `attribute` is a Union[ColumnProperty, RelationshipProperty]
+            # `request` is a starlette.requests.Request
             pass
         ```
     """
@@ -466,7 +463,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Template configuration
     show_compact_lists: ClassVar[bool] = True
-    """Show compact lists. Default is `True`. 
+    """Show compact lists. Default is `True`.
     If False, when showing lists of objects, each object will be \
     displayed in a separate line."""
 
@@ -507,7 +504,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
     Enable export of CSV files using column labels and column formatters.
 
-    If set to True, the export will apply column labels and formatting logic 
+    If set to True, the export will apply column labels and formatting logic
     used in the list template.
     Otherwise, raw database values and field names will be used.
 
@@ -737,6 +734,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._detail_formatters = self._build_column_pairs(
             self.column_formatters_detail
         )
+        self._list_formatter_accepts_request = self._build_formatter_request_support(
+            self._list_formatters
+        )
+        self._detail_formatter_accepts_request = self._build_formatter_request_support(
+            self._detail_formatters
+        )
 
         self._form_prop_names = self.get_form_columns()
         self._form_relation_names = [
@@ -793,12 +796,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         else:
             return await anyio.to_thread.run_sync(self._run_query_sync, stmt)
 
+    def _identity_for_object(self, obj: Any) -> str:
+        if isinstance(obj, self.model):
+            return self.identity
+        return slugify_class_name(obj.__class__.__name__)
+
     def _url_for_delete(self, request: Request, obj: Any) -> str:
         pk = get_object_identifier(obj)
         query_params = urlencode({"pks": pk})
-        url = request.url_for(
-            "admin:delete", identity=slugify_class_name(obj.__class__.__name__)
-        )
+        url = request.url_for("admin:delete", identity=self._identity_for_object(obj))
         return str(url) + "?" + query_params
 
     def _url_for_details_with_prop(self, request: Request, obj: Any, prop: str) -> URL:
@@ -813,7 +819,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     def _build_url_for(self, name: str, request: Request, obj: Any) -> URL:
         return request.url_for(
             name,
-            identity=slugify_class_name(obj.__class__.__name__),
+            identity=self._identity_for_object(obj),
             pk=get_object_identifier(obj),
         )
 
@@ -837,6 +843,45 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             return formatter(value)
 
         return value
+
+    def _formatter_accepts_request(self, formatter: Callable[..., Any]) -> bool:
+        try:
+            parameters = inspect_module.signature(formatter).parameters.values()
+        except (TypeError, ValueError):
+            return False
+
+        positional_count = 0
+        for parameter in parameters:
+            if parameter.kind == inspect_module.Parameter.VAR_POSITIONAL:
+                return True
+            if parameter.kind in {
+                inspect_module.Parameter.POSITIONAL_ONLY,
+                inspect_module.Parameter.POSITIONAL_OR_KEYWORD,
+            }:
+                positional_count += 1
+
+        return positional_count >= 3
+
+    def _build_formatter_request_support(
+        self, formatters: Dict[str, Callable[..., Any]]
+    ) -> Dict[str, bool]:
+        return {
+            prop: self._formatter_accepts_request(formatter)
+            for prop, formatter in formatters.items()
+        }
+
+    def _call_formatter(
+        self,
+        formatter: Callable[..., Any],
+        obj: Any,
+        prop: str,
+        request: Request | None = None,
+        accepts_request: bool = False,
+    ) -> Any:
+        if request is not None and accepts_request:
+            return formatter(obj, prop, request)
+
+        return formatter(obj, prop)
 
     def validate_page_number(self, number: Union[str, None], default: int) -> int:
         if not number:
@@ -968,23 +1013,43 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                 session.add(obj)
                 return await anyio.to_thread.run_sync(lambda: getattr(obj, prop))
 
-    async def get_list_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
+    async def get_list_value(
+        self, obj: Any, prop: str, request: Request | None = None
+    ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the list view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._list_formatters.get(prop)
         formatted_value = (
-            formatter(obj, prop) if formatter else self._default_formatter(value)
+            self._call_formatter(
+                formatter,
+                obj,
+                prop,
+                request,
+                self._list_formatter_accepts_request.get(prop, False),
+            )
+            if formatter
+            else self._default_formatter(value)
         )
         return value, formatted_value
 
-    async def get_detail_value(self, obj: Any, prop: str) -> Tuple[Any, Any]:
+    async def get_detail_value(
+        self, obj: Any, prop: str, request: Request | None = None
+    ) -> Tuple[Any, Any]:
         """Get tuple of (value, formatted_value) for the detail view."""
 
         value = await self.get_prop_value(obj, prop)
         formatter = self._detail_formatters.get(prop)
         formatted_value = (
-            formatter(obj, prop) if formatter else self._default_formatter(value)
+            self._call_formatter(
+                formatter,
+                obj,
+                prop,
+                request,
+                self._detail_formatter_accepts_request.get(prop, False),
+            )
+            if formatter
+            else self._default_formatter(value)
         )
         return value, formatted_value
 
@@ -1075,10 +1140,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def after_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-    ) -> None:
+    ) -> Response | None:
         """Perform some actions after a model was created
         or updated and committed to the database.
-        By default does nothing.
+
+        The return value controls the HTTP response:
+
+        * ``None`` (default) -- redirect as usual.
+        * ``Response`` -- return a custom Starlette ``Response`` directly.
         """
 
     def _build_column_pairs(
@@ -1108,6 +1177,24 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """Perform some actions after a model is deleted.
         By default do nothing.
         """
+
+    async def check_can_view_details(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before view details.
+        """
+        return self.can_view_details
+
+    async def check_can_edit(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before edit.
+        """
+        return self.can_edit
+
+    async def check_can_delete(self, request: Request, model: Any) -> bool:
+        """
+        You can add a custom model attribute checker before delete.
+        """
+        return self.can_delete
 
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
         if self.form is not None:
@@ -1150,6 +1237,38 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ]
         return ", ".join(field_names)
 
+    def _join_relationship_paths(
+        self,
+        stmt: Select,
+        field_path: str,
+        joined_paths: Set[str],
+    ) -> Tuple[Select, Any]:
+        """Join relationship paths and return the statement and target model.
+
+        Navigates through a dotted relationship path (e.g. ``user.profile.role``)
+        and joins each segment via its relationship attribute, which lets
+        SQLAlchemy pick the correct foreign key when a model has multiple
+        relationships to the same target. Paths are tracked to avoid duplicate
+        joins within a single call; SQLAlchemy itself dedupes joins on the same
+        relationship attribute across calls.
+        """
+        model = self.model
+        parts = field_path.split(".")
+
+        current_path = ""
+        for part in parts[:-1]:
+            current_path = f"{current_path}.{part}" if current_path else part
+            relationship_attr = getattr(model, part)
+            next_model = relationship_attr.mapper.class_
+
+            if current_path not in joined_paths:
+                stmt = stmt.join(relationship_attr)
+                joined_paths.add(current_path)
+
+            model = next_model
+
+        return stmt, model
+
     def search_query(self, stmt: Select, term: str) -> Select:
         """Specify the search query given the SQLAlchemy statement
         and term to search for.
@@ -1161,17 +1280,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
         expressions = []
+        joined_paths: Set[str] = set()
+
         for field in self._search_fields:
-            model = self.model
+            stmt, model = self._join_relationship_paths(stmt, field, joined_paths)
             parts = field.split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+            field_attr = getattr(model, parts[-1])
+            expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
-            field = getattr(model, parts[-1])
-            expressions.append(cast(field, String).ilike(f"%{term}%"))
-
-        return stmt.filter(or_(*expressions))
+        return stmt.filter(or_(false(), *expressions))
 
     def list_query(self, request: Request) -> Select:
         """
@@ -1187,7 +1304,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         customized. By default it will select all objects without any filters.
         """
 
-        return self.form_edit_query(request)
+        return self.form_details_query(request)
+
+    def form_details_query(self, request: Request) -> Select:
+        """
+        The SQLAlchemy select expression used for the details page which can be
+        customized. By default it will select the object by primary key(s) without any
+        additional filters.
+        """
+        stmt = self._stmt_by_identifier(request.path_params["pk"])
+        for relation in self._details_relations:
+            stmt = stmt.options(selectinload(relation))
+        return stmt
 
     def edit_form_query(self, request: Request) -> Select:
         msg = (
@@ -1229,17 +1357,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         sort = request.query_params.get("sort", "asc")
 
         if sort_by:
+            if sort_by not in self._sort_fields:
+                raise HTTPException(status_code=400, detail="Invalid sortBy parameter")
             sort_fields = [(sort_by, sort == "desc")]
         else:
             sort_fields = self._get_default_sort()
 
-        for sort_field, is_desc in sort_fields:
-            model = self.model
+        joined_paths: Set[str] = set()
 
-            parts = self._get_prop_name(sort_field).split(".")
-            for part in parts[:-1]:
-                model = getattr(model, part).mapper.class_
-                stmt = stmt.join(model)
+        for sort_field, is_desc in sort_fields:
+            field_path = self._get_prop_name(sort_field)
+            stmt, model = self._join_relationship_paths(stmt, field_path, joined_paths)
+            parts = field_path.split(".")
 
             if is_desc:
                 stmt = stmt.order_by(desc(getattr(model, parts[-1])))
@@ -1257,10 +1386,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self,
         data: List[Any],
         export_type: str = "csv",
+        request: Request | None = None,
     ) -> StreamingResponse:
         if export_type == "csv":
             export_method = (
-                PrettyExport.pretty_export_csv(self, data)
+                PrettyExport.pretty_export_csv(self, data, request=request)
                 if self.use_pretty_export
                 else self._export_csv(data)
             )
@@ -1299,6 +1429,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     async def _export_json(
         self,
         data: List[Any],
+        ensure_ascii: bool = False,
     ) -> StreamingResponse:
         async def generate() -> AsyncGenerator[str, None]:
             yield "["
@@ -1308,12 +1439,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
             for idx, row in enumerate(data):
                 row_dict = {
-                    name: str(await self.get_prop_value(row, name))
+                    name: await self.get_prop_value(row, name)
                     for name in self._export_prop_names
                 }
-                yield json.dumps(row_dict, ensure_ascii=False) + (
-                    separator if idx < last_idx else ""
-                )
+                yield json.dumps(
+                    row_dict,
+                    default=default_encoder,
+                    ensure_ascii=ensure_ascii,
+                ) + (separator if idx < last_idx else "")
 
             yield "]"
 

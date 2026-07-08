@@ -2,12 +2,14 @@ from typing import Generator
 
 import pytest
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -15,6 +17,7 @@ from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
+session_maker = sessionmaker(bind=engine)
 
 
 class DataModel(Base):
@@ -28,6 +31,22 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), default="SQLAdmin")
+
+
+class PinnedObject(Base):
+    __tablename__ = "pinned_objects"
+
+    id = Column(Integer, primary_key=True)
+    pinnedable_type = Column(String)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "pinned_object",
+        "polymorphic_on": pinnedable_type,
+    }
+
+
+class NewsPinned(PinnedObject):
+    __mapper_args__ = {"polymorphic_identity": "news_pinned"}
 
 
 @pytest.fixture(autouse=True)
@@ -68,6 +87,27 @@ def test_application_logo() -> None:
     )
 
 
+def test_application_logo_custom_dimensions() -> None:
+    app = Starlette()
+    Admin(
+        app=app,
+        engine=engine,
+        logo_url="https://example.com/logo.svg",
+        logo_width=128,
+        logo_height=96,
+        base_url="/dashboard",
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert (
+        '<img src="https://example.com/logo.svg" width="128" height="96"'
+        in response.text
+    )
+
+
 def test_middlewares() -> None:
     class CorrelationIdMiddleware:
         def __init__(self, app: ASGIApp) -> None:
@@ -96,21 +136,72 @@ def test_middlewares() -> None:
     assert "x-correlation-id" in response.headers
 
 
-def test_get_save_redirect_url():
+def _get_statics_mount(admin: Admin) -> Mount:
+    statics_mount = next(
+        route
+        for route in admin.admin.router.routes
+        if isinstance(route, Mount) and route.name == "statics"
+    )
+    assert isinstance(statics_mount.app, StaticFiles)
+    return statics_mount
+
+
+def test_static_files_use_default_kwargs() -> None:
     app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    statics_mount = _get_statics_mount(admin)
+
+    assert statics_mount.app.follow_symlink is False
+    assert statics_mount.app.packages == ["sqladmin"]
+
+
+def test_static_files_accept_custom_kwargs() -> None:
+    """Issue #863: package statics can opt into following symlinks."""
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        static_files_kwargs={"follow_symlink": True},
+    )
+
+    statics_mount = _get_statics_mount(admin)
+
+    assert statics_mount.app.follow_symlink is True
+    assert statics_mount.app.packages == ["sqladmin"]
+
+
+def test_static_files_kwargs_cannot_override_packages() -> None:
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        static_files_kwargs={"packages": ["not_sqladmin"]},
+    )
+
+    statics_mount = _get_statics_mount(admin)
+
+    assert statics_mount.app.packages == ["sqladmin"]
+
+
+def test_get_save_redirect_url():
+    async def index(request: Request):
+        obj = User(id=1)
+        form_data = await request.form()
+        url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
+        return Response(str(url))
+
+    app = Starlette(
+        routes=[
+            Route("/{identity}", index, methods=["POST"]),
+        ]
+    )
     admin = Admin(app=app, engine=engine)
 
     class UserAdmin(ModelView, model=User):
         save_as = True
 
     admin.add_view(UserAdmin)
-
-    @app.route("/{identity}", methods=["POST"])
-    async def index(request: Request):
-        obj = User(id=1)
-        form_data = await request.form()
-        url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
-        return Response(str(url))
 
     client = TestClient(app)
 
@@ -125,6 +216,16 @@ def test_get_save_redirect_url():
 
     response = client.post("/user", data={"save": "Save and add another"})
     assert response.text == "http://testserver/admin/user/create"
+
+    # Issue #1055: the list query string (page, sorting, search) should be
+    # preserved on "Save" so the user returns to the page they came from.
+    response = client.post("/user?page=3", data={"save": "Save"})
+    assert response.text == "http://testserver/admin/user/list?page=3"
+
+    # The query string only matters for the list redirect; the other actions
+    # go to fixed edit/create pages and should ignore it.
+    response = client.post("/user?page=3", data={"save": "Save and continue editing"})
+    assert response.text == "http://testserver/admin/user/edit/1"
 
 
 def test_build_category_menu():
@@ -162,6 +263,11 @@ def test_denormalize_wtform_fields() -> None:
         "data": "abcdef"
     }
 
+    datamodel_empty = DataModel(id=1, data="")
+    assert admin._denormalize_wtform_data({"data_": "abcdef"}, datamodel_empty) == {
+        "data": "abcdef"
+    }
+
 
 def test_validate_page_and_page_size():
     app = Starlette()
@@ -178,6 +284,62 @@ def test_validate_page_and_page_size():
 
     response = client.get("/admin/user/list?page=aaaa")
     assert response.status_code == 400
+
+
+def test_polymorphic_model_pages_use_view_identity() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class PinnedObjectAdmin(ModelView, model=PinnedObject):
+        column_list = [PinnedObject.id]
+
+    admin.add_view(PinnedObjectAdmin)
+
+    with session_maker() as session:
+        session.add(NewsPinned(id=1))
+        session.commit()
+
+    client = TestClient(app)
+
+    response = client.get("/admin/pinned-object/list")
+    assert response.status_code == 200
+    assert 'href="http://testserver/admin/pinned-object/details/1"' in response.text
+    assert 'href="http://testserver/admin/pinned-object/edit/1"' in response.text
+    assert (
+        'data-url="http://testserver/admin/pinned-object/delete?pks=1"' in response.text
+    )
+    assert "/admin/news-pinned/" not in response.text
+
+    response = client.get("/admin/pinned-object/details/1")
+    assert response.status_code == 200
+    assert (
+        'data-url="http://testserver/admin/pinned-object/delete?pks=1"' in response.text
+    )
+    assert 'href="http://testserver/admin/pinned-object/edit/1"' in response.text
+
+    response = client.get("/admin/pinned-object/edit/1")
+    assert response.status_code == 200
+    assert 'action="http://testserver/admin/pinned-object/edit/1"' in response.text
+
+
+def test_polymorphic_delete_helper_uses_view_identity() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class PinnedObjectAdmin(ModelView, model=PinnedObject): ...
+
+    admin.add_view(PinnedObjectAdmin)
+    view = admin.views[0]
+
+    async def index(request: Request) -> Response:
+        return Response(view._url_for_delete(request, NewsPinned(id=1)))
+
+    app.add_route("/delete-url", index)
+
+    client = TestClient(app)
+    response = client.get("/delete-url")
+
+    assert response.text == "http://testserver/admin/pinned-object/delete?pks=1"
 
 
 def test_is_list_template_global():

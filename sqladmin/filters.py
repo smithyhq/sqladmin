@@ -67,6 +67,7 @@ def get_model_from_column(column: Any) -> Any:
 
 class BooleanFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -105,6 +106,7 @@ class BooleanFilter:
 
 class AllUniqueStringValuesFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -139,6 +141,7 @@ class AllUniqueStringValuesFilter:
 
 class StaticValuesFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -184,6 +187,7 @@ class StaticValuesFilter:
 
 class ForeignKeyFilter:
     has_operator = False
+    template = "sqladmin/filters/lookup_filter.html"
 
     def __init__(
         self,
@@ -242,6 +246,7 @@ class OperationColumnFilter:
     """Universal filter that provides appropriate filter types based on column type"""
 
     has_operator = True
+    template = "sqladmin/filters/operation_filter.html"
 
     def __init__(
         self,

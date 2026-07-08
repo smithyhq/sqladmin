@@ -137,6 +137,17 @@ The options available are:
         column_filterable_list = [User.is_admin]
     ```
 
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: r.url_for(
+                "admin:details", identity="user", pk=m.id
+            )
+        }
+    ```
+
 !!! tip
 
     You can use the special keyword `"__all__"` in `column_list` or `column_details_list`
@@ -278,6 +289,8 @@ The options available are:
         column_details_list = [User.id, User.name, "address.zip_code"]
         column_formatters_detail = {User.name: lambda m, a: m.name[:10]}
     ```
+
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
 
 !!! tip
 
@@ -463,6 +476,14 @@ There are four methods you can override to achieve this:
 
 By default these methods do nothing.
 
+### Controlling the response with `after_model_change`
+
+`after_model_change` can optionally return a value to control the HTTP response
+after a successful create or edit:
+
+- **`None`** (default) – the normal redirect happens.
+- **`Response`** – a custom Starlette `Response` is returned directly.
+
 !!! example
 
     ```python
@@ -476,6 +497,12 @@ By default these methods do nothing.
             ...
     ```
 
+!!! tip
+
+    See the [Displaying one-time secrets](cookbook/displaying_one_time_secrets.md)
+    cookbook for a practical example of returning a custom `Response` to show a
+    secret on the create page after generating a token.
+
 ## Custom Action
 
 To add custom action on models to the Admin, you can use the `action` decorator.
@@ -483,7 +510,7 @@ To add custom action on models to the Admin, you can use the `action` decorator.
 !!! example
 
     ```python
-    from sqladmin import BaseView, action
+    from sqladmin import BaseView, action, Flash
     from starlette.responses import RedirectResponse
 
     class UserAdmin(ModelView, model=User):
@@ -502,6 +529,7 @@ To add custom action on models to the Admin, you can use the `action` decorator.
                     ...
 
             referer = request.headers.get("Referer")
+            Flash.success(request, "Users approved successfully")
             if referer:
                 return RedirectResponse(referer)
             else:
@@ -517,3 +545,68 @@ The available options for `action` are:
 - `add_in_list`: A boolean indicating if this action should be available in list page.
 - `add_in_detail`: A boolean indicating if this action should be available in detail page.
 - `confirmation_message`: A string message that if defined, will open a modal to ask for confirmation before calling the action method.
+
+
+### Toast Notifications
+
+You can display toast notifications after a custom action completes using
+either the `Flash` utility class or the low-level `flash()` function.
+
+#### Using the `Flash` class (recommended)
+
+`Flash` provides convenience class methods that set the severity level automatically.
+Import it directly from `sqladmin`:
+
+```python
+from sqladmin import BaseView, action, Flash
+from starlette.responses import RedirectResponse
+
+class UserAdmin(ModelView, model=User):
+    @action(name="approve_users", label="Approve", add_in_list=True)
+    async def approve_users(self, request: Request):
+        pks = request.query_params.get("pks", "").split(",")
+        if pks:
+            for pk in pks:
+                model: User = await self.get_object_for_edit(pk)
+                ...
+
+        Flash.success(request, "Users approved successfully")
+        referer = request.headers.get("Referer")
+        if referer:
+            return RedirectResponse(referer)
+        else:
+            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+```
+
+The available convenience methods are:
+
+* `Flash.info(request, message, title="")` — informational message (blue)
+* `Flash.success(request, message, title="")` — success message (green)
+* `Flash.warning(request, message, title="")` — warning message (yellow)
+* `Flash.error(request, message, title="")` — error message (red)
+
+For custom levels use `Flash.flash()` with an explicit `FlashLevel`:
+
+```python
+from sqladmin import Flash, FlashLevel
+
+Flash.flash(request, "Server process started.", FlashLevel.warning, "System Alert")
+```
+
+#### Using the `flash()` function
+
+For cases where you want to pass a raw Bootstrap color class string directly,
+use the low-level `flash()` function from `sqladmin.flash`:
+
+```python
+from sqladmin.flash import flash
+
+flash(request, "Operation completed.", category="success", title="Done")
+flash(request, "Something went wrong.", category="danger")
+flash(request, "Process started.")  # defaults to "primary" (blue)
+```
+
+!!! note
+    Flash messages are stored in the session and displayed as Bootstrap toast
+    notifications on the next page render. They are automatically cleared after
+    being displayed. If no session is available, messages are silently ignored.

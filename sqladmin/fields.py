@@ -6,6 +6,7 @@ import json
 import operator
 from enum import Enum
 from typing import Any, Callable, Generator
+from uuid import UUID
 
 from wtforms import Form, ValidationError, fields, widgets
 
@@ -406,3 +407,35 @@ class BooleanField(fields.BooleanField):
     """
 
     widget = sqladmin_widgets.BooleanInputWidget()
+
+
+class UuidField(fields.StringField):
+    def process_formdata(self, valuelist: list) -> None:
+        """Convert submitted string to UUID object."""
+        if valuelist:
+            value = valuelist[0]
+            if not value:  # Empty string
+                self.data = None
+                return
+
+            try:
+                self.data = UUID(value)  # type: ignore[assignment]
+            except (ValueError, AttributeError, TypeError) as e:
+                self.data = None
+                raise ValidationError(f"Invalid UUID format. {e}")
+        else:
+            self.data = None
+
+    def process_data(self, value: str | UUID | None) -> None:
+        """Handle initial data (from object or default)."""
+        if value is None:
+            self.data = None
+        elif isinstance(value, UUID):
+            self.data = value  # type: ignore[assignment]
+        elif isinstance(value, str):
+            try:
+                self.data = UUID(value)  # type: ignore[assignment]
+            except (ValueError, AttributeError, TypeError):
+                self.data = None
+        else:
+            self.data = None

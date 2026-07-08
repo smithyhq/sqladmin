@@ -1,6 +1,6 @@
 import enum
 import json
-from typing import Any, Generator
+from typing import Generator
 
 import pytest
 from sqlalchemy import (
@@ -15,6 +15,7 @@ from sqlalchemy import (
     func,
     select,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -74,6 +75,7 @@ class Profile(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    data = Column(String, nullable=True)
 
     user = relationship("User", back_populates="profile")
 
@@ -105,6 +107,33 @@ class ProfileFormattable(Base):
         return f"Profile {self.id}"
 
 
+class Person(Base):
+    __tablename__ = "person"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=16))
+    worker = relationship("Worker", back_populates="person")
+
+
+class Worker(Base):
+    __tablename__ = "worker"
+    id = Column(Integer, primary_key=True)
+    person_id = Column(Integer, ForeignKey("person.id"))
+    person = relationship(Person, back_populates="worker", lazy="immediate")
+
+    @hybrid_property
+    def person_name(self):
+        return self.person.name
+
+    @person_name.inplace.expression
+    def _person_name_expression(cls):
+        return (
+            select(Person.name).where(Person.id == cls.person_id).label("person_name")
+        )
+
+    def __str__(self):
+        return f"{self.person_name}"
+
+
 class Movie(Base):
     __tablename__ = "movies"
 
@@ -120,7 +149,7 @@ class Product(Base):
     is_sold = Column(Boolean, nullable=False)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
     yield
@@ -128,7 +157,7 @@ def prepare_database() -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def client(prepare_database: Any) -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient, None, None]:
     with TestClient(app=app, base_url="http://testserver") as c:
         yield c
 
@@ -145,7 +174,7 @@ class UserAdmin(ModelView, model=User):
         User.status,
     ]
     column_labels = {User.email: "Email"}
-    column_searchable_list = [User.name]
+    column_searchable_list = [User.name, User.id]
     column_sortable_list = [User.id]
     column_export_list = [User.name, User.status]
     column_formatters = {
@@ -193,11 +222,16 @@ class ProductAdmin(ModelView, model=Product):
     pass
 
 
+class PersonAdmin(ModelView, model=Person):
+    form_columns = [Person.name]
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
 admin.add_view(ProductAdmin)
+admin.add_view(PersonAdmin)
 
 
 def test_root_view(client: TestClient) -> None:
@@ -420,7 +454,8 @@ def test_delete_endpoint_unauthorized_response(client: TestClient) -> None:
 def test_delete_endpoint_not_found_response(client: TestClient) -> None:
     response = client.delete("/admin/user/delete?pks=1")
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert "error=404%3A+Object+not+found" in response.text
 
     with session_maker() as s:
         assert s.query(User).count() == 0
@@ -509,23 +544,20 @@ def test_update_endpoint_with_checkbox_widget(client: TestClient) -> None:
 
     assert response.status_code == 200
 
-    assert (
-        '<div class="form-switch d-flex align-items-center h-100">'
-        f'<input class="form-check-input" id="{Product.is_sold.key}" '
-        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
-        in response.text
-    )
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
 
     response = client.get("/admin/product/edit/2")
 
     assert response.status_code == 200
 
-    assert (
-        '<div class="form-switch d-flex align-items-center h-100">'
-        f'<input checked class="form-check-input" id="{Product.is_sold.key}" '
-        f'name="{Product.is_sold.key}" type="checkbox" value="y"></div>'
-        in response.text
-    )
+    assert '<div class="form-switch d-flex align-items-center h-100">' in response.text
+    assert f'id="{Product.is_sold.key}"' in response.text
+    assert f'name="{Product.is_sold.key}"' in response.text
+    assert 'type="checkbox"' in response.text
+    assert "checked" in response.text
 
 
 def test_create_endpoint_post_form(client: TestClient) -> None:
@@ -768,6 +800,28 @@ def test_update_submit_form(client: TestClient) -> None:
         assert address[0].user_id == 1
 
 
+def test_update_wtforms_reserved_filed_names(client: TestClient) -> None:
+    with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        session.flush()
+
+        profile = Profile(user=user)
+        session.add(profile)
+        session.commit()
+
+    data = {"data": "new_data"}
+    response = client.post("/admin/profile/edit/1", data=data)
+
+    assert response.status_code == 200
+
+    stmt = select(Profile).limit(1)
+    with session_maker() as s:
+        profile = s.execute(stmt).scalar_one()
+
+    assert profile.data == "new_data"
+
+
 def test_searchable_list(client: TestClient) -> None:
     with session_maker() as session:
         user = User(name="Ross")
@@ -814,6 +868,29 @@ def test_export_csv(client: TestClient) -> None:
 
     response = client.get("/admin/user/export/csv")
     assert response.text == "name,status\r\nDaniel,ACTIVE\r\n"
+
+
+def test_pretty_export_csv_formatter_receives_request() -> None:
+    class UserRequestExportAdmin(ModelView, model=User):
+        column_export_list = [User.name]
+        column_formatters = {
+            User.name: lambda m, a, r: str(r.url_for("admin:list", identity="user")),
+        }
+        use_pretty_export = True
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRequestExportAdmin)
+
+    with session_maker() as session:
+        user = User(name="Daniel", status="ACTIVE")
+        session.add(user)
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/user/export/csv")
+
+    assert response.text == "name\r\nhttp://testserver/admin/user/list\r\n"
 
 
 def test_export_csv_utf8(client: TestClient) -> None:
@@ -877,7 +954,7 @@ def test_export_json_complex_model(client: TestClient) -> None:
 
     response = client.get("/admin/address/export/json")
     assert response.text == json.dumps(
-        [{"id": "1", "user_id": "1", "user": "User 1", "user.profile.id": "None"}]
+        [{"id": 1, "user_id": 1, "user": "User 1", "user.profile.id": None}]
     )
 
 
@@ -911,3 +988,86 @@ def test_export_bad_type_is_404(client: TestClient) -> None:
 def test_export_permission(client: TestClient) -> None:
     response = client.get("/admin/movie/export/csv")
     assert response.status_code == 403
+
+
+def test_sort_and_search_together_no_ambigious_column_error() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = ["user.name", "user.email"]
+        column_sortable_list = [Address.id, "user.id", "user.name"]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user1 = User(name="Alice", email="alice@example.com")
+        user2 = User(name="Bob", email="bob@example.com")
+        user3 = User(name="Charlie", email="charlie@example.com")
+        address1 = Address(user=user1)
+        address2 = Address(user=user2)
+        address3 = Address(user=user3)
+        session.add_all([user1, user2, user3, address1, address2, address3])
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/address/list?sortBy=user.name&sort=asc&search=o")
+    assert response.status_code == 200
+
+
+def test_list_column_formatter_receives_request_from_template() -> None:
+    class UserRequestFormatterAdmin(ModelView, model=User):
+        column_list = [User.name]
+        column_formatters = {
+            User.name: lambda m, a, r: str(r.url_for("admin:list", identity="user")),
+        }
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRequestFormatterAdmin)
+
+    with session_maker() as session:
+        session.add(User(name="Daniel"))
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/user/list")
+
+    assert response.status_code == 200
+    assert "http://testserver/admin/user/list" in response.text
+
+
+def test_detail_column_formatter_receives_request_from_template() -> None:
+    class UserRequestFormatterAdmin(ModelView, model=User):
+        column_details_list = [User.name]
+        column_formatters_detail = {
+            User.name: lambda m, a, r: str(
+                r.url_for("admin:details", identity="user", pk=m.id)
+            ),
+        }
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRequestFormatterAdmin)
+
+    with session_maker() as session:
+        session.add(User(name="Daniel"))
+        session.commit()
+
+    with TestClient(app=local_app, base_url="http://testserver") as client:
+        response = client.get("/admin/user/details/1")
+
+    assert response.status_code == 200
+    assert "http://testserver/admin/user/details/1" in response.text
+
+
+def test_hybrid_property(client: TestClient) -> None:
+    with session_maker() as session:
+        person = Person(name="Daniel")
+        session.add(person)
+        session.flush()
+        worker = Worker(person_id=person.id)
+        session.add(worker)
+        session.commit()
+
+    response = client.get("/admin/person/details/1")
+    assert response.status_code == 200

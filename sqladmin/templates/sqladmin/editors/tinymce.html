@@ -1,0 +1,13 @@
+<script>
+  (function () {
+    var fieldId = "{{ field.id }}";
+    tinymce.init({
+      selector: "#" + fieldId,
+      plugins: "{{ field.plugins }}",
+      toolbar: "{{ field.toolbar }}",
+      min_height: {{ field.min_height }},
+      promotion: false,
+      resize: false,
+    });
+  })();
+</script>

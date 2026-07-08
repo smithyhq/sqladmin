@@ -21,11 +21,7 @@ from typing import (
 import anyio
 from sqlalchemy import Boolean, select
 from sqlalchemy import inspect as sqlalchemy_inspect
-from sqlalchemy.orm import (
-    ColumnProperty,
-    RelationshipProperty,
-    sessionmaker,
-)
+from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.elements import Label
 from wtforms import (
     DecimalField,
@@ -39,7 +35,7 @@ from wtforms import (
 )
 from wtforms.fields.core import UnboundField
 
-from sqladmin._types import MODEL_PROPERTY
+from sqladmin._types import MODEL_PROPERTY, SESSION_MAKER
 from sqladmin._validators import (
     ColorValidator,
     CurrencyValidator,
@@ -61,6 +57,7 @@ from sqladmin.fields import (
     QuerySelectMultipleField,
     Select2TagsField,
     SelectField,
+    UuidField,
 )
 from sqladmin.helpers import (
     choice_type_coerce_factory,
@@ -128,7 +125,7 @@ class ModelConverterBase:
     async def _prepare_kwargs(
         self,
         prop: MODEL_PROPERTY,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
         field_args: dict[str, Any],
         field_widget_args: dict[str, Any],
         form_include_pk: bool,
@@ -146,7 +143,6 @@ class ModelConverterBase:
         kwargs.setdefault("label", label)
         kwargs.setdefault("validators", [])
         kwargs.setdefault("filters", [])
-        kwargs.setdefault("default", None)
         kwargs.setdefault("description", prop.doc)
         kwargs.setdefault("render_kw", widget_args)
 
@@ -158,6 +154,10 @@ class ModelConverterBase:
             kwargs = await self._prepare_relationship(
                 prop=prop, session_maker=session_maker, kwargs=kwargs, loader=loader
             )
+
+        # Fallback so kwargs always has "default"; column defaults set above win.
+        if kwargs is not None:
+            kwargs.setdefault("default", None)
 
         return kwargs
 
@@ -190,7 +190,7 @@ class ModelConverterBase:
                     else callable_default
                 )
 
-        kwargs["default"] = default
+        kwargs.setdefault("default", default)
         optional_types = (Boolean,)
 
         if column.nullable:
@@ -210,7 +210,7 @@ class ModelConverterBase:
         self,
         prop: RelationshipProperty,
         kwargs: dict,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
         loader: QueryAjaxModelLoader | None = None,
     ) -> dict:
         nullable = True
@@ -218,7 +218,7 @@ class ModelConverterBase:
             if not pair[0].nullable:
                 nullable = False
 
-        kwargs["allow_blank"] = nullable
+        kwargs.setdefault("allow_blank", nullable)
 
         if not loader:
             kwargs.setdefault(
@@ -230,7 +230,7 @@ class ModelConverterBase:
     async def _prepare_select_options(
         self,
         prop: RelationshipProperty,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
     ) -> list[tuple[str, Any]]:
         target_model = prop.mapper.class_
         stmt = select(target_model)
@@ -288,7 +288,7 @@ class ModelConverterBase:
         self,
         model: type,
         prop: MODEL_PROPERTY,
-        session_maker: sessionmaker,
+        session_maker: SESSION_MAKER,
         field_args: dict[str, Any],
         field_widget_args: dict[str, Any],
         form_include_pk: bool,
@@ -378,9 +378,9 @@ class ModelConverter(ModelConverterBase):
             kwargs["render_kw"]["class"] = "form-check-input"
             return BooleanField(**kwargs)
 
-        kwargs["allow_blank"] = True
-        kwargs["choices"] = [(True, "True"), (False, "False")]
-        kwargs["coerce"] = lambda v: str(v) == "True"
+        kwargs.setdefault("allow_blank", True)
+        kwargs.setdefault("choices", [(True, "True"), (False, "False")])
+        kwargs.setdefault("coerce", lambda v: str(v) == "True")
         return SelectField(**kwargs)
 
     @converts("Date")
@@ -424,7 +424,7 @@ class ModelConverter(ModelConverterBase):
         accepted_values = [choice[0] for choice in available_choices]
 
         if prop.columns[0].nullable:
-            kwargs["allow_blank"] = True
+            kwargs.setdefault("allow_blank", True)
             accepted_values.append(None)
             filters = kwargs.get("filters", [])
             filters.append(lambda x: x or None)
@@ -433,7 +433,9 @@ class ModelConverter(ModelConverterBase):
         kwargs["choices"] = available_choices
         kwargs.setdefault("validators", [])
         kwargs["validators"].append(validators.AnyOf(accepted_values))
-        kwargs["coerce"] = lambda v: v.name if isinstance(v, enum.Enum) else str(v)
+        kwargs.setdefault(
+            "coerce", lambda v: v.name if isinstance(v, enum.Enum) else str(v)
+        )
         return SelectField(**kwargs)
 
     @converts("Integer")  # includes BigInteger and SmallInteger
@@ -516,9 +518,7 @@ class ModelConverter(ModelConverterBase):
         prop: ColumnProperty,
         kwargs: dict[str, Any],
     ) -> UnboundField:
-        kwargs.setdefault("validators", [])
-        kwargs["validators"].append(validators.UUID())
-        return StringField(**kwargs)
+        return UuidField(**kwargs)
 
     @converts(
         "sqlalchemy.dialects.postgresql.base.ARRAY",
@@ -622,7 +622,7 @@ class ModelConverter(ModelConverterBase):
         ]
 
         if column.nullable:
-            kwargs["allow_blank"] = column.nullable
+            kwargs.setdefault("allow_blank", column.nullable)
             accepted_values.append(None)
             filters = kwargs.get("filters", [])
             filters.append(lambda x: x or None)
@@ -630,7 +630,7 @@ class ModelConverter(ModelConverterBase):
 
         kwargs["choices"] = available_choices
         kwargs["validators"].append(validators.AnyOf(accepted_values))
-        kwargs["coerce"] = choice_type_coerce_factory(column.type)
+        kwargs.setdefault("coerce", choice_type_coerce_factory(column.type))
         return SelectField(**kwargs)
 
     @converts("fastapi_storages.integrations.sqlalchemy.FileType")
@@ -659,6 +659,8 @@ class ModelConverter(ModelConverterBase):
         kwargs: dict[str, Any],
     ) -> UnboundField:
         kwargs["allow_blank"] = True
+
+        # kwargs.setdefault("allow_blank", True)
         return QuerySelectField(**kwargs)
 
     @converts("MANYTOONE")
@@ -682,7 +684,7 @@ class ModelConverter(ModelConverterBase):
 
 async def get_model_form(
     model: type,
-    session_maker: sessionmaker,
+    session_maker: SESSION_MAKER,
     only: Sequence[str] | None = None,
     exclude: Sequence[str] | None = None,
     column_labels: dict[str, str] | None = None,

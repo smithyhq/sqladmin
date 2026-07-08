@@ -15,12 +15,11 @@ actions = \
 	lint-format \
 	docs-build \
 	docs-serve \
-	docs-deploy \
 	build \
 	publish
 
 # ARGS used for `test`. `PY_ARGS` used for `lint` and `format`
-PY_ARGS := $(or $(filter %.py,$(ARGS)),sqladmin)
+PY_ARGS := $(or $(filter %.py,$(ARGS)),sqladmin tests)
 
 setup:
 	uv sync --all-groups
@@ -45,13 +44,10 @@ secure:
 	uv run bandit -r sqladmin --config pyproject.toml
 
 docs-build:
-	uv run mkdocs build
+	uv run zensical build
 
 docs-serve:
-	uv run mkdocs serve --dev-addr localhost:8080
-
-docs-deploy:
-	uv run mkdocs gh-deploy --force
+	uv run zensical serve --dev-addr localhost:8080
 
 build:
 	uv build
@@ -60,4 +56,4 @@ publish:
 	uv publish
 
 
-.PHONY: setup test cov lint-check lint-format docs-build docs-serve docs-deploy build publish
+.PHONY: setup test cov lint-check lint-format docs-build docs-serve build publish

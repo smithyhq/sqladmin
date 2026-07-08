@@ -376,7 +376,7 @@ The forms are based on `WTForms` package and include the following options:
 
 ### Related models
 
-To define how related model is displayed in the dropdown, `__str__` method must be difined in the related model.
+To define how related model is displayed in the dropdown, `__str__` method must be defined in the related model.
 
 ## Export options
 

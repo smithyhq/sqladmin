@@ -20,7 +20,7 @@ from starlette.responses import RedirectResponse
 
 
 class AdminAuth(AuthenticationBackend):
-    async def login(self, request: Request) -> bool:
+    async def login(self, request: Request) -> bool | RedirectResponse:
         form = await request.form()
         username, password = form["username"], form["password"]
 
@@ -30,7 +30,7 @@ class AdminAuth(AuthenticationBackend):
 
         return True
 
-    async def logout(self, request: Request) -> bool:
+    async def logout(self, request: Request) -> bool | RedirectResponse:
         # Usually you'd want to just clear the session
         request.session.clear()
         return True
@@ -46,8 +46,21 @@ class AdminAuth(AuthenticationBackend):
 
 
 authentication_backend = AdminAuth(secret_key="...")
-admin = Admin(app=..., authentication_backend=authentication_backend، ...)
+admin = Admin(app=..., authentication_backend=authentication_backend, ...)
 ```
+
+### Login/logout return values
+
+`AuthenticationBackend.login` and `AuthenticationBackend.logout` may return:
+
+- `True`: SQLAdmin applies its default redirect.
+    - login: redirect to admin index.
+    - logout: redirect to admin index.
+- `False`: SQLAdmin treats the operation as failed.
+    - login: renders the login template with status `400` and an error message.
+    - logout: redirects to the login page.
+- A Starlette `Response` (for example `RedirectResponse`, `JSONResponse`, etc):
+    SQLAdmin returns it as-is.
 
 !!! note
     In order to use AuthenticationBackend you need to install the `itsdangerous` package.
@@ -82,11 +95,11 @@ admin = Admin(app=..., authentication_backend=authentication_backend، ...)
 
 
     class AdminAuth(AuthenticationBackend):
-        async def login(self, request: Request) -> bool:
+        async def login(self, request: Request) -> bool | RedirectResponse:
             request.session.update({"token": "..."})
             return True
 
-        async def logout(self, request: Request) -> bool:
+        async def logout(self, request: Request) -> bool | RedirectResponse:
             request.session.clear()
             return True
 

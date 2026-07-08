@@ -25,7 +25,7 @@ class AuthenticationBackend:
     async def login(self, request: Request) -> Response | bool:
         """Implement login logic here.
         You can access the login form data `await request.form()`
-        andvalidate the credentials.
+        and validate the credentials.
         """
         raise NotImplementedError()
 

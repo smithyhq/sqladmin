@@ -55,7 +55,7 @@ class IntervalField(fields.StringField):
 
         interval = parse_interval(valuelist[0])
         if not interval:
-            raise ValueError("Invalide timedelta format.")
+            raise ValueError("Invalid timedelta format.")
 
         self.data = interval  # type: ignore[assignment]
 

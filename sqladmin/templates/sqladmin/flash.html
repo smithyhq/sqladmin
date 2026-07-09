@@ -2,8 +2,8 @@
 {% if messages %}
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
   {% for message in messages %}
-  <div class="toast text-bg-{{message.category}} " role="alert" aria-live="assertive" aria-atomic="true"
-    data-bs-toggle="toast" style="width: auto">
+  <div class="toast admin-toast text-bg-{{message.category}}" role="alert" aria-live="assertive" aria-atomic="true"
+    data-bs-toggle="toast">
     <div class="d-flex">
       {% if message.title %}
       <div class="toast-header">{{ message.title }}</div>

@@ -17,6 +17,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -111,6 +112,33 @@ class ProfileFormattable(Base):
         return f"Profile {self.id}"
 
 
+class Person(Base):
+    __tablename__ = "person"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    worker = relationship("Worker", back_populates="person")
+
+
+class Worker(Base):
+    __tablename__ = "worker"
+    id = Column(Integer, primary_key=True)
+    person_id = Column(Integer, ForeignKey("person.id"))
+    person = relationship(Person, back_populates="worker", lazy="immediate")
+
+    @hybrid_property
+    def person_name(self):
+        return self.person.name
+
+    @person_name.inplace.expression
+    def _person_name_expression(cls):
+        return (
+            select(Person.name).where(Person.id == cls.person_id).label("person_name")
+        )
+
+    def __str__(self):
+        return f"{self.person_name}"
+
+
 class Movie(Base):
     __tablename__ = "movies"
 
@@ -134,6 +162,15 @@ class EachRowAction(Base):
     can_view_details = Column(Boolean, nullable=True, default=True)
     can_edit = Column(Boolean, nullable=True, default=True)
     can_delete = Column(Boolean, nullable=True, default=True)
+
+
+class WithDefaults(Base):
+    __tablename__ = "with_defaults"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, default="untitled")
+    priority = Column(Integer, default=5)
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
 @pytest.fixture(autouse=True)
@@ -183,6 +220,11 @@ class UserAdmin(ModelView, model=User):
             f"Formatted {a}" for a in m.addresses_formattable
         ],
         User.profile_formattable: lambda m, a: f"Formatted {m.profile_formattable}",
+    }
+    form_args = {
+        "profile": {
+            "allow_blank": True,
+        },
     }
     save_as = True
     can_import = True
@@ -236,12 +278,22 @@ class ProductAdmin(ModelView, model=Product):
     pass
 
 
+class PersonAdmin(ModelView, model=Person):
+    form_columns = [Person.name]
+
+
+class WithDefaultsAdmin(ModelView, model=WithDefaults):
+    pass
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
 admin.add_view(EachRowActionAdmin)
 admin.add_view(ProductAdmin)
+admin.add_view(PersonAdmin)
+admin.add_view(WithDefaultsAdmin)
 
 
 async def test_root_view(client: AsyncClient) -> None:
@@ -533,6 +585,42 @@ async def test_create_endpoint_with_required_fields(client: AsyncClient) -> None
         '<label class="form-label col-sm-2 col-form-label" for="price">Price</label>'
         in response.text
     )
+
+
+async def test_create_endpoint_renders_column_defaults(client: AsyncClient) -> None:
+    response = await client.get("/admin/with-defaults/create")
+
+    assert response.status_code == 200
+    assert (
+        '<input class="form-control" id="name" name="name" type="text"'
+        ' value="untitled">' in response.text
+    )
+    assert (
+        '<input class="form-control" id="priority" name="priority" type="number"'
+        ' value="5">' in response.text
+    )
+    assert (
+        '<input checked class="form-check-input" id="is_active" name="is_active"'
+        ' type="checkbox" value="y">' in response.text
+    )
+
+
+async def test_create_endpoint_post_unchecked_overrides_default(
+    client: AsyncClient,
+) -> None:
+    data = {"name": "foo", "priority": "3"}
+    response = await client.post(
+        "/admin/with-defaults/create", data=data, follow_redirects=False
+    )
+
+    assert response.status_code == 302
+
+    async with session_maker() as session:
+        result = await session.execute(select(WithDefaults))
+        row = result.scalars().one()
+    assert row.is_active is False
+    assert row.name == "foo"
+    assert row.priority == 3
 
 
 async def test_check_can_view_details(client: AsyncClient) -> None:
@@ -1098,3 +1186,16 @@ async def test_import_csv_permission(client: AsyncClient) -> None:
         },
     )
     assert response.status_code == 403
+
+
+async def test_hybrid_property(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        person = Person(name="Daniel")
+        session.add(person)
+        await session.flush()
+        worker = Worker(person_id=person.id)
+        session.add(worker)
+        await session.commit()
+
+    response = await client.get("/admin/person/details/1")
+    assert response.status_code == 200

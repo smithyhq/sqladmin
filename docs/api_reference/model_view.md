@@ -40,6 +40,8 @@
         - can_import
         - column_import_list
         - column_import_exclude_list
+        - max_import_file_size
+        - max_reported_missed_rows
         - form
         - form_args
         - form_columns

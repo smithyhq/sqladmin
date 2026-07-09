@@ -445,6 +445,8 @@ The import options can be set per model and includes the following options:
 * `can_import`: If the model can be imported. Default value is `False`.
 * `column_import_list`: List of columns to include in the import data. Default is all model columns.
 * `column_import_exclude_list`: List of columns to exclude in the import data.
+* `max_import_file_size`: Maximum accepted CSV file size in bytes for this model import. Default is `5 * 1024 * 1024`.
+* `max_reported_missed_rows`: Maximum number of missed rows included in the import result payload. Default is `100`.
 
 !!! example
 
@@ -458,7 +460,26 @@ The import options can be set per model and includes the following options:
     class UserAdmin(ModelView, model=User):
         can_import = True
         column_import_list = [User.name, User.address]
+        max_import_file_size = 20 * 1024 * 1024
+        max_reported_missed_rows = 500
     ```
+
+### Reported missed rows vs total skipped rows
+
+During import, SQLAdmin can skip invalid rows (for example with "Skip invalid rows and continue").
+
+- `skipped`: Total number of rows skipped during import.
+- `missed_rows`: Detailed row reports (line, data, errors) included in the result payload.
+
+`missed_rows` is intentionally capped by `max_reported_missed_rows` to keep payloads and browser rendering responsive on large imports.
+
+When skipped rows exceed the cap:
+
+- `skipped` still shows the full total skipped count.
+- `missed_rows` contains only the first `max_reported_missed_rows` detailed entries.
+- `missed_rows_omitted_count` contains how many additional detailed missed rows were not included.
+
+In short: totals are complete, detailed preview may be truncated by design.
 
 ## Templates
 

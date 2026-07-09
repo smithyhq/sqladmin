@@ -33,13 +33,13 @@
                   </a>
                 </div>
                 {% endif %}
-                {% if model_view.can_import %}
+                {% endif %}
+                {% if can_import %}
                 <div class="ms-3 d-inline-block">
                   <a class="btn btn-primary" id="action-import" href="#" data-name="{{ model_view.name }}"
-                  data-url="{{ url_for('admin:import', identity=model_view.identity) }}" data-bs-toggle="modal"
-                  data-bs-target="#modal-import">Import CSV</a>
+                    data-url="{{ url_for('admin:import', identity=model_view.identity) }}" data-bs-toggle="modal"
+                    data-bs-target="#modal-import">Import CSV</a>
                 </div>
-                {% endif %}
                 {% endif %}
                 {% if model_view.can_create %}
                 <div class="ms-3 d-inline-block">
@@ -150,8 +150,8 @@
                       </a>
                       {% endif %}
                       {% if model_view.check_can_edit(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="Edit">
+                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>
                       {% endif %}
@@ -264,7 +264,7 @@
   {% if model_view.can_delete %}
   {% include 'sqladmin/modals/delete.html' %}
   {% endif %}
-  {% if model_view.can_import %}
+  {% if can_import %}
   {% include 'sqladmin/modals/import.html' %}
   {% endif %}
 

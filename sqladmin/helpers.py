@@ -188,8 +188,15 @@ def parse_csv(
 ) -> list[MultiDict]:
     if csv_content[:3] == b"\xef\xbb\xbf":
         csv_content = csv_content[3:]
-    _csv_content = csv_content.decode("utf-8").splitlines()
+    try:
+        _csv_content = csv_content.decode("utf-8").splitlines()
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV file must be UTF-8 encoded.") from exc
+
     reader = csv.DictReader(_csv_content, delimiter=delimiter)
+    if not reader.fieldnames:
+        raise ValueError("CSV file is missing a header row.")
+
     result = []
     for row in reader:
         md = MultiDict()

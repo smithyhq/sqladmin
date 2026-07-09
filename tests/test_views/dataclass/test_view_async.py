@@ -39,6 +39,8 @@ class User(Base):
 class UserAdmin(ModelView, model=User):
     column_list = ["name", "email"]
     column_labels = {"name": "Name", "email": "Email"}
+    can_import = True
+    column_import_list = ["name", "email"]
 
 
 app = Starlette()
@@ -86,3 +88,27 @@ async def test_update_dataclass(client: AsyncClient) -> None:
     user = result.scalar_one()
     assert user.name == "foo"
     assert user.email == "bar"
+
+
+async def test_import_dataclass(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/user/import",
+        data={"continue_on_error": "1"},
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,email\r\nimported,imported@example.com\r\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    stmt = select(User)
+    async with session_maker() as s:
+        result = await s.execute(stmt)
+    user = result.scalar_one()
+
+    assert user.name == "imported"
+    assert user.email == "imported@example.com"

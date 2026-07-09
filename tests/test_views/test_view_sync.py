@@ -24,7 +24,7 @@ from starlette.testclient import TestClient
 from sqladmin import Admin, ModelView
 from tests.common import sync_engine as engine
 
-Base = declarative_base()  # type: Any
+Base = declarative_base()
 session_maker = sessionmaker(bind=engine)
 
 app = Starlette()
@@ -234,6 +234,16 @@ admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(PersonAdmin)
+
+
+def _parse_ndjson_events(content: str) -> list[dict]:
+    events = []
+    for line in content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        events.append(json.loads(line))
+    return events
 
 
 def test_root_view(client: TestClient) -> None:
@@ -1105,6 +1115,52 @@ def test_import_csv_button(client: TestClient) -> None:
     )
 
 
+def test_import_csv_permission_check_can_import(client: TestClient) -> None:
+    class UserSelectiveImportAdmin(ModelView, model=User):
+        can_import = True
+
+        async def check_can_import(self, request: Request) -> bool:
+            return request.headers.get("x-allow-import") == "1"
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserSelectiveImportAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        denied_list = local_client.get("/admin/user/list")
+        allowed_list = local_client.get(
+            "/admin/user/list", headers={"x-allow-import": "1"}
+        )
+        denied_import = local_client.post(
+            "/admin/user/import",
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,status\r\nUSER_1,ACTIVE\r\n",
+                    "text/csv",
+                )
+            },
+        )
+        allowed_import = local_client.post(
+            "/admin/user/import",
+            headers={"x-allow-import": "1"},
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,status\r\nUSER_1,ACTIVE\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    assert denied_list.status_code == 200
+    assert "Import CSV" not in denied_list.text
+    assert allowed_list.status_code == 200
+    assert "Import CSV" in allowed_list.text
+    assert denied_import.status_code == 403
+    assert allowed_import.status_code == 200
+
+
 def test_import_csv_bad_type_is_404(client: TestClient) -> None:
     response = client.post(
         "/admin/notfound/import",
@@ -1131,3 +1187,193 @@ def test_import_csv_permission(client: TestClient) -> None:
         },
     )
     assert response.status_code == 403
+
+
+def test_import_csv_invalid_extension(client: TestClient) -> None:
+    response = client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.txt",
+                b"name,status\r\nUSER_1,ACTIVE\r\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.text == "Undefined file."
+
+
+def test_import_csv_invalid_content_type(client: TestClient) -> None:
+    response = client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nUSER_1,ACTIVE\r\n",
+                "application/json",
+            )
+        },
+    )
+
+    assert response.status_code == 400
+
+
+def test_import_csv_file_too_large(client: TestClient) -> None:
+    response = client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"a" * (UserAdmin.max_import_file_size + 1),
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 413
+
+
+def test_import_csv_invalid_encoding(client: TestClient) -> None:
+    response = client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"\xff\xfe\xfd",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.text == "CSV file must be UTF-8 encoded."
+
+
+def test_import_csv_continue_on_error_modes(client: TestClient) -> None:
+    response_abort = client.post(
+        "/admin/user/import",
+        data={"continue_on_error": "0"},
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nGOOD,ACTIVE\r\nBAD,NOT_A_STATUS\r\n",
+                "text/csv",
+            )
+        },
+    )
+    events_abort = _parse_ndjson_events(response_abort.text)
+    result_abort = events_abort[-1]
+
+    assert response_abort.status_code == 200
+    assert result_abort["type"] == "result"
+    assert result_abort["ok"] is False
+    assert result_abort["aborted"] is True
+    assert result_abort["imported"] == 0
+    assert result_abort["skipped"] == 1
+
+    with session_maker() as s:
+        users_after_abort = list(s.execute(select(User)).scalars())
+    assert len(users_after_abort) == 0
+
+    response_continue = client.post(
+        "/admin/user/import",
+        data={"continue_on_error": "1"},
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nGOOD,ACTIVE\r\nBAD,NOT_A_STATUS\r\n",
+                "text/csv",
+            )
+        },
+    )
+    events_continue = _parse_ndjson_events(response_continue.text)
+    result_continue = events_continue[-1]
+
+    assert response_continue.status_code == 200
+    assert result_continue["type"] == "result"
+    assert result_continue["ok"] is True
+    assert result_continue["imported"] == 1
+    assert result_continue["skipped"] == 1
+
+    with session_maker() as s:
+        users_after_continue = list(s.execute(select(User)).scalars())
+    assert len(users_after_continue) == 1
+    assert users_after_continue[0].name == "GOOD"
+
+
+def test_import_csv_missed_rows_cap(client: TestClient) -> None:
+    class UserImportCapAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.status]
+        max_reported_missed_rows = 1
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserImportCapAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        response = local_client.post(
+            "/admin/user/import",
+            data={"continue_on_error": "1"},
+            files={
+                "csvfile": (
+                    "user.csv",
+                    (
+                        b"name,status\r\n"
+                        b"OK,ACTIVE\r\n"
+                        b"BAD1,NOT_A_STATUS\r\n"
+                        b"BAD2,NOT_A_STATUS\r\n"
+                    ),
+                    "text/csv",
+                )
+            },
+        )
+
+    result = _parse_ndjson_events(response.text)[-1]
+
+    assert response.status_code == 200
+    assert result["type"] == "result"
+    assert result["ok"] is True
+    assert result["imported"] == 1
+    assert result["skipped"] == 2
+    assert len(result["missed_rows"]) == 1
+    assert result["missed_rows_omitted_count"] == 1
+
+
+def test_import_csv_foreign_key_validation(client: TestClient) -> None:
+    class AddressImportAdmin(ModelView, model=Address):
+        can_import = True
+        column_import_list = [Address.user_id]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(AddressImportAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        response = local_client.post(
+            "/admin/address/import",
+            data={"continue_on_error": "1"},
+            files={
+                "csvfile": (
+                    "address.csv",
+                    b"user_id\r\n999999\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    result = _parse_ndjson_events(response.text)[-1]
+
+    assert response.status_code == 200
+    assert result["type"] == "result"
+    assert result["ok"] is True
+    assert result["imported"] == 0
+    assert result["skipped"] == 1
+    assert len(result["missed_rows"]) == 1
+    assert "user_id" in result["missed_rows"][0]["errors"]
+
+    with session_maker() as s:
+        addresses = list(s.execute(select(Address)).scalars())
+    assert len(addresses) == 0

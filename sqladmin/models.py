@@ -250,6 +250,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     Default value is set to `False`.
     """
 
+    max_import_file_size: ClassVar[int] = 5 * 1024 * 1024
+    """Maximum import CSV file size in bytes for this ModelView."""
+
+    max_reported_missed_rows: ClassVar[int] = 100
+    """Maximum missed rows included in import result payload."""
+
     # List page
     column_list: ClassVar[Union[str, Sequence[MODEL_ATTR]]] = []
     """List of columns to display in `List` page.
@@ -1171,7 +1177,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         return self._build_column_list(
             include=columns,
             exclude=excluded_columns,
-            defaults=self._list_prop_names,
+            defaults=self._prop_names,
         )
 
     async def on_model_change(
@@ -1245,6 +1251,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         You can add a custom model attribute checker before delete.
         """
         return self.can_delete
+
+    async def check_can_import(self, request: Request) -> bool:
+        """
+        You can add a custom model attribute checker before import.
+        """
+        return self.can_import
 
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
         if self.form is not None:

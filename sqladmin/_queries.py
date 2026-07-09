@@ -256,7 +256,7 @@ class Query:
         objs = []
         with self.model_view.session_maker(expire_on_commit=False) as session:
             for row in data:
-                obj = self.model_view.model()
+                obj = self._get_model_object(row)
                 anyio.from_thread.run(
                     self.model_view.on_model_change, row, obj, True, request
                 )
@@ -276,7 +276,7 @@ class Query:
         objs = []
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             for row in data:
-                obj = self.model_view.model()
+                obj = self._get_model_object(row)
                 await self.model_view.on_model_change(row, obj, True, request)
                 obj = await self._set_attributes_async(session, obj, row)
                 objs.append(obj)

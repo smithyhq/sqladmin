@@ -15,6 +15,7 @@ from starlette.datastructures import UploadFile
 
 from sqladmin import Admin, ModelView
 from sqladmin.fields import FileField, file_display_formatter
+from sqladmin.helpers import validate_servable_file_path
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -103,13 +104,13 @@ async def test_detail_view(client: AsyncClient) -> None:
         '<span class="me-1"><i class="fa-solid fa-download"></i></span>'
         in response.text
     )
-    assert '<a href="http://testserver/admin/user/1/file/read/">' in response.text
+    assert '<a href="http://testserver/admin/user/1/file/preview/">' in response.text
     assert '<a href="http://testserver/admin/user/1/file/download/">' in response.text
 
 
 async def test_list_view(client: AsyncClient) -> None:
     async with session_maker() as session:
-        for i in range(10):
+        for _ in range(10):
             user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
             session.add(user)
         await session.commit()
@@ -127,35 +128,76 @@ async def test_list_view(client: AsyncClient) -> None:
     pattern_span = re.compile(
         r'<span class="me-1"><i class="fa-solid fa-download"></i></span>'
     )
-    pattern_a_read = re.compile(
-        r'<a href="http://testserver/admin/user/\d+/file/read/">'
+    pattern_a_preview = re.compile(
+        r'<a href="http://testserver/admin/user/\d+/file/preview/">'
     )
     pattern_a_download = re.compile(
         r'<a href="http://testserver/admin/user/\d+/file/download/">'
     )
 
     count_span = len(pattern_span.findall(response.text))
-    count_a_read = len(pattern_a_read.findall(response.text))
+    count_a_preview = len(pattern_a_preview.findall(response.text))
     count_a_download = len(pattern_a_download.findall(response.text))
 
-    assert count_span == count_a_read == count_a_download == 10
+    assert count_span == count_a_preview == count_a_download == 10
 
 
 async def test_file_download(client: AsyncClient) -> None:
     async with session_maker() as session:
-        for i in range(10):
-            user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
-            session.add(user)
+        user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
+        session.add(user)
         await session.commit()
 
     response = await client.get("/admin/user/1/file/download/")
 
     assert response.status_code == 200
+    assert response.content == b"abc"
 
-    with open(".uploads/download.txt", "wb") as local_file:
-        local_file.write(response.content)
 
-    assert open(".uploads/download.txt", "rb").read() == b"abc"
+async def test_file_preview(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
+        session.add(user)
+        await session.commit()
+
+    response = await client.get("/admin/user/1/file/preview/")
+    assert response.status_code == 200
+    assert response.text == "abc"
+
+
+async def test_file_download_forbidden_when_details_disabled(
+    client: AsyncClient,
+) -> None:
+    class RestrictedUserAdmin(ModelView, model=User):
+        can_view_details = False
+        column_list = [User.id, User.file]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(RestrictedUserAdmin)
+
+    async with session_maker() as session:
+        user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
+        session.add(user)
+        await session.commit()
+
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as local_client:
+        response = await local_client.get("/admin/user/1/file/download/")
+
+    assert response.status_code == 403
+
+
+async def test_file_download_unknown_column(client: AsyncClient) -> None:
+    async with session_maker() as session:
+        user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
+        session.add(user)
+        await session.commit()
+
+    response = await client.get("/admin/user/1/missing/download/")
+    assert response.status_code == 404
 
 
 async def test_cdn_url_list(client: AsyncClient) -> None:
@@ -172,13 +214,35 @@ async def test_cdn_url_list(client: AsyncClient) -> None:
     assert "file/download" not in response.text
 
 
-async def test_file_read(client: AsyncClient) -> None:
+async def test_cdn_url_download_not_served(client: AsyncClient) -> None:
     async with session_maker() as session:
-        for i in range(10):
-            user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
-            session.add(user)
+        asset = Asset(url="https://cdn.example.com/image.png")
+        session.add(asset)
         await session.commit()
 
-    response = await client.get("/admin/user/1/file/read/")
-    assert response.status_code == 200
-    assert response.text == "abc"
+    response = await client.get("/admin/asset/1/url/download/")
+    assert response.status_code == 400
+
+
+def test_validate_servable_file_path_allows_files_under_storage_root(
+    tmp_path: Path,
+) -> None:
+    storage_root = tmp_path / "storage"
+    storage_root.mkdir()
+    allowed = storage_root / "allowed.txt"
+    allowed.write_text("ok", encoding="utf-8")
+
+    resolved = validate_servable_file_path(str(allowed), [storage_root])
+    assert resolved == allowed.resolve()
+
+
+def test_validate_servable_file_path_rejects_outside_storage_root(
+    tmp_path: Path,
+) -> None:
+    storage_root = tmp_path / "storage"
+    storage_root.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("nope", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="File path not allowed"):
+        validate_servable_file_path(str(outside), [storage_root])

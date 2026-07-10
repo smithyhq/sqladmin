@@ -9,11 +9,13 @@ import re
 import unicodedata
 from abc import ABC, abstractmethod
 from datetime import date, datetime, time, timedelta
+from pathlib import Path
 from typing import (
     Any,
     AsyncGenerator,
     Callable,
     Generator,
+    Sequence,
     TypeVar,
     get_args,
     get_origin,
@@ -157,6 +159,39 @@ def resolve_storage_path(value: Any) -> str | None:
     if isinstance(value, str):
         return value
     return str(value)
+
+
+def get_column_storage_roots(column: Column) -> list[Path]:
+    """Return allowed filesystem roots for a SQLAlchemy file column."""
+    roots: list[Path] = []
+    col_type = column.type
+    storage = getattr(col_type, "storage", None)
+    if storage is not None:
+        storage_path = getattr(storage, "_path", None)
+        if storage_path is not None:
+            roots.append(Path(storage_path).resolve())
+    return roots
+
+
+def validate_servable_file_path(path: str, allowed_roots: Sequence[Path]) -> Path:
+    """Resolve and validate a local file path against allowed storage roots."""
+    if "\x00" in path:
+        raise ValueError("Invalid path")
+
+    resolved = Path(path).expanduser().resolve()
+    if not resolved.is_file():
+        raise ValueError("File not found")
+
+    roots = list(allowed_roots) or [Path.cwd().resolve()]
+    for root in roots:
+        root_resolved = Path(root).expanduser().resolve()
+        try:
+            resolved.relative_to(root_resolved)
+            return resolved
+        except ValueError:
+            continue
+
+    raise ValueError("File path not allowed")
 
 
 def file_display_label(value: Any) -> str:

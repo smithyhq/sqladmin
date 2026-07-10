@@ -13,15 +13,16 @@ It also includes custom SQLAlchemy types to make it easier to integrate into `SQ
 - `FileType`
 - `ImageType`
 
-File upload and download links are **opt-in**. Enable them explicitly on your `ModelView`
-with `form_overrides` and `column_formatters`.
+**Upload forms** for `FileType` / `ImageType` columns are wired automatically through the
+model converter (`FileField`). **List/detail download and preview links** are opt-in via
+`column_formatters`.
 
-## Local files (upload + admin download links)
+## Local files (upload + admin preview/download links)
 
 ```python
 from fastapi import FastAPI
 from sqladmin import Admin, ModelView
-from sqladmin.fields import FileField, file_display_formatter
+from sqladmin.fields import file_display_formatter
 from sqlalchemy import Column, Integer, create_engine
 from sqlalchemy.orm import declarative_base
 from fastapi_storages import FileSystemStorage
@@ -44,7 +45,6 @@ class User(Base):
 
 class UserAdmin(ModelView, model=User):
     column_list = [User.id, User.file]
-    form_overrides = {User.file: FileField}
     column_formatters = {User.file: file_display_formatter}
     column_formatters_detail = {User.file: file_display_formatter}
 
@@ -54,8 +54,11 @@ Base.metadata.create_all(engine)  # Create tables
 admin.add_view(UserAdmin)
 ```
 
-- **`FileField`** — file input on create/edit forms (not applied automatically).
-- **`file_display_formatter`** — view/download links on list and detail pages for local files.
+- **`FileField`** — used automatically on create/edit forms for `FileType` / `ImageType`.
+- **`file_display_formatter`** — preview and download links on list and detail pages.
+
+Preview and download routes require the same permissions as the details view
+(`can_view_details`, `is_accessible`, and optional `check_can_view_details`).
 
 ## CDN or remote URLs
 
@@ -81,7 +84,6 @@ class AssetAdmin(ModelView, model=Asset):
     column_formatters_detail = {Asset.url: file_display_formatter}
 ```
 
-Remote `http://` / `https://` values are rendered as external links. Local filesystem
-paths use the admin `file_read` / `file_download` routes.
+Remote `http://` / `https://` values are rendered as external links. Local filesystem paths use the admin `file_preview` / `file_download` routes and must stay within the configured storage directory.
 
 For complete features and API reference of the `fastapi-storages` you can visit the docs at [https://smithyhq.github.io/fastapi-storages](https://smithyhq.github.io/fastapi-storages).

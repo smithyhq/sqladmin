@@ -383,20 +383,36 @@ class BaseAdminView(BaseAdmin):
         if request.path_params["export_type"] not in model_view.export_types:
             raise HTTPException(status_code=404)
 
+    async def _file_access(self, request: Request) -> ModelView:
+        """Authorize file preview/download like the details view."""
+
+        model_view = self._find_model_view(request.path_params["identity"])
+        if not model_view.can_view_details or not model_view.is_accessible(request):
+            raise HTTPException(status_code=403)
+
+        if hasattr(model_view, "check_can_view_details"):
+            pk = request.path_params.get("pk")
+            if pk is None or not isinstance(pk, str):
+                raise ValueError(
+                    f'pk not found in request.path_params "{request.path_params}"'
+                )
+            model = await model_view.get_object_for_details(request)
+            can_view_details_row = await model_view.check_can_view_details(
+                request, model
+            )
+            if can_view_details_row is not True:
+                raise HTTPException(status_code=403)
+
+        return model_view
+
     async def _get_file(self, request: Request) -> Path:
-        """Get file path"""
+        """Get a validated file path for preview/download."""
 
-        identity = request.path_params["identity"]
-        identifier = request.path_params["pk"]
-        column_name = request.path_params["column_name"]
-
-        model_view = self._find_model_view(identity)
-        file_path = await model_view.get_object_filepath(identifier, column_name)
-
-        request_path = Path(file_path)
-        if not request_path.is_file():
-            raise HTTPException(status_code=404)
-        return request_path
+        model_view = await self._file_access(request)
+        return await model_view.get_object_filepath(
+            request.path_params["pk"],
+            request.path_params["column_name"],
+        )
 
 
 class Admin(BaseAdminView):
@@ -520,14 +536,14 @@ class Admin(BaseAdminView):
             Route("/logout", endpoint=self.logout, name="logout", methods=["GET"]),
             Route(
                 "/{identity}/{pk:path}/{column_name}/download/",
-                endpoint=self.download_file,
+                endpoint=self.file_download,
                 name="file_download",
                 methods=["GET"],
             ),
             Route(
-                "/{identity}/{pk:path}/{column_name}/read/",
-                endpoint=self.reed_file,
-                name="file_read",
+                "/{identity}/{pk:path}/{column_name}/preview/",
+                endpoint=self.file_preview,
+                name="file_preview",
                 methods=["GET"],
             ),
         ]
@@ -819,14 +835,14 @@ class Admin(BaseAdminView):
         return RedirectResponse(request.url_for("admin:index"), status_code=302)
 
     @login_required
-    async def download_file(self, request: Request) -> Response:
+    async def file_download(self, request: Request) -> Response:
         """Download file endpoint."""
         request_path = await self._get_file(request)
         return FileResponse(request_path, filename=request_path.name)
 
     @login_required
-    async def reed_file(self, request: Request) -> Response:
-        """Read file endpoint."""
+    async def file_preview(self, request: Request) -> Response:
+        """Preview file inline."""
         request_path = await self._get_file(request)
         return FileResponse(
             request_path, filename=request_path.name, content_disposition_type="inline"

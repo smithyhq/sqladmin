@@ -406,10 +406,10 @@ class Select2TagsField(fields.SelectField):
 
 class FileField(fields.FileField):
     """
-    Optional file upload field for local storage (e.g. fastapi-storages FileType).
+    File upload field for local storage (e.g. fastapi-storages FileType).
 
-    Enable explicitly via ``form_overrides`` on your ModelView — it is not applied
-    automatically for FileType/ImageType columns.
+    ``FileType`` / ``ImageType`` columns use this field automatically via the
+    model converter. Override with ``form_overrides`` when needed.
 
     For list/detail links, set ``column_formatters`` / ``column_formatters_detail``
     to :func:`file_display_formatter`.
@@ -422,7 +422,7 @@ class CDNURLField(fields.StringField):
     """
     URL field for CDN or remote file links (https://...).
 
-    Use via ``form_overrides`` together with :func:`file_display_formatter`` in
+    Use via ``form_overrides`` together with :func:`file_display_formatter` in
     ``column_formatters`` for list/detail pages.
     """
 
@@ -469,8 +469,8 @@ def file_display_formatter(obj: Any, prop: str, request: Any) -> Any:
     pk = get_object_identifier(obj)
 
     if path and value_is_filepath(path):
-        read_url = request.url_for(
-            "admin:file_read",
+        preview_url = request.url_for(
+            "admin:file_preview",
             identity=identity,
             pk=pk,
             column_name=prop,
@@ -482,11 +482,15 @@ def file_display_formatter(obj: Any, prop: str, request: Any) -> Any:
             column_name=prop,
         )
         return Markup(
-            '<a href="{read_url}">{label}</a> '
+            '<a href="{preview_url}">{label}</a> '
             '<a href="{download_url}">'
             '<span class="me-1"><i class="fa-solid fa-download"></i></span>'
             "</a>"
-        ).format(read_url=read_url, download_url=download_url, label=label)
+        ).format(
+            preview_url=preview_url,
+            download_url=download_url,
+            label=label,
+        )
 
     return Markup("<span>{label}</span>").format(label=label)
 

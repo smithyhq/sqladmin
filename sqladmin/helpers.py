@@ -255,19 +255,24 @@ def _object_identifier_parts(id_string: str, model: type) -> tuple[str, ...]:
     return tuple(v.replace(r"\;", ";").replace(r"\\", "\\") for v in values)
 
 
+def coerce_column_value(column: Column, value: Any) -> Any:
+    """Coerce a value (typically from CSV import) to a column's Python type."""
+    if not isinstance(value, str):
+        return value
+
+    type_ = get_column_python_type(column)
+    if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
+        return type_.fromisoformat(value)
+    if inspect.isclass(type_) and issubclass(type_, bool):
+        return False if value == "False" else type_(value)
+    return type_(value)  # type: ignore[call-arg]
+
+
 def object_identifier_values(id_string: str, model: Any) -> tuple:
     values = []
     pks = get_primary_keys(model)
     for pk, part in zip(pks, _object_identifier_parts(id_string, model)):
-        type_ = get_column_python_type(pk)
-        value: Any
-        if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
-            value = type_.fromisoformat(part)
-        elif inspect.isclass(type_) and issubclass(type_, bool):
-            value = False if part == "False" else type_(part)
-        else:
-            value = type_(part)  # type: ignore [call-arg]
-        values.append(value)
+        values.append(coerce_column_value(pk, part))
     return tuple(values)
 
 

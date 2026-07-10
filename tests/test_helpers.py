@@ -9,6 +9,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.type_api import TypeDecorator
 
 from sqladmin.helpers import (
+    coerce_column_value,
     get_column_python_type,
     get_object_identifier,
     is_falsy_value,
@@ -73,6 +74,15 @@ class Family(Base):
 class Profile(Base):
     __tablename__ = "profile"
     id = Column(Integer, primary_key=True)
+
+
+def test_coerce_column_value() -> None:
+    assert coerce_column_value(Profile.id, "3217") == 3217
+    assert coerce_column_value(Family.id, "test") == "test"
+    assert coerce_column_value(Profile.id, 3217) == 3217
+
+    with pytest.raises(ValueError):
+        coerce_column_value(Profile.id, "not-an-integer")
 
 
 class Anniversary(Base):

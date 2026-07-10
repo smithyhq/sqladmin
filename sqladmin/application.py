@@ -50,6 +50,7 @@ from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
+    coerce_column_value,
     get_object_identifier,
     is_async_session_maker,
     parse_csv,
@@ -1080,10 +1081,15 @@ class Admin(BaseAdminView):
         target_column: Any,
         value: Any,
     ) -> bool:
+        try:
+            coerced_value = coerce_column_value(target_column, value)
+        except (TypeError, ValueError):
+            return False
+
         stmt = (
             select(sa_func.count())
             .select_from(target_column.table)
-            .where(target_column == value)
+            .where(target_column == coerced_value)
         )
 
         if model_view.is_async:

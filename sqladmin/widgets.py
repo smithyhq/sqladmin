@@ -106,14 +106,12 @@ class FileInputWidget(widgets.FileInput):
         return super().__call__(field, **kwargs)
 
 
-class BooleanInputWidget(widgets.Input):
+class BooleanInputWidget(widgets.CheckboxInput):
     """
     Render a checkbox.
 
     The ``checked`` HTML attribute is set if the field's data is a non-false value.
     """
-
-    input_type = "checkbox"
 
     def __call__(self, field: Field, **kwargs: Any) -> Markup:
         if field.data:

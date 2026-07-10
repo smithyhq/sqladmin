@@ -69,3 +69,25 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: coverage.xml
+  wtforms-compat:
+    name: "WTForms upper-bound (>=3.2,<3.3)"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions/setup-python@v4"
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: "Install dependencies"
+        run: uv sync --all-groups
+      - name: Force WTForms upper-bound
+        run: uv pip install "wtforms>=3.2,<3.3"
+      - name: "Run tests with SQLite"
+        env:
+          TEST_DATABASE_URI_SYNC: "sqlite:///test.db?check_same_thread=False"
+          TEST_DATABASE_URI_ASYNC: "sqlite+aiosqlite:///test.db?check_same_thread=False"
+        run: make test

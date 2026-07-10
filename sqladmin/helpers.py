@@ -197,6 +197,14 @@ def parse_csv(
     if not reader.fieldnames:
         raise ValueError("CSV file is missing a header row.")
 
+    missing_columns = [column for column in columns if column not in reader.fieldnames]
+    if missing_columns:
+        raise ValueError(
+            "CSV file is missing required column(s): "
+            + ", ".join(missing_columns)
+            + "."
+        )
+
     result = []
     for row in reader:
         md = MultiDict()
@@ -264,8 +272,17 @@ def coerce_column_value(column: Column, value: Any) -> Any:
     if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
         return type_.fromisoformat(value)
     if inspect.isclass(type_) and issubclass(type_, bool):
-        return False if value == "False" else type_(value)
+        return _coerce_bool(value)
     return type_(value)  # type: ignore[call-arg]
+
+
+def _coerce_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"true", "1", "yes", "on", "t"}:
+        return True
+    if normalized in {"false", "0", "no", "off", "f", ""}:
+        return False
+    raise ValueError(f"Invalid boolean value {value!r}.")
 
 
 def object_identifier_values(id_string: str, model: Any) -> tuple:

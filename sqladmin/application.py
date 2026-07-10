@@ -11,6 +11,7 @@ from typing import (
     Awaitable,
     Callable,
     List,
+    NamedTuple,
     Sequence,
     Tuple,
     cast,
@@ -67,6 +68,13 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+
+class ImportUploadResult(NamedTuple):
+    content: bytes | None
+    continue_on_error: bool
+    error: str | None = None
+    status_code: int = 400
 
 
 class BaseAdmin:
@@ -796,20 +804,29 @@ class Admin(BaseAdminView):
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
 
-        csv_content, continue_on_error = await self._handle_form_file(
-            request,
-            model_view,
-        )
-        if not csv_content:
-            return Response(content="Undefined file.", status_code=400)
+        upload = await self._handle_form_file(request, model_view)
+        if upload.error:
+            return self._import_error_response(upload.error, upload.status_code)
+        if not upload.content:
+            return self._import_error_response(
+                "No CSV file uploaded or file does not have a .csv extension."
+            )
+        continue_on_error = upload.continue_on_error
+        csv_content = upload.content
 
         try:
             data = parse_csv(csv_content, model_view._import_prop_names)
         except ValueError as exc:
-            return Response(content=str(exc), status_code=400)
+            return self._import_error_response(str(exc))
         except Exception as exc:
             logger.exception(exc)
-            return Response(content="Failed to parse CSV file.", status_code=400)
+            return self._import_error_response("Failed to parse CSV file.")
+
+        if model_view.import_max_rows > 0 and len(data) > model_view.import_max_rows:
+            return self._import_error_response(
+                f"CSV file exceeds the maximum of {model_view.import_max_rows} data "
+                "row(s) for this model."
+            )
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
 
@@ -821,7 +838,7 @@ class Admin(BaseAdminView):
             import_models: list[dict[str, Any]] = []
             missed_rows: list[dict[str, Any]] = []
             missed_rows_omitted_count = 0
-            fk_exists_cache: dict[tuple[str, str, str], bool] = {}
+            fk_error_cache: dict[tuple[str, str, str], str] = {}
 
             def append_missed_row(row_report: dict[str, Any]) -> None:
                 nonlocal missed_rows_omitted_count
@@ -874,7 +891,7 @@ class Admin(BaseAdminView):
                 foreign_key_errors = await self._validate_foreign_key_values(
                     model_view=model_view,
                     row_data=merged_import_data,
-                    fk_exists_cache=fk_exists_cache,
+                    fk_error_cache=fk_error_cache,
                 )
                 row_errors.update(foreign_key_errors)
 
@@ -1035,7 +1052,7 @@ class Admin(BaseAdminView):
         self,
         model_view: ModelView,
         row_data: dict[str, Any],
-        fk_exists_cache: dict[tuple[str, str, str], bool],
+        fk_error_cache: dict[tuple[str, str, str], str],
     ) -> dict[str, List[str]]:
         mapper = sa_inspect(model_view.model)
         foreign_key_errors: dict[str, List[str]] = {}
@@ -1056,35 +1073,35 @@ class Admin(BaseAdminView):
                     foreign_key.target_fullname,
                 )
 
-                exists = fk_exists_cache.get(cache_key)
-                if exists is None:
-                    exists = await self._foreign_key_value_exists(
+                cached_error = fk_error_cache.get(cache_key)
+                if cached_error is None:
+                    error_message = await self._foreign_key_error_message(
                         model_view=model_view,
                         target_column=target_column,
                         value=value,
+                        column_key=column.key,
+                        target_fullname=foreign_key.target_fullname,
                     )
-                    fk_exists_cache[cache_key] = exists
+                    fk_error_cache[cache_key] = error_message or ""
+                    cached_error = fk_error_cache[cache_key]
 
-                if not exists:
-                    foreign_key_errors.setdefault(column.key, []).append(
-                        (
-                            "Referenced value does not exist for "
-                            f"{foreign_key.target_fullname}."
-                        )
-                    )
+                if cached_error:
+                    foreign_key_errors.setdefault(column.key, []).append(cached_error)
 
         return foreign_key_errors
 
-    async def _foreign_key_value_exists(
+    async def _foreign_key_error_message(
         self,
         model_view: ModelView,
         target_column: Any,
         value: Any,
-    ) -> bool:
+        column_key: str,
+        target_fullname: str,
+    ) -> str | None:
         try:
             coerced_value = coerce_column_value(target_column, value)
         except (TypeError, ValueError):
-            return False
+            return f"Invalid value {value!r} for column {column_key}."
 
         stmt = (
             select(sa_func.count())
@@ -1095,14 +1112,52 @@ class Admin(BaseAdminView):
         if model_view.is_async:
             async with model_view.session_maker(expire_on_commit=False) as session:
                 count = int(await session.scalar(stmt) or 0)
-                return count > 0
+        else:
 
-        def run_sync() -> bool:
-            with model_view.session_maker(expire_on_commit=False) as session:
-                count = int(session.execute(stmt).scalar_one() or 0)
-                return count > 0
+            def run_sync() -> int:
+                with model_view.session_maker(expire_on_commit=False) as session:
+                    return int(session.execute(stmt).scalar_one() or 0)
 
-        return await anyio.to_thread.run_sync(run_sync)
+            count = await anyio.to_thread.run_sync(run_sync)
+
+        if count > 0:
+            return None
+
+        return f"Referenced value does not exist for {target_fullname}."
+
+    async def _persist_import_row_async(
+        self,
+        query: Query,
+        session: AsyncSession,
+        model_view: ModelView,
+        request: Request,
+        row_entry: dict[str, Any],
+    ) -> Any:
+        row = row_entry["model"]
+        async with session.begin_nested():
+            obj = query._get_model_object(row)
+            await model_view.on_import_row(row, obj, request)
+            obj = await query._set_attributes_async(session, obj, row)
+            session.add(obj)
+            await session.flush()
+        return obj
+
+    def _persist_import_row_sync(
+        self,
+        query: Query,
+        session: Session,
+        model_view: ModelView,
+        request: Request,
+        row_entry: dict[str, Any],
+    ) -> Any:
+        row = row_entry["model"]
+        with session.begin_nested():
+            obj = query._get_model_object(row)
+            anyio.from_thread.run(model_view.on_import_row, row, obj, request)
+            obj = query._set_attributes_sync(session, obj, row)
+            session.add(obj)
+            session.flush()
+        return obj
 
     async def _persist_import_models_with_count_check_async(
         self,
@@ -1117,26 +1172,23 @@ class Admin(BaseAdminView):
         try:
             async with model_view.session_maker(expire_on_commit=False) as session:
                 persisted_count = 0
-                successful_objs_with_data: List[Tuple[Any, dict[str, Any]]] = []
 
                 for row_entry in import_models:
                     line_number = int(row_entry["line"])
                     source_data = row_entry["data"]
-                    row = row_entry["model"]
 
                     if await request.is_disconnected():
                         await session.rollback()
                         return False, 0, "Import canceled. No rows were imported.", []
 
                     try:
-                        async with session.begin_nested():
-                            obj = query._get_model_object(row)
-                            await model_view.on_model_change(row, obj, True, request)
-                            obj = await query._set_attributes_async(session, obj, row)
-                            session.add(obj)
-                            await session.flush()
-
-                        successful_objs_with_data.append((obj, row))
+                        await self._persist_import_row_async(
+                            query,
+                            session,
+                            model_view,
+                            request,
+                            row_entry,
+                        )
                         persisted_count += 1
                     except Exception as exc:
                         failed_rows.append(
@@ -1159,9 +1211,6 @@ class Admin(BaseAdminView):
                             )
 
                 await session.commit()
-
-                for obj, row in successful_objs_with_data:
-                    await model_view.after_model_change(row, obj, True, request)
 
                 return True, persisted_count, None, failed_rows
         except Exception as exc:
@@ -1189,32 +1238,23 @@ class Admin(BaseAdminView):
         try:
             with model_view.session_maker(expire_on_commit=False) as session:
                 persisted_count = 0
-                successful_objs_with_data: List[Tuple[Any, dict[str, Any]]] = []
 
                 for row_entry in import_models:
                     line_number = int(row_entry["line"])
                     source_data = row_entry["data"]
-                    row = row_entry["model"]
 
                     if anyio.from_thread.run(request.is_disconnected):
                         session.rollback()
                         return False, 0, "Import canceled. No rows were imported.", []
 
                     try:
-                        with session.begin_nested():
-                            obj = query._get_model_object(row)
-                            anyio.from_thread.run(
-                                model_view.on_model_change,
-                                row,
-                                obj,
-                                True,
-                                request,
-                            )
-                            obj = query._set_attributes_sync(session, obj, row)
-                            session.add(obj)
-                            session.flush()
-
-                        successful_objs_with_data.append((obj, row))
+                        self._persist_import_row_sync(
+                            query,
+                            session,
+                            model_view,
+                            request,
+                            row_entry,
+                        )
                         persisted_count += 1
                     except Exception as exc:
                         failed_rows.append(
@@ -1237,15 +1277,6 @@ class Admin(BaseAdminView):
                             )
 
                 session.commit()
-
-                for obj, row in successful_objs_with_data:
-                    anyio.from_thread.run(
-                        model_view.after_model_change,
-                        row,
-                        obj,
-                        True,
-                        request,
-                    )
 
                 return True, persisted_count, None, failed_rows
         except Exception as exc:
@@ -1374,7 +1405,7 @@ class Admin(BaseAdminView):
         self,
         request: Request,
         model_view: ModelView,
-    ) -> tuple[bytes | None, bool]:
+    ) -> ImportUploadResult:
         async with request.form(max_files=1) as form:
             continue_on_error = str(form.get("continue_on_error", "")).lower() in {
                 "1",
@@ -1385,8 +1416,10 @@ class Admin(BaseAdminView):
             csv_file = form.get("csvfile")
 
             if not isinstance(csv_file, UploadFile):
-                raise HTTPException(
-                    status_code=400, detail="Invalid file upload. Expected UploadFile."
+                return ImportUploadResult(
+                    None,
+                    continue_on_error,
+                    "Invalid file upload. Expected a CSV file.",
                 )
 
             if (
@@ -1394,7 +1427,7 @@ class Admin(BaseAdminView):
                 or not csv_file.filename
                 or not csv_file.filename.lower().endswith(".csv")
             ):
-                return None, continue_on_error
+                return ImportUploadResult(None, continue_on_error)
 
             allowed_content_types = {
                 None,
@@ -1405,18 +1438,29 @@ class Admin(BaseAdminView):
                 "application/vnd.ms-excel",
             }
             if csv_file.content_type not in allowed_content_types:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid CSV file type.",
+                return ImportUploadResult(
+                    None,
+                    continue_on_error,
+                    "Invalid CSV file type.",
                 )
 
             csv_content = await csv_file.read()
             if len(csv_content) > model_view.max_import_file_size:
-                raise HTTPException(
-                    status_code=413,
-                    detail="CSV file is too large.",
+                return ImportUploadResult(
+                    None,
+                    continue_on_error,
+                    "CSV file is too large.",
+                    413,
                 )
-        return csv_content, continue_on_error
+        return ImportUploadResult(csv_content, continue_on_error)
+
+    @staticmethod
+    def _import_error_response(message: str, status_code: int = 400) -> Response:
+        return Response(
+            content=message,
+            status_code=status_code,
+            media_type="text/plain; charset=utf-8",
+        )
 
     @staticmethod
     def _normalize_wtform_data(obj: Any) -> dict:

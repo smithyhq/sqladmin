@@ -250,42 +250,6 @@ class Query:
             self._store_after_change_response(request, after_result)
             return obj
 
-    def _insert_sync_many(
-        self, data: list[dict[str, Any]], request: Request
-    ) -> list[Any]:
-        objs = []
-        with self.model_view.session_maker(expire_on_commit=False) as session:
-            for row in data:
-                obj = self._get_model_object(row)
-                anyio.from_thread.run(
-                    self.model_view.on_model_change, row, obj, True, request
-                )
-                obj = self._set_attributes_sync(session, obj, row)
-                objs.append(obj)
-            session.add_all(objs)
-            session.commit()
-            for obj, row in zip(objs, data):
-                anyio.from_thread.run(
-                    self.model_view.after_model_change, row, obj, True, request
-                )
-        return objs
-
-    async def _insert_async_many(
-        self, data: list[dict[str, Any]], request: Request
-    ) -> list[Any]:
-        objs = []
-        async with self.model_view.session_maker(expire_on_commit=False) as session:
-            for row in data:
-                obj = self._get_model_object(row)
-                await self.model_view.on_model_change(row, obj, True, request)
-                obj = await self._set_attributes_async(session, obj, row)
-                objs.append(obj)
-            session.add_all(objs)
-            await session.commit()
-            for obj, row in zip(objs, data):
-                await self.model_view.after_model_change(row, obj, True, request)
-        return objs
-
     async def delete(self, obj: Any, request: Request) -> None:
         if self.model_view.is_async:
             coro = self._delete_async(obj, request)
@@ -299,14 +263,6 @@ class Query:
             coro = self._insert_async(data, request)
         else:
             coro = anyio.to_thread.run_sync(self._insert_sync, data, request)
-
-        return await coro
-
-    async def insert_many(self, data: list[dict[str, Any]], request: Request) -> Any:
-        if self.model_view.is_async:
-            coro = self._insert_async_many(data, request)
-        else:
-            coro = anyio.to_thread.run_sync(self._insert_sync_many, data, request)
 
         return await coro
 

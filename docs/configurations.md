@@ -439,30 +439,64 @@ class ExamResultAdmin(ModelView, model=ExamResult):
 
 ## Import options
 
-SQLAdmin supports importing data from a CSV file in the list page.
-The import options can be set per model and includes the following options:
+SQLAdmin supports importing data from a UTF-8 CSV file on the list page.
+The import endpoint streams progress as **NDJSON** (`application/x-ndjson`): each line is a
+JSON object with `type` of `progress` or `result`.
+
+CSV headers must use **model property names** (for example `name`, `user_id`), not
+`column_labels` or pretty-export headers. When using `use_pretty_export=True` for export,
+re-import requires matching property names in the CSV header or a custom `column_import_list`.
+
+The file must use a `.csv` extension. A UTF-8 byte-order mark (BOM) at the start of the file
+is accepted and stripped automatically.
+
+The import options can be set per model:
 
 * `can_import`: If the model can be imported. Default value is `False`.
-* `column_import_list`: List of columns to include in the import data. Default is all model columns.
+* `column_import_list`: List of columns to include in the import data. When unset, defaults to the list page columns (`column_list`), or the model's primary key column(s) if `column_list` is not configured. Set this explicitly for production imports.
 * `column_import_exclude_list`: List of columns to exclude in the import data.
-* `max_import_file_size`: Maximum accepted CSV file size in bytes for this model import. Default is `5 * 1024 * 1024`.
+* `max_import_file_size`: Maximum accepted CSV file size in bytes. Default is `5 * 1024 * 1024`.
+* `import_max_rows`: Maximum number of data rows allowed per import. `0` means unlimited (default).
 * `max_reported_missed_rows`: Maximum number of missed rows included in the import result payload. Default is `100`.
+
+Override `check_can_import(request)` to gate the import button and endpoint dynamically.
+
+Override `on_import_row(data, model, request)` to customize each validated row before it is
+persisted. `on_model_change` and `after_model_change` are not called during CSV import.
+
+The form field `continue_on_error` (`1` / `0`) controls whether invalid rows are skipped or
+abort the import.
 
 !!! example
 
     ```python
-    class User(Base):
-        __tablename__ = "users"
-        id = Column(Integer, primary_key=True)
-        name = Column(String)
-        address = Column(String)
-    
     class UserAdmin(ModelView, model=User):
         can_import = True
-        column_import_list = [User.name, User.address]
+        column_import_list = [User.name, User.status]
         max_import_file_size = 20 * 1024 * 1024
+        import_max_rows = 10_000
         max_reported_missed_rows = 500
+
+        async def check_can_import(self, request: Request) -> bool:
+            return self.can_import
+
+        async def on_import_row(self, data, model, request: Request) -> None:
+            if "name" in data:
+                data["name"] = data["name"].strip()
     ```
+
+### CSV format
+
+* First row must be a header containing every column listed in `column_import_list` (or the default import columns).
+* Extra columns in the file are ignored.
+* Allowed upload content types include `text/csv`, `application/csv`, `text/plain`, and `application/vnd.ms-excel`.
+
+Upload validation failures (missing file, invalid extension, content type, encoding, row limit, or missing
+headers) return a plain-text response with HTTP `400` or `413`, not NDJSON.
+
+Row-level validation errors (form validation, foreign keys, and database constraints) are reported in the
+final NDJSON `result` payload. Foreign key values are coerced to the referenced column type before lookup;
+invalid types and missing references produce distinct error messages.
 
 ### Reported missed rows vs total skipped rows
 

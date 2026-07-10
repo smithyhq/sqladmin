@@ -1141,7 +1141,7 @@ async def test_export_permission_json(client: AsyncClient) -> None:
 
 
 async def test_import_csv_file(client: AsyncClient) -> None:
-    await client.post(
+    response = await client.post(
         "/admin/user/import",
         files={
             "csvfile": (
@@ -1151,6 +1151,15 @@ async def test_import_csv_file(client: AsyncClient) -> None:
             )
         },
     )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/x-ndjson")
+
+    events = _parse_ndjson_events(response.text)
+    assert events[0]["type"] == "progress"
+    assert events[-1]["type"] == "result"
+    assert events[-1]["ok"] is True
+    assert events[-1]["imported"] == 2
+
     async with session_maker() as s:
         result = await s.execute(select(User).order_by(User.id))
         users = list(result.scalars())
@@ -1174,6 +1183,7 @@ async def test_import_csv_button(client: AsyncClient) -> None:
 async def test_import_csv_permission_check_can_import(client: AsyncClient) -> None:
     class UserSelectiveImportAdmin(ModelView, model=User):
         can_import = True
+        column_import_list = [User.name, User.status]
 
         async def check_can_import(self, request: Request) -> bool:
             return request.headers.get("x-allow-import") == "1"
@@ -1262,7 +1272,9 @@ async def test_import_csv_invalid_extension(client: AsyncClient) -> None:
     )
 
     assert response.status_code == 400
-    assert response.text == "Undefined file."
+    assert response.text == (
+        "No CSV file uploaded or file does not have a .csv extension."
+    )
 
 
 async def test_import_csv_invalid_content_type(client: AsyncClient) -> None:
@@ -1278,6 +1290,7 @@ async def test_import_csv_invalid_content_type(client: AsyncClient) -> None:
     )
 
     assert response.status_code == 400
+    assert response.text == "Invalid CSV file type."
 
 
 async def test_import_csv_file_too_large(client: AsyncClient) -> None:
@@ -1293,9 +1306,7 @@ async def test_import_csv_file_too_large(client: AsyncClient) -> None:
     )
 
     assert response.status_code == 413
-
-
-async def test_import_csv_invalid_encoding(client: AsyncClient) -> None:
+    assert response.text == "CSV file is too large."
     response = await client.post(
         "/admin/user/import",
         files={
@@ -1448,6 +1459,225 @@ async def test_import_csv_foreign_key_validation(client: AsyncClient) -> None:
         result = await s.execute(select(Address))
         addresses = list(result.scalars())
     assert len(addresses) == 0
+
+
+async def test_import_csv_foreign_key_invalid_type(client: AsyncClient) -> None:
+    class AddressImportAdmin(ModelView, model=Address):
+        can_import = True
+        column_import_list = [Address.user_id]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(AddressImportAdmin)
+
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/address/import",
+            data={"continue_on_error": "1"},
+            files={
+                "csvfile": (
+                    "address.csv",
+                    b"user_id\r\nnot-an-integer\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    result = _parse_ndjson_events(response.text)[-1]
+
+    assert response.status_code == 200
+    assert result["imported"] == 0
+    assert "Invalid value" in result["missed_rows"][0]["errors"]["user_id"][0]
+
+
+async def test_import_csv_missing_required_column_header(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name\r\nAlice\r\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 400
+    assert "missing required column" in response.text
+
+
+async def test_import_csv_utf8_bom(client: AsyncClient) -> None:
+    response = await client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"\xef\xbb\xbfname,status\r\nBOM_USER,ACTIVE\r\n",
+                "text/csv",
+            )
+        },
+    )
+
+    result = _parse_ndjson_events(response.text)[-1]
+    assert response.status_code == 200
+    assert result["imported"] == 1
+
+    async with session_maker() as s:
+        user = (
+            await s.execute(select(User).where(User.name == "BOM_USER"))
+        ).scalar_one()
+    assert user.status == Status.ACTIVE
+
+
+async def test_import_csv_max_rows_exceeded(client: AsyncClient) -> None:
+    class LimitedImportAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.status]
+        import_max_rows = 1
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(LimitedImportAdmin)
+
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/user/import",
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,status\r\nONE,ACTIVE\r\nTWO,ACTIVE\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    assert response.status_code == 400
+    assert "maximum of 1 data row" in response.text
+
+
+async def test_import_csv_export_round_trip(client: AsyncClient) -> None:
+    async with session_maker() as s:
+        s.add(User(name="RoundTrip", status=Status.ACTIVE))
+        await s.commit()
+
+    export_response = await client.get("/admin/user/export/csv")
+    csv_bytes = export_response.text.encode("utf-8")
+
+    async with session_maker() as s:
+        for user in (await s.execute(select(User))).scalars():
+            await s.delete(user)
+        await s.commit()
+
+    import_response = await client.post(
+        "/admin/user/import",
+        files={"csvfile": ("user.csv", csv_bytes, "text/csv")},
+    )
+    result = _parse_ndjson_events(import_response.text)[-1]
+
+    assert import_response.status_code == 200
+    assert result["imported"] == 1
+
+    async with session_maker() as s:
+        user = (
+            await s.execute(select(User).where(User.name == "RoundTrip"))
+        ).scalar_one()
+    assert user.status == Status.ACTIVE
+
+
+async def test_import_csv_persist_continue_on_error_unique_violation(
+    client: AsyncClient,
+) -> None:
+    class UserEmailImportAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.email, User.status]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserEmailImportAdmin)
+
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/user/import",
+            data={"continue_on_error": "1"},
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,email,status\r\n"
+                    b"First,first@example.com,ACTIVE\r\n"
+                    b"Second,first@example.com,ACTIVE\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    result = _parse_ndjson_events(response.text)[-1]
+
+    assert response.status_code == 200
+    assert result["imported"] == 1
+    assert result["skipped"] == 1
+    assert "__all__" in result["missed_rows"][0]["errors"]
+
+    async with session_maker() as s:
+        users = list((await s.execute(select(User))).scalars())
+    assert len(users) == 1
+    assert users[0].name == "First"
+
+
+async def test_import_csv_on_import_row_hook(client: AsyncClient) -> None:
+    hook_calls: list[str] = []
+
+    class TrackingUserAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.status]
+
+        async def on_import_row(
+            self, data: dict, model: User, request: Request
+        ) -> None:
+            hook_calls.append(data["name"])
+            data["name"] = f"{data['name']}_imported"
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(TrackingUserAdmin)
+
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/user/import",
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,status\r\nHooked,ACTIVE\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    result = _parse_ndjson_events(response.text)[-1]
+    assert response.status_code == 200
+    assert result["imported"] == 1
+    assert hook_calls == ["Hooked"]
+
+    async with session_maker() as s:
+        user = (
+            await s.execute(select(User).where(User.name == "Hooked_imported"))
+        ).scalar_one()
+    assert user.status == Status.ACTIVE
 
 
 async def test_hybrid_property(client: AsyncClient) -> None:

@@ -256,6 +256,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     max_reported_missed_rows: ClassVar[int] = 100
     """Maximum missed rows included in import result payload."""
 
+    import_max_rows: ClassVar[int] = 0
+    """Maximum number of data rows allowed for import.
+    Unlimited by default.
+    """
+
     # List page
     column_list: ClassVar[Union[str, Sequence[MODEL_ATTR]]] = []
     """List of columns to display in `List` page.
@@ -1177,7 +1182,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         return self._build_column_list(
             include=columns,
             exclude=excluded_columns,
-            defaults=self._prop_names,
+            defaults=self._list_prop_names,
         )
 
     async def on_model_change(
@@ -1213,13 +1218,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def insert_model(self, request: Request, data: dict) -> Any:
         return await Query(self).insert(data, request)
-
-    async def insert_many_models(
-        self,
-        request: Request,
-        data: Any,
-    ) -> Any:
-        return await Query(self).insert_many(data, request)
 
     async def update_model(self, request: Request, pk: str, data: dict) -> Any:
         return await Query(self).update(pk, data, request)
@@ -1257,6 +1255,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         You can add a custom model attribute checker before import.
         """
         return self.can_import
+
+    async def on_import_row(self, data: dict, model: Any, request: Request) -> None:
+        """Perform some actions on a validated import row before it is persisted.
+        By default does nothing.
+        """
 
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
         if self.form is not None:

@@ -159,6 +159,36 @@ async def test_model_form_form_args() -> None:
     assert Form()._fields["number"].default == 100
 
 
+async def test_model_form_column_default() -> None:
+    class Model(Base):
+        __tablename__ = "model_column_default"
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String, default="untitled")
+        priority = Column(Integer, default=5)
+        is_active = Column(Boolean, nullable=False, default=True)
+
+    Form = await get_model_form(model=Model, session_maker=session_maker)
+    assert Form()._fields["name"].default == "untitled"
+    assert Form()._fields["priority"].default == 5
+    assert Form()._fields["is_active"].default is True
+
+
+async def test_model_form_form_args_default_overrides_column() -> None:
+    class Model(Base):
+        __tablename__ = "model_form_args_overrides_column_default"
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String, default="from-column")
+
+    Form = await get_model_form(
+        model=Model,
+        session_maker=session_maker,
+        form_args={"name": {"default": "from-form-args"}},
+    )
+    assert Form()._fields["name"].default == "from-form-args"
+
+
 async def test_model_form_column_label() -> None:
     labels = {"name": "User Name"}
     Form = await get_model_form(
@@ -307,7 +337,7 @@ async def test_model_field_clashing_with_wtforms_reserved_attribute() -> None:
     class DataModel(Base):
         __tablename__ = "model_with_wtforms_reserved_attribute"
         id = Column(Integer, primary_key=True)
-        data = Column(String)
+        data = Column(String, default="untitled")
         errors = Column(String)
         process = Column(String)
         validate = Column(Boolean)
@@ -328,6 +358,7 @@ async def test_model_field_clashing_with_wtforms_reserved_attribute() -> None:
     assert Form.process_.name == "process"
     assert Form.validate_.name == "validate"
     assert Form.populate_obj_.name == "populate_obj"
+    assert Form()._fields["data_"].default == "untitled"
     assert isinstance(Form.data, property)
     assert isinstance(Form.errors, property)
     assert isinstance(form.data, dict)

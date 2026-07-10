@@ -3,8 +3,8 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-12">
-      <div class="d-flex">
-        <div class="flex-grow-1 me-2">
+      <div class="d-flex min-w-0">
+        <div class="flex-grow-1 me-2 min-w-0">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">{{ model_view.name_plural }}</h3>
@@ -55,7 +55,7 @@
                 <div class="dropdown col-4">
                   <button {% if not model_view.can_delete and not model_view._custom_actions_in_list %} disabled {%
                     endif %} class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Actions
                   </button>
                   {% if model_view.can_delete or model_view._custom_actions_in_list %}
@@ -143,7 +143,7 @@
                       </a>
                       {% endif %}
                       {% if model_view.check_can_edit(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}" data-bs-toggle="tooltip"
+                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="Edit">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>
@@ -159,7 +159,7 @@
                       {% endif %}
                     </td>
                     {% for name in model_view._list_prop_names %}
-                    {% set value, formatted_value = model_view.get_list_value(row, name) %}
+                    {% set value, formatted_value = model_view.get_list_value(row, name, request) %}
                     {% if name in model_view._relation_names %}
                     {% if is_list( value ) %}
                     <td>
@@ -221,7 +221,7 @@
               </ul>
               <div class="dropdown text-muted">
                 Show
-                <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true"
                   aria-expanded="false">
                   {{ request.query_params.get("pageSize") or model_view.page_size }} / Page
                 </a>
@@ -238,7 +238,7 @@
           </div>
         </div>
         {% if model_view.get_filters() %}
-        <div class="col-md-3" style="width: 300px; flex-shrink: 0;">
+        <div class="col-md-3 filter-sidebar-col">
           <div id="filter-sidebar" class="card">
             <div class="card-header">
               <h3 class="card-title">Filters</h3>

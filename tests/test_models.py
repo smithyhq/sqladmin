@@ -17,6 +17,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql.expression import Select
 from starlette.applications import Starlette
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.testclient import TestClient
 
@@ -223,6 +224,56 @@ async def test_column_list_formatters() -> None:
     assert await UserAdmin().get_list_value(user, "name") == ("Long Name", "L")
 
 
+async def test_column_list_formatter_can_receive_request() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "path": "/admin/user/list",
+            "headers": [(b"host", b"testserver")],
+        }
+    )
+
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: f"{r.url.path}:{m.name[:1]}",
+        }
+
+    user = User(id=1, name="Long Name")
+
+    assert await UserAdmin().get_list_value(user, "name", request) == (
+        "Long Name",
+        "/admin/user/list:L",
+    )
+
+
+async def test_column_list_formatter_request_support_is_cached() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "path": "/admin/user/list",
+            "headers": [(b"host", b"testserver")],
+        }
+    )
+
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: f"{r.url.path}:{m.name[:1]}",
+        }
+
+    model_view = UserAdmin()
+    user = User(id=1, name="Long Name")
+
+    def fail_if_called(formatter):
+        raise AssertionError("formatter request support should be cached")
+
+    model_view._formatter_accepts_request = fail_if_called
+
+    assert await model_view.get_list_value(user, "name", request) == (
+        "Long Name",
+        "/admin/user/list:L",
+    )
+
+
 async def test_column_formatters_detail() -> None:
     class UserAdmin(ModelView, model=User):
         column_formatters_detail = {
@@ -234,6 +285,28 @@ async def test_column_formatters_detail() -> None:
 
     assert await UserAdmin().get_detail_value(user, "id") == (1, 2)
     assert await UserAdmin().get_detail_value(user, "name") == ("Long Name", "L")
+
+
+async def test_column_detail_formatter_can_receive_request() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "path": "/admin/user/details/1",
+            "headers": [(b"host", b"testserver")],
+        }
+    )
+
+    class UserAdmin(ModelView, model=User):
+        column_formatters_detail = {
+            User.name: lambda m, a, r: f"{r.url.path}:{m.name[:1]}",
+        }
+
+    user = User(id=1, name="Long Name")
+
+    assert await UserAdmin().get_detail_value(user, "name", request) == (
+        "Long Name",
+        "/admin/user/details/1:L",
+    )
 
 
 async def test_column_formatters_default() -> None:
@@ -573,7 +646,8 @@ async def test_model_property_in_columns() -> None:
 
 
 def test_sort_query() -> None:
-    class AddressAdmin(ModelView, model=Address): ...
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = ["id", "user.name", "user.profile.role"]
 
     query = select(Address)
 
@@ -588,6 +662,47 @@ def test_sort_query() -> None:
     request = Request({"type": "http", "query_string": b"sortBy=user.profile.role"})
     stmt = AddressAdmin().sort_query(query, request)
     assert "ORDER BY profiles.role ASC" in str(stmt)
+
+
+def test_sort_query_rejects_field_not_in_sortable_list() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_list = [Address.id]
+        column_sortable_list = [Address.id]
+
+    admin = AddressAdmin()
+    assert admin._sort_fields == ["id"]
+
+    query = select(Address)
+
+    request = Request({"type": "http", "query_string": b"sortBy=name&sort=asc"})
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
+
+    request = Request({"type": "http", "query_string": b"sortBy=user.name&sort=desc"})
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
+
+
+def test_sort_query_rejects_invalid_field() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_sortable_list = [Address.id]
+
+    admin = AddressAdmin()
+    query = select(Address)
+
+    request = Request(
+        {"type": "http", "query_string": b"sortBy=does_not_exist&sort=asc"}
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
+
+    request = Request({"type": "http", "query_string": b"sortBy=name.x&sort=asc"})
+    with pytest.raises(HTTPException) as exc_info:
+        admin.sort_query(query, request)
+    assert exc_info.value.status_code == 400
 
 
 def test_count_query() -> None:
@@ -628,7 +743,7 @@ def test_search_query() -> None:
 
 def test_sort_multi_fields_no_duplicate_joins() -> None:
     class AddressAdmin(ModelView, model=Address):
-        column_sortable_list = [Address.id, User.id, User.name]
+        column_sortable_list = [Address.id, "user.id", "user.name"]
 
     query = select(Address)
     request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})
@@ -650,7 +765,7 @@ def test_search_multi_fields_no_duplicate_joins() -> None:
 def test_sort_then_search_no_duplicate_joins() -> None:
     class AddressAdmin(ModelView, model=Address):
         column_searchable_list = ["user.name"]
-        column_sortable_list = [User.id]
+        column_sortable_list = ["user.id"]
 
     query = select(Address)
     request = Request({"type": "http", "query_string": b"sortBy=user.id&sort=asc"})

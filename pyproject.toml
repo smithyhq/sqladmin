@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.9.17,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -8,10 +8,10 @@ module-root = ""
 
 [project]
 name = "sqladmin"
-version = "0.25.0"
+version = "0.28.0"
 description = 'SQLAlchemy admin for FastAPI and Starlette'
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "BSD-3-Clause"
 keywords = ["sqlalchemy", "fastapi", "starlette", "admin"]
 authors = [{ name = "Amin Alaee", email = "mohammadamin.alaee@gmail.com" }]
@@ -21,7 +21,6 @@ maintainers = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -34,9 +33,8 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "starlette==0.49.3,<0.50.0; python_version == '3.9'",
-  "starlette>=0.50,<2.0.0; python_version >= '3.10'",
-  "wtforms >=3.1, <3.2",
+  "starlette>=0.50,<2.0.0",
+  "wtforms >=3.1, <3.3",
   "jinja2",
   "python-multipart",
   "sqlalchemy >= 2.0",
@@ -77,13 +75,9 @@ dev = [
   "bandit",
 ]
 
-lint = ["mypy==1.19.1", "ruff==0.15.4", "types-wtforms>=3.2.1.20250809"]
+lint = ["mypy==2.1.0", "ruff==0.15.20", "types-wtforms>=3.2.1.20250809"]
 
-docs = [
-  "mkdocs-material==9.7.1",
-  "mkdocs==1.6.1",
-  "mkdocstrings[python]==0.30.1",
-]
+docs = ["zensical~=0.0.42", "mkdocstrings[python]~=1.0.3"]
 
 [tool.mypy]
 disallow_untyped_defs = true

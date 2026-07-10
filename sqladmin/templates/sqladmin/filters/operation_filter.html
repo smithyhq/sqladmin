@@ -11,7 +11,7 @@
   </div>
   {% endif %}
 
-  <form method="get" class="d-flex flex-column" style="gap: 8px;">
+  <form method="get" class="d-flex flex-column filter-form">
     {% for key, value in request.query_params.items() %}
       {% if key != filter.parameter_name and key != filter.parameter_name + '_op' and key != 'error' %}
       <input type="hidden" name="{{ key }}" value="{{ value }}">

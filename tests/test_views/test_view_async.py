@@ -1175,9 +1175,9 @@ async def test_import_csv_button(client: AsyncClient) -> None:
     response = await client.get("/admin/user/list")
     assert response.status_code == 200
     assert (
-        '<input id="csvfile" name="csvfile" type="file" accept="text/csv" />'
-        in response.text
-    )
+        '<input id="csvfile" name="csvfile" type="file" accept="text/csv"'
+        ' class="import-csv-file-input" />'
+    ) in response.text
 
 
 async def test_import_csv_permission_check_can_import(client: AsyncClient) -> None:

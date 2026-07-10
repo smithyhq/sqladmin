@@ -137,6 +137,17 @@ The options available are:
         column_filterable_list = [User.is_admin]
     ```
 
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        column_formatters = {
+            User.name: lambda m, a, r: r.url_for(
+                "admin:details", identity="user", pk=m.id
+            )
+        }
+    ```
+
 !!! tip
 
     You can use the special keyword `"__all__"` in `column_list` or `column_details_list`
@@ -279,6 +290,8 @@ The options available are:
         column_formatters_detail = {User.name: lambda m, a: m.name[:10]}
     ```
 
+    Formatters may accept either `(model, attribute)` or `(model, attribute, request)`.
+
 !!! tip
 
     You can show related model's attributes by using a string value. For example
@@ -363,7 +376,7 @@ The forms are based on `WTForms` package and include the following options:
 
 ### Related models
 
-To define how related model is displayed in the dropdown, `__str__` method must be difined in the related model.
+To define how related model is displayed in the dropdown, `__str__` method must be defined in the related model.
 
 ## Export options
 
@@ -463,6 +476,14 @@ There are four methods you can override to achieve this:
 
 By default these methods do nothing.
 
+### Controlling the response with `after_model_change`
+
+`after_model_change` can optionally return a value to control the HTTP response
+after a successful create or edit:
+
+- **`None`** (default) – the normal redirect happens.
+- **`Response`** – a custom Starlette `Response` is returned directly.
+
 !!! example
 
     ```python
@@ -475,6 +496,12 @@ By default these methods do nothing.
             # Perform some other action
             ...
     ```
+
+!!! tip
+
+    See the [Displaying one-time secrets](cookbook/displaying_one_time_secrets.md)
+    cookbook for a practical example of returning a custom `Response` to show a
+    secret on the create page after generating a token.
 
 ## Custom Action
 
@@ -519,51 +546,67 @@ The available options for `action` are:
 - `add_in_detail`: A boolean indicating if this action should be available in detail page.
 - `confirmation_message`: A string message that if defined, will open a modal to ask for confirmation before calling the action method.
 
-You can use `Flash` utility class to notify results to the custom action. 
 
-#### Flash Utility Class
-All methods are class methods and require the request object to access the user session.
+### Toast Notifications
 
-1. **Primary Method**: `Flash.flash()`
+You can display toast notifications after a custom action completes using
+either the `Flash` utility class or the low-level `flash()` function.
 
-The general-purpose method for adding any message with an explicitly defined `FlashLevel`.
+#### Using the `Flash` class (recommended)
 
-| Parameter | Type         | Default           | Description                              |
-|-----------|--------------|-------------------|------------------------------------------|
-| `request` | `Request`    |                   | The current incoming request object.     |
-| `message` | `str`        |                   | The main text content of the message.    |
-| `level`   | `FlashLevel` | `FlashLevel.info` | The severity level.                      |
-| `title`   | `str`        | `""`              | An optional title for the flash message. |
+`Flash` provides convenience class methods that set the severity level automatically.
+Import it directly from `sqladmin`:
 
-!!! example
+```python
+from sqladmin import BaseView, action, Flash
+from starlette.responses import RedirectResponse
 
-    ```python
-    from sqladmin import Flash, FlashLevel
-    
-    # Explicitly setting the level
-    Flash.flash(request, "A crucial server process has started.", FlashLevel.warning, "System Alert")
-    ```
+class UserAdmin(ModelView, model=User):
+    @action(name="approve_users", label="Approve", add_in_list=True)
+    async def approve_users(self, request: Request):
+        pks = request.query_params.get("pks", "").split(",")
+        if pks:
+            for pk in pks:
+                model: User = await self.get_object_for_edit(pk)
+                ...
 
-2. **Convenience Methods (Shortcuts)**
+        Flash.success(request, "Users approved successfully")
+        referer = request.headers.get("Referer")
+        if referer:
+            return RedirectResponse(referer)
+        else:
+            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+```
 
-These methods simplify message creation by automatically setting the appropriate `FlashLevel`. 
-They accept the same `request`, `message`, and optional `title` parameters.
+The available convenience methods are:
 
-| Method                                      | Level Set            | Description                                      |
-|---------------------------------------------|----------------------|--------------------------------------------------|
-| `Flash.info(request, message, title="")`    | `FlashLevel.info`    | Adds a general information message.              |
-| `Flash.error(request, message, title="")`   | `FlashLevel.error`   | Adds a high-severity error message.              |
-| `Flash.warning(request, message, title="")` | `FlashLevel.warning` | Adds a cautionary message.                       |
-| `Flash.success(request, message, title="")` | `FlashLevel.success` | Adds a message confirming successful completion. |
+* `Flash.info(request, message, title="")` — informational message (blue)
+* `Flash.success(request, message, title="")` — success message (green)
+* `Flash.warning(request, message, title="")` — warning message (yellow)
+* `Flash.error(request, message, title="")` — error message (red)
 
-!!! example
+For custom levels use `Flash.flash()` with an explicit `FlashLevel`:
 
-    ```python
-    from sqladmin import Flash, FlashLevel
-    
-    # Using the success shortcut
-    Flash.success(request, "Your profile was updated successfully.", "Update Complete")
-    
-    # Using the error shortcut
-    Flash.error(request, "Access denied. Invalid credentials provided.")
-    ```
+```python
+from sqladmin import Flash, FlashLevel
+
+Flash.flash(request, "Server process started.", FlashLevel.warning, "System Alert")
+```
+
+#### Using the `flash()` function
+
+For cases where you want to pass a raw Bootstrap color class string directly,
+use the low-level `flash()` function from `sqladmin.flash`:
+
+```python
+from sqladmin.flash import flash
+
+flash(request, "Operation completed.", category="success", title="Done")
+flash(request, "Something went wrong.", category="danger")
+flash(request, "Process started.")  # defaults to "primary" (blue)
+```
+
+!!! note
+    Flash messages are stored in the session and displayed as Bootstrap toast
+    notifications on the next page render. They are automatically cleared after
+    being displayed. If no session is available, messages are silently ignored.

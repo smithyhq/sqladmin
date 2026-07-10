@@ -317,7 +317,7 @@ def test_edit_form_block_coexists_using_super(make_client: _ClientFixtureType) -
     response = client.get("/admin/user/edit/1")
     assert response.status_code == 200
     assert "CUSTOM_EDIT_FORM" in response.text
-    assert "<form action=" in response.text
+    assert "<form" in response.text
 
 
 def test_submit_buttons_bottom_can_be_overridden_in_edit(

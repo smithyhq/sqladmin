@@ -74,7 +74,7 @@ class ViewMenu(ItemMenu):
     def url(self, request: Request) -> str | URL:
         if self.view.is_model:
             return request.url_for("admin:list", identity=self.view.identity)
-        return request.url_for(f"admin:{self.view.identity}")
+        return request.url_for(f"admin:view-{self.view.identity}")
 
     @property
     def display_name(self) -> str:

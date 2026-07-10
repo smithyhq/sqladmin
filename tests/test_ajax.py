@@ -230,17 +230,31 @@ async def test_create_ajax_loader_exceptions() -> None:
         create_ajax_loader(model_admin=AddressAdmin(), name="user", options={})
 
 
+async def test_nullable_multi_select_ajax_field_does_not_allow_clear(
+    client: AsyncClient,
+) -> None:
+    response = await client.get("/admin/user/create")
+
+    # Multi-select AJAX fields should never have data-allow-blank,
+    # even if allow_blank=True in the field definition
+    assert 'data-role="select2-ajax"' in response.text
+    assert 'multiple="1"' in response.text
+    assert 'data-allow-blank="1"' not in response.text
+
+
 async def test_create_page_template(client: AsyncClient) -> None:
     response = await client.get("/admin/user/create")
 
     assert 'data-json="[]"' in response.text
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/user/ajax/lookup"' in response.text
+    assert 'data-allow-blank="1"' not in response.text
 
     response = await client.get("/admin/address/create")
 
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
+    assert 'data-allow-blank="1"' in response.text
 
 
 async def test_edit_page_template(client: AsyncClient) -> None:
@@ -268,6 +282,7 @@ async def test_edit_page_template(client: AsyncClient) -> None:
     )
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
+    assert 'data-allow-blank="1"' in response.text
 
 
 async def test_create_and_edit_forms(client: AsyncClient) -> None:
@@ -287,9 +302,12 @@ async def test_create_and_edit_forms(client: AsyncClient) -> None:
     async with session_maker() as s:
         stmt = select(User).options(selectinload(User.addresses))
         result = await s.execute(stmt)
+        address = await s.get(Address, 1)
 
     user = result.scalar_one()
     assert len(user.addresses) == 0
+    assert address is not None
+    assert address.user_id is None
 
     data = {"addresses": ["1"]}
     response = await client.post("/admin/user/edit/1", data=data)

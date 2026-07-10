@@ -38,6 +38,7 @@ from sqladmin._menu import CategoryMenu, Menu, ViewMenu
 from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
@@ -46,6 +47,7 @@ from sqladmin.helpers import (
     slugify_action_name,
 )
 from sqladmin.models import BaseView, ModelView
+from sqladmin.secret import Secret
 from sqladmin.templating import Jinja2Templates
 
 __all__ = [
@@ -72,6 +74,8 @@ class BaseAdmin:
         base_url: str = "/admin",
         title: str = "Admin",
         logo_url: str | None = None,
+        logo_width: int = 64,
+        logo_height: int = 64,
         favicon_url: str | None = None,
         templates_dir: str = "templates",
         middlewares: Sequence[Middleware] | None = None,
@@ -83,6 +87,8 @@ class BaseAdmin:
         self.templates_dir = templates_dir
         self.title = title
         self.logo_url = logo_url
+        self.logo_width = logo_width
+        self.logo_height = logo_height
         self.favicon_url = favicon_url
 
         if session_maker:
@@ -125,6 +131,8 @@ class BaseAdmin:
         templates.env.globals["is_list"] = lambda x: isinstance(x, (list, set))
         templates.env.globals["get_object_identifier"] = get_object_identifier
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
+        templates.env.globals["Secret"] = Secret
+        templates.env.globals["collect_form_media"] = collect_form_media
 
         return templates
 
@@ -216,7 +224,7 @@ class BaseAdmin:
             else:
                 view.identity = getattr(func, "_identity")
                 path = getattr(func, "_path")
-                name = getattr(func, "_identity")
+                name = f"view-{view.identity}"
 
             self.admin.add_route(
                 route=func,
@@ -422,11 +430,14 @@ class Admin(BaseAdminView):
         base_url: str = "/admin",
         title: str = "Admin",
         logo_url: str | None = None,
+        logo_width: int = 64,
+        logo_height: int = 64,
         favicon_url: str | None = None,
         middlewares: Sequence[Middleware] | None = None,
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        static_files_kwargs: dict[str, Any] | None = None,
     ) -> None:
         """
         Args:
@@ -436,7 +447,10 @@ class Admin(BaseAdminView):
             base_url: Base URL for Admin interface.
             title: Admin title.
             logo_url: URL of logo to be displayed instead of title.
+            logo_width: Width of the logo image in pixels. Defaults to 64.
+            logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
+            static_files_kwargs: Extra keyword arguments for Starlette StaticFiles.
         """
 
         super().__init__(
@@ -446,13 +460,16 @@ class Admin(BaseAdminView):
             base_url=base_url,
             title=title,
             logo_url=logo_url,
+            logo_width=logo_width,
+            logo_height=logo_height,
             favicon_url=favicon_url,
             templates_dir=templates_dir,
             middlewares=middlewares,
             authentication_backend=authentication_backend,
         )
 
-        statics = StaticFiles(packages=["sqladmin"])
+        static_files_kwargs = {**(static_files_kwargs or {}), "packages": ["sqladmin"]}
+        statics = StaticFiles(**static_files_kwargs)
 
         async def http_exception(
             request: Request, exc: Exception
@@ -605,6 +622,32 @@ class Admin(BaseAdminView):
         url = url.include_query_params(**referer_params)
         return PlainTextResponse(content=str(url))
 
+    async def _resolve_after_change_response(
+        self,
+        request: Request,
+        context: dict,
+        obj: Any,
+        template: str,
+        identity: str,
+    ) -> Response | None:
+        """Return an override response from ``after_model_change`` or the
+        one-time secret modal, if either is set on ``request.state``."""
+
+        after_response = getattr(request.state, "_sqladmin_after_change_response", None)
+        if isinstance(after_response, Response):
+            return after_response
+
+        if Secret.get(request) is not None:
+            context["obj"] = obj
+            context["secret_next_url"] = str(
+                request.url_for("admin:list", identity=identity)
+            )
+            response = await self.templates.TemplateResponse(request, template, context)
+            Secret.apply_no_store_headers(response)
+            return response
+
+        return None
+
     @login_required
     async def create(self, request: Request) -> Response:
         """Create model endpoint."""
@@ -614,6 +657,17 @@ class Admin(BaseAdminView):
         model_view = self._find_model_view(identity)
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
+
+        if request.method == "GET":
+            form = Form()
+            context = {
+                "model_view": model_view,
+                "form": form,
+            }
+            return await self.templates.TemplateResponse(
+                request, model_view.create_template, context
+            )
+
         form_data = await self._handle_form_data(request)
         form = Form(form_data)
 
@@ -621,11 +675,6 @@ class Admin(BaseAdminView):
             "model_view": model_view,
             "form": form,
         }
-
-        if request.method == "GET":
-            return await self.templates.TemplateResponse(
-                request, model_view.create_template, context
-            )
 
         if not form.validate():
             return await self.templates.TemplateResponse(
@@ -641,6 +690,12 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(
                 request, model_view.create_template, context, status_code=400
             )
+
+        override = await self._resolve_after_change_response(
+            request, context, obj, model_view.create_template, identity
+        )
+        if override is not None:
+            return override
 
         url = self.get_save_redirect_url(
             request=request,
@@ -698,6 +753,12 @@ class Admin(BaseAdminView):
                 request, model_view.edit_template, context, status_code=400
             )
 
+        override = await self._resolve_after_change_response(
+            request, context, obj, model_view.edit_template, identity
+        )
+        if override is not None:
+            return override
+
         url = self.get_save_redirect_url(
             request=request,
             form=form_data,
@@ -719,7 +780,9 @@ class Admin(BaseAdminView):
         rows = await model_view.get_model_objects(
             request=request, limit=model_view.export_max_rows
         )
-        return await model_view.export_data(rows, export_type=export_type)
+        return await model_view.export_data(
+            rows, export_type=export_type, request=request
+        )
 
     async def login(self, request: Request) -> Response:
         if self.authentication_backend is None:
@@ -806,7 +869,10 @@ class Admin(BaseAdminView):
         identifier = get_object_identifier(obj)
 
         if form.get("save") == "Save":
-            return request.url_for("admin:list", identity=identity)
+            url = URL(str(request.url_for("admin:list", identity=identity)))
+            if request.url.query:
+                url = url.replace(query=request.url.query)
+            return url
 
         if form.get("save") == "Save and continue editing" or (
             form.get("save") == "Save as new" and model_view.save_as_continue
@@ -909,8 +975,8 @@ def action(
         label: Human-readable text describing action
         confirmation_message: Message to show before confirming action
         include_in_schema: Indicating if the endpoint be included in the schema
-        add_in_detail: Indicating if action should be dispalyed on model detail page
-        add_in_list: Indicating if action should be dispalyed on model list page
+        add_in_detail: Indicating if action should be displayed on model detail page
+        add_in_list: Indicating if action should be displayed on model list page
     """
 
     @no_type_check

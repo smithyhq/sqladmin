@@ -56,7 +56,7 @@ to render lookup values in a drop-down instead of a long list of links:
     {% block filter_body %}
       {% set current_value = request.query_params.get(filter.parameter_name, '') %}
 
-      <form method="get" class="d-flex flex-column" style="gap: 8px;">
+      <form method="get" class="d-flex flex-column filter-form">
         {% for key, value in request.query_params.items() %}
           {% if key != filter.parameter_name %}
           <input type="hidden" name="{{ key }}" value="{{ value }}">
@@ -69,7 +69,7 @@ to render lookup values in a drop-down instead of a long list of links:
           {% endfor %}
         </select>
 
-        <div class="d-flex align-items-center" style="gap: 8px;">
+        <div class="d-flex align-items-center filter-form-actions">
           <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
           {% if current_value %}
           <a href="{{ request.url.remove_query_params(filter.parameter_name) }}" class="text-decoration-none small">Clear</a>

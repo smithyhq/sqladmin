@@ -210,12 +210,12 @@ $(':input[data-role="select2-tags"]').each(function () {
 // Automatically resize textarea on input events.
 $('.autoresize-textarea').each(function() {
   const $textarea = $(this);
+  if (!$textarea) return;
+
   const $maxLength = parseInt($textarea.attr('maxlength'), 10) || 0;
 
   const $charsCountLabel = $textarea.next('.chars-count-label');
   const $charsCountElement = $charsCountLabel.length ? $charsCountLabel : $charsCountLabel.first();
-
-  if (!$charsCountElement.length) return;
 
   const updateTextareaHeight = () => {
     $textarea.css('height', 'auto');
@@ -223,6 +223,8 @@ $('.autoresize-textarea').each(function() {
   };
 
   const updateCharsCount = () => {
+    if (!$charsCountElement.length || !$charsCountLabel) return;
+
     const $currentLength = $textarea.val().length;
     $charsCountElement.text(`Number of characters: ${$currentLength}${$maxLength ? ` / ${$maxLength}` : ''}`);
     $charsCountElement.toggleClass('warning', $maxLength > 0 && $currentLength >= $maxLength);

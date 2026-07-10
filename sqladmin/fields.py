@@ -449,6 +449,28 @@ class TextAreaField(fields.StringField):
     """
     This field represents an HTML `textarea` and can be used to take
     multi-line input.
+
+    To disable the display of the number of characters,
+    you need to pass the value show_chars_count = False to the field arguments.
+
+    ```python
+    form_args = {
+        'field_name': {
+            'show_chars_count': False
+        }
+    }
+    ```
     """
+
+    def __init__(
+        self,
+        label: str | None = None,
+        validators: list | None = None,
+        *,
+        show_chars_count: bool = True,
+        **kwargs: Any,
+    ):
+        super().__init__(label, validators, **kwargs)
+        self.show_chars_count = show_chars_count
 
     widget = sqladmin_widgets.TextAreaWidget()

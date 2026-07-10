@@ -138,16 +138,21 @@ class TextAreaWidget(widgets.Input):
         flags = getattr(field, "flags", {})
         for k in dir(flags):
             if k in self.validation_attrs and k not in kwargs:
-                kwargs.setdefault(k, getattr(flags, k))
+                kwargs[k] = getattr(flags, k)
 
         class_ = " ".join(filter(None, (kwargs.get("class"), "autoresize-textarea")))
-        kwargs.setdefault("class", class_)
+        kwargs["class"] = class_
         kwargs.setdefault("rows", "1")
         if hasattr(field, "_value") and callable(field._value):
-            kwargs.setdefault("value", field._value())
+            kwargs["value"] = field._value()
+
+        if getattr(field, "show_chars_count", True) is True:
+            chars_count = '<div class="chars-count-label pt-1"></div>'
+        else:
+            chars_count = ""
 
         return Markup(
             "<textarea %s>%s</textarea>"
             % (html_params(name=field.name, **kwargs), escape(kwargs.get("value", "")))
-            + '<div class="chars-count-label pt-1"></div>'
+            + chars_count
         )  # nosec: markupsafe_markup_xss

@@ -114,6 +114,7 @@ class BooleanInputWidget(widgets.Input):
     """
 
     input_type = "checkbox"
+    validation_attrs = []
 
     def __call__(self, field: Field, **kwargs: Any) -> Markup:
         if field.data:

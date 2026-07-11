@@ -85,28 +85,47 @@ jobs:
         id: discover
         run: |
           python << 'PYEOF'
-          import re, json, os
-          content = open("pyproject.toml").read()
-          match = re.search(r'"wtforms\s*([^"]+)"', content)
-          if not match:
+          import re, json, os, tomllib
+
+          with open("pyproject.toml", "rb") as f:
+              dependencies = tomllib.load(f)["project"]["dependencies"]
+
+          wtforms_spec = None
+          for dep in dependencies:
+              if dep.split()[0].lower() == "wtforms":
+                  wtforms_spec = dep
+                  break
+          if wtforms_spec is None:
               raise SystemExit("wtforms dependency not found in pyproject.toml")
-          spec = match.group(1).strip()
-          lower = re.search(r">=\s*(\d+)\.(\d+)", spec)
-          upper = re.search(r"<\s*(\d+)\.(\d+)", spec)
+
+          lower = re.search(r">=\s*(\d+)\.(\d+)", wtforms_spec)
+          upper = re.search(r"<\s*(\d+)\.(\d+)", wtforms_spec)
           if not lower or not upper:
-              raise SystemExit(f"could not parse bounds from spec: {spec}")
+              raise SystemExit(f"could not parse bounds from spec: {wtforms_spec}")
+
           lower_major, lower_minor = int(lower.group(1)), int(lower.group(2))
           upper_major, upper_minor = int(upper.group(1)), int(upper.group(2))
+
+          if lower_major != upper_major:
+              raise SystemExit(
+                  "WTForms discovery expects lower and upper bounds "
+                  "within the same major version"
+              )
+
           entries = []
-          major, minor = lower_major, lower_minor
-          while (major, minor) < (upper_major, upper_minor):
+          minor = lower_minor
+          while minor < upper_minor:
               entries.append({
-                  "wtforms-version": f"{major}.{minor}",
-                  "wtforms-spec": f"wtforms>={major}.{minor},<{major}.{minor + 1}",
+                  "wtforms-version": f"{lower_major}.{minor}",
+                  "wtforms-spec": f"wtforms>={lower_major}.{minor},<{lower_major}.{minor + 1}",
               })
               minor += 1
+
+          if not entries:
+              raise SystemExit("no WTForms versions discovered; check dependency bounds")
+
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"matrix={json.dumps(entries)}\n")
+              f.write(f"matrix={json.dumps({'include': entries})}\n")
           PYEOF
 
   wtforms-compat:
@@ -115,8 +134,7 @@ jobs:
     needs: discover-wtforms
 
     strategy:
-      matrix:
-        include: ${{ fromJSON(needs.discover-wtforms.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.discover-wtforms.outputs.matrix) }}
 
     steps:
       - uses: "actions/checkout@v3"

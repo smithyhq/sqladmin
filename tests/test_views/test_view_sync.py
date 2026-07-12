@@ -1231,6 +1231,9 @@ def test_import_csv_invalid_content_type(client: TestClient) -> None:
 
     assert response.status_code == 400
     assert response.text == "Invalid CSV file type."
+
+
+def test_import_csv_file_too_large(client: TestClient) -> None:
     response = client.post(
         "/admin/user/import",
         files={
@@ -1387,6 +1390,44 @@ def test_import_csv_foreign_key_validation(client: TestClient) -> None:
     assert len(addresses) == 0
 
 
+def test_import_csv_foreign_key_valid_value(client: TestClient) -> None:
+    with session_maker() as s:
+        user = User(name="FK Owner", status=Status.ACTIVE)
+        s.add(user)
+        s.commit()
+        user_id = user.id
+
+    class AddressImportAdmin(ModelView, model=Address):
+        can_import = True
+        column_import_list = [Address.user_id]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(AddressImportAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        response = local_client.post(
+            "/admin/address/import",
+            files={
+                "csvfile": (
+                    "address.csv",
+                    f"user_id\r\n{user_id}\r\n".encode(),
+                    "text/csv",
+                )
+            },
+        )
+
+    result = _parse_ndjson_events(response.text)[-1]
+
+    assert response.status_code == 200
+    assert result["imported"] == 1
+
+    with session_maker() as s:
+        address = s.execute(select(Address)).scalar_one()
+    assert address.user_id == user_id
+    assert isinstance(address.user_id, int)
+
+
 def test_import_csv_foreign_key_invalid_type(client: TestClient) -> None:
     class AddressImportAdmin(ModelView, model=Address):
         can_import = True
@@ -1504,6 +1545,62 @@ def test_import_csv_export_round_trip(client: TestClient) -> None:
     with session_maker() as s:
         user = s.execute(select(User).where(User.name == "RoundTrip")).scalar_one()
     assert user.status == Status.ACTIVE
+
+
+def test_import_csv_boolean_export_round_trip(client: TestClient) -> None:
+    with session_maker() as s:
+        s.add(
+            Product(
+                name="Unsold Item",
+                price=100,
+                is_sold=False,
+            )
+        )
+        s.add(
+            Product(
+                name="Sold Item",
+                price=200,
+                is_sold=True,
+            )
+        )
+        s.commit()
+
+    class ProductImportAdmin(ModelView, model=Product):
+        can_import = True
+        can_export = True
+        column_import_list = [Product.name, Product.price, Product.is_sold]
+        column_export_list = [Product.name, Product.price, Product.is_sold]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(ProductImportAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        export_response = local_client.get("/admin/product/export/csv")
+        csv_bytes = export_response.text.encode("utf-8")
+
+        with session_maker() as s:
+            for product in s.execute(select(Product)).scalars():
+                s.delete(product)
+            s.commit()
+
+        import_response = local_client.post(
+            "/admin/product/import",
+            files={"csvfile": ("product.csv", csv_bytes, "text/csv")},
+        )
+
+    result = _parse_ndjson_events(import_response.text)[-1]
+
+    assert import_response.status_code == 200
+    assert result["imported"] == 2
+
+    with session_maker() as s:
+        products = {
+            product.name: product for product in s.execute(select(Product)).scalars()
+        }
+
+    assert products["Unsold Item"].is_sold is False
+    assert products["Sold Item"].is_sold is True
 
 
 def test_import_csv_persist_continue_on_error_unique_violation(

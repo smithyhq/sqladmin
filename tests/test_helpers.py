@@ -18,14 +18,17 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.type_api import TypeDecorator
 
 from sqladmin.helpers import (
+    build_import_form_row,
     coerce_column_value,
     get_column_python_type,
     get_object_identifier,
     is_falsy_value,
+    merge_import_row_data,
     object_identifier_values,
     parse_csv,
     parse_interval,
     secure_filename,
+    serialize_import_value_for_form,
     slugify_action_name,
 )
 
@@ -122,6 +125,62 @@ def test_coerce_column_value_bool(raw: str, expected: bool) -> None:
 def test_coerce_column_value_bool_invalid() -> None:
     with pytest.raises(ValueError, match="Invalid boolean value"):
         coerce_column_value(Flagged.active, "maybe")
+
+
+def test_serialize_import_value_for_form() -> None:
+    assert serialize_import_value_for_form(False) == "false"
+    assert serialize_import_value_for_form(True) == "true"
+    assert serialize_import_value_for_form(None) == ""
+    assert serialize_import_value_for_form(date(2024, 1, 15)) == "2024-01-15"
+
+
+def test_merge_import_row_data_coerces_bool_and_foreign_key() -> None:
+    class ImportWidget(Base):
+        __tablename__ = "import_widget"
+        id = Column(Integer, primary_key=True)
+        profile_id = Column(Integer, ForeignKey("profile.id"))
+        active = Column(Boolean, nullable=False)
+
+    merged, errors = merge_import_row_data(
+        ImportWidget,
+        ["profile_id", "active"],
+        {"profile_id": "5", "active": "False"},
+        {"active": True},
+    )
+
+    assert errors == {}
+    assert merged["profile_id"] == 5
+    assert isinstance(merged["profile_id"], int)
+    assert merged["active"] is False
+
+
+def test_build_import_form_row_uses_coerced_values() -> None:
+    from starlette.datastructures import MultiDict
+
+    row = MultiDict([("active", "False"), ("profile_id", "5")])
+    merged = {"active": False, "profile_id": 5}
+    form_row = build_import_form_row(row, merged, ["active", "profile_id"])
+
+    assert form_row["active"] == "false"
+    assert form_row["profile_id"] == "5"
+
+
+def test_merge_import_row_data_invalid_foreign_key_type() -> None:
+    class InvalidFkWidget(Base):
+        __tablename__ = "import_widget_invalid_fk"
+        id = Column(Integer, primary_key=True)
+        profile_id = Column(Integer, ForeignKey("profile.id"))
+
+    merged, errors = merge_import_row_data(
+        InvalidFkWidget,
+        ["profile_id"],
+        {"profile_id": "not-an-integer"},
+        {},
+    )
+
+    assert merged == {}
+    assert "profile_id" in errors
+    assert "Invalid value" in errors["profile_id"][0]
 
 
 def test_parse_csv_reads_rows_and_filters_columns() -> None:

@@ -2,28 +2,19 @@ from __future__ import annotations
 
 import inspect
 import io
-import json
 import logging
 from types import MethodType
 from typing import (
     Any,
-    AsyncGenerator,
     Awaitable,
     Callable,
-    List,
-    NamedTuple,
     Sequence,
-    Tuple,
     cast,
     no_type_check,
 )
 from urllib.parse import parse_qsl, urljoin
 
-import anyio
 from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
-from sqlalchemy import func as sa_func
-from sqlalchemy import inspect as sa_inspect
-from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
@@ -37,13 +28,12 @@ from starlette.responses import (
     PlainTextResponse,
     RedirectResponse,
     Response,
-    StreamingResponse,
 )
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
+from sqladmin._import import handle_import_upload, import_csv, import_error_response
 from sqladmin._menu import CategoryMenu, Menu, ViewMenu
-from sqladmin._queries import Query
 from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.authentication import AuthenticationBackend, login_required
@@ -51,10 +41,8 @@ from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
-    coerce_column_value,
     get_object_identifier,
     is_async_session_maker,
-    parse_csv,
     slugify_action_name,
 )
 from sqladmin.models import BaseView, ModelView
@@ -68,13 +56,6 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
-
-
-class ImportUploadResult(NamedTuple):
-    content: bytes | None
-    continue_on_error: bool
-    error: str | None = None
-    status_code: int = 400
 
 
 class BaseAdmin:
@@ -804,492 +785,21 @@ class Admin(BaseAdminView):
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
 
-        upload = await self._handle_form_file(request, model_view)
+        upload = await handle_import_upload(request, model_view)
         if upload.error:
-            return self._import_error_response(upload.error, upload.status_code)
+            return import_error_response(upload.error, upload.status_code)
         if not upload.content:
-            return self._import_error_response(
+            return import_error_response(
                 "No CSV file uploaded or file does not have a .csv extension."
             )
-        continue_on_error = upload.continue_on_error
-        csv_content = upload.content
 
-        try:
-            data = parse_csv(csv_content, model_view._import_prop_names)
-        except ValueError as exc:
-            return self._import_error_response(str(exc))
-        except Exception as exc:
-            logger.exception(exc)
-            return self._import_error_response("Failed to parse CSV file.")
-
-        if model_view.import_max_rows > 0 and len(data) > model_view.import_max_rows:
-            return self._import_error_response(
-                f"CSV file exceeds the maximum of {model_view.import_max_rows} data "
-                "row(s) for this model."
-            )
-
-        Form = await model_view.scaffold_form(model_view._form_create_rules)
-
-        async def import_events() -> AsyncGenerator[bytes, None]:
-            total = len(data)
-            processed = 0
-            imported = 0
-            skipped = 0
-            import_models: list[dict[str, Any]] = []
-            missed_rows: list[dict[str, Any]] = []
-            missed_rows_omitted_count = 0
-            fk_error_cache: dict[tuple[str, str, str], str] = {}
-
-            def append_missed_row(row_report: dict[str, Any]) -> None:
-                nonlocal missed_rows_omitted_count
-                if len(missed_rows) < model_view.max_reported_missed_rows:
-                    missed_rows.append(row_report)
-                else:
-                    missed_rows_omitted_count += 1
-
-            def emit(payload: dict[str, Any]) -> bytes:
-                return (json.dumps(payload, default=str) + "\n").encode("utf-8")
-
-            yield emit(
-                {
-                    "type": "progress",
-                    "phase": "validating",
-                    "processed": processed,
-                    "total": total,
-                    "imported": imported,
-                    "skipped": skipped,
-                }
-            )
-
-            for line_number, row in enumerate(data, start=2):
-                await anyio.sleep(0)
-                if await request.is_disconnected():
-                    return
-
-                processed += 1
-                form = Form(row)
-                row_errors: dict[str, Any] = {}
-
-                if not form.validate():
-                    row_errors.update(form.errors)
-
-                row_data = {col: row.get(col) for col in model_view._import_prop_names}
-                form_data_dict = self._denormalize_wtform_data(
-                    form.data,
-                    model_view.model,
-                )
-
-                # Import forms may omit FK columns (when form_include_pk=False).
-                # Keep raw CSV values for imported columns missing in the form.
-                merged_import_data = dict(form_data_dict)
-                for column_name in model_view._import_prop_names:
-                    if column_name in merged_import_data:
-                        continue
-                    if column_name in row_data:
-                        merged_import_data[column_name] = row_data[column_name]
-
-                foreign_key_errors = await self._validate_foreign_key_values(
-                    model_view=model_view,
-                    row_data=merged_import_data,
-                    fk_error_cache=fk_error_cache,
-                )
-                row_errors.update(foreign_key_errors)
-
-                if row_errors:
-                    skipped += 1
-
-                    row_report = {
-                        "line": line_number,
-                        "data": row_data,
-                        "errors": row_errors,
-                    }
-                    append_missed_row(row_report)
-
-                    if not continue_on_error:
-                        yield emit(
-                            {
-                                "type": "result",
-                                "ok": False,
-                                "aborted": True,
-                                "rolled_back": True,
-                                "processed": processed,
-                                "total": total,
-                                "imported": 0,
-                                "skipped": skipped,
-                                "missed_rows": missed_rows,
-                                "missed_rows_omitted_count": missed_rows_omitted_count,
-                                "summary": (
-                                    "Import aborted on invalid row "
-                                    f"{line_number}. No rows were imported."
-                                ),
-                            }
-                        )
-                        return
-                else:
-                    import_models.append(
-                        {
-                            "line": line_number,
-                            "data": row_data,
-                            "model": merged_import_data,
-                        }
-                    )
-                    imported += 1
-
-                if processed % 20 == 0 or processed == total:
-                    yield emit(
-                        {
-                            "type": "progress",
-                            "phase": "validating",
-                            "processed": processed,
-                            "total": total,
-                            "imported": imported,
-                            "skipped": skipped,
-                        }
-                    )
-
-            if await request.is_disconnected():
-                return
-
-            yield emit(
-                {
-                    "type": "progress",
-                    "phase": "persisting",
-                    "processed": processed,
-                    "total": total,
-                    "imported": imported,
-                    "skipped": skipped,
-                }
-            )
-
-            if import_models:
-                (
-                    success,
-                    persisted_count,
-                    failure_summary,
-                    persistence_failed_rows,
-                ) = await self._persist_import_models_with_count_check(
-                    model_view,
-                    request,
-                    import_models,
-                    continue_on_error,
-                )
-            else:
-                success, persisted_count, failure_summary, persistence_failed_rows = (
-                    True,
-                    0,
-                    None,
-                    [],
-                )
-
-            for failed_row in persistence_failed_rows:
-                skipped += 1
-                append_missed_row(failed_row)
-
-            if not success:
-                yield emit(
-                    {
-                        "type": "result",
-                        "ok": False,
-                        "aborted": True,
-                        "rolled_back": True,
-                        "processed": processed,
-                        "total": total,
-                        "imported": 0,
-                        "skipped": skipped,
-                        "missed_rows": missed_rows,
-                        "missed_rows_omitted_count": missed_rows_omitted_count,
-                        "summary": failure_summary,
-                    }
-                )
-                return
-
-            imported = persisted_count
-            summary = (
-                f"Imported {imported} out of {total} row(s). Skipped {skipped} row(s)."
-            )
-
-            yield emit(
-                {
-                    "type": "result",
-                    "ok": True,
-                    "aborted": False,
-                    "processed": total,
-                    "total": total,
-                    "imported": imported,
-                    "skipped": skipped,
-                    "missed_rows": missed_rows,
-                    "missed_rows_omitted_count": missed_rows_omitted_count,
-                    "summary": summary,
-                }
-            )
-
-        return StreamingResponse(import_events(), media_type="application/x-ndjson")
-
-    async def _persist_import_models_with_count_check(
-        self,
-        model_view: ModelView,
-        request: Request,
-        import_models: List[dict[str, Any]],
-        continue_on_error: bool,
-    ) -> Tuple[bool, int, str | None, List[dict[str, Any]]]:
-        if model_view.is_async:
-            return await self._persist_import_models_with_count_check_async(
-                model_view,
-                request,
-                import_models,
-                continue_on_error,
-            )
-
-        return await anyio.to_thread.run_sync(
-            self._persist_import_models_with_count_check_sync,
-            model_view,
+        return await import_csv(
             request,
-            import_models,
-            continue_on_error,
+            model_view,
+            upload.content,
+            upload.continue_on_error,
+            self._denormalize_wtform_data,
         )
-
-    async def _validate_foreign_key_values(
-        self,
-        model_view: ModelView,
-        row_data: dict[str, Any],
-        fk_error_cache: dict[tuple[str, str, str], str],
-    ) -> dict[str, List[str]]:
-        mapper = sa_inspect(model_view.model)
-        foreign_key_errors: dict[str, List[str]] = {}
-
-        for column in mapper.columns:
-            if not column.foreign_keys:
-                continue
-
-            value = row_data.get(column.key)
-            if value in (None, ""):
-                continue
-
-            for foreign_key in column.foreign_keys:
-                target_column = foreign_key.column
-                cache_key = (
-                    column.key,
-                    str(value),
-                    foreign_key.target_fullname,
-                )
-
-                cached_error = fk_error_cache.get(cache_key)
-                if cached_error is None:
-                    error_message = await self._foreign_key_error_message(
-                        model_view=model_view,
-                        target_column=target_column,
-                        value=value,
-                        column_key=column.key,
-                        target_fullname=foreign_key.target_fullname,
-                    )
-                    fk_error_cache[cache_key] = error_message or ""
-                    cached_error = fk_error_cache[cache_key]
-
-                if cached_error:
-                    foreign_key_errors.setdefault(column.key, []).append(cached_error)
-
-        return foreign_key_errors
-
-    async def _foreign_key_error_message(
-        self,
-        model_view: ModelView,
-        target_column: Any,
-        value: Any,
-        column_key: str,
-        target_fullname: str,
-    ) -> str | None:
-        try:
-            coerced_value = coerce_column_value(target_column, value)
-        except (TypeError, ValueError):
-            return f"Invalid value {value!r} for column {column_key}."
-
-        stmt = (
-            select(sa_func.count())
-            .select_from(target_column.table)
-            .where(target_column == coerced_value)
-        )
-
-        if model_view.is_async:
-            async with model_view.session_maker(expire_on_commit=False) as session:
-                count = int(await session.scalar(stmt) or 0)
-        else:
-
-            def run_sync() -> int:
-                with model_view.session_maker(expire_on_commit=False) as session:
-                    return int(session.execute(stmt).scalar_one() or 0)
-
-            count = await anyio.to_thread.run_sync(run_sync)
-
-        if count > 0:
-            return None
-
-        return f"Referenced value does not exist for {target_fullname}."
-
-    async def _persist_import_row_async(
-        self,
-        query: Query,
-        session: AsyncSession,
-        model_view: ModelView,
-        request: Request,
-        row_entry: dict[str, Any],
-    ) -> Any:
-        row = row_entry["model"]
-        async with session.begin_nested():
-            obj = query._get_model_object(row)
-            await model_view.on_import_row(row, obj, request)
-            obj = await query._set_attributes_async(session, obj, row)
-            session.add(obj)
-            await session.flush()
-        return obj
-
-    def _persist_import_row_sync(
-        self,
-        query: Query,
-        session: Session,
-        model_view: ModelView,
-        request: Request,
-        row_entry: dict[str, Any],
-    ) -> Any:
-        row = row_entry["model"]
-        with session.begin_nested():
-            obj = query._get_model_object(row)
-            anyio.from_thread.run(model_view.on_import_row, row, obj, request)
-            obj = query._set_attributes_sync(session, obj, row)
-            session.add(obj)
-            session.flush()
-        return obj
-
-    async def _persist_import_models_with_count_check_async(
-        self,
-        model_view: ModelView,
-        request: Request,
-        import_models: List[dict[str, Any]],
-        continue_on_error: bool,
-    ) -> Tuple[bool, int, str | None, List[dict[str, Any]]]:
-        query = Query(model_view)
-        failed_rows: List[dict[str, Any]] = []
-
-        try:
-            async with model_view.session_maker(expire_on_commit=False) as session:
-                persisted_count = 0
-
-                for row_entry in import_models:
-                    line_number = int(row_entry["line"])
-                    source_data = row_entry["data"]
-
-                    if await request.is_disconnected():
-                        await session.rollback()
-                        return False, 0, "Import canceled. No rows were imported.", []
-
-                    try:
-                        await self._persist_import_row_async(
-                            query,
-                            session,
-                            model_view,
-                            request,
-                            row_entry,
-                        )
-                        persisted_count += 1
-                    except Exception as exc:
-                        failed_rows.append(
-                            {
-                                "line": line_number,
-                                "data": source_data,
-                                "errors": {"__all__": [str(exc)]},
-                            }
-                        )
-                        if not continue_on_error:
-                            await session.rollback()
-                            return (
-                                False,
-                                0,
-                                (
-                                    "Import aborted on invalid row "
-                                    f"{line_number}. No rows were imported."
-                                ),
-                                failed_rows,
-                            )
-
-                await session.commit()
-
-                return True, persisted_count, None, failed_rows
-        except Exception as exc:
-            logger.exception(exc)
-            return (
-                False,
-                0,
-                (
-                    "Import failed during database commit. "
-                    "No rows were imported (rolled back)."
-                ),
-                failed_rows,
-            )
-
-    def _persist_import_models_with_count_check_sync(
-        self,
-        model_view: ModelView,
-        request: Request,
-        import_models: List[dict[str, Any]],
-        continue_on_error: bool,
-    ) -> Tuple[bool, int, str | None, List[dict[str, Any]]]:
-        query = Query(model_view)
-        failed_rows: List[dict[str, Any]] = []
-
-        try:
-            with model_view.session_maker(expire_on_commit=False) as session:
-                persisted_count = 0
-
-                for row_entry in import_models:
-                    line_number = int(row_entry["line"])
-                    source_data = row_entry["data"]
-
-                    if anyio.from_thread.run(request.is_disconnected):
-                        session.rollback()
-                        return False, 0, "Import canceled. No rows were imported.", []
-
-                    try:
-                        self._persist_import_row_sync(
-                            query,
-                            session,
-                            model_view,
-                            request,
-                            row_entry,
-                        )
-                        persisted_count += 1
-                    except Exception as exc:
-                        failed_rows.append(
-                            {
-                                "line": line_number,
-                                "data": source_data,
-                                "errors": {"__all__": [str(exc)]},
-                            }
-                        )
-                        if not continue_on_error:
-                            session.rollback()
-                            return (
-                                False,
-                                0,
-                                (
-                                    "Import aborted on invalid row "
-                                    f"{line_number}. No rows were imported."
-                                ),
-                                failed_rows,
-                            )
-
-                session.commit()
-
-                return True, persisted_count, None, failed_rows
-        except Exception as exc:
-            logger.exception(exc)
-            return (
-                False,
-                0,
-                (
-                    "Import failed during database commit. "
-                    "No rows were imported (rolled back)."
-                ),
-                failed_rows,
-            )
 
     async def login(self, request: Request) -> Response:
         if self.authentication_backend is None:
@@ -1400,67 +910,6 @@ class Admin(BaseAdminView):
             else:
                 form_data.append((key, value))
         return FormData(form_data)
-
-    async def _handle_form_file(
-        self,
-        request: Request,
-        model_view: ModelView,
-    ) -> ImportUploadResult:
-        async with request.form(max_files=1) as form:
-            continue_on_error = str(form.get("continue_on_error", "")).lower() in {
-                "1",
-                "true",
-                "on",
-                "yes",
-            }
-            csv_file = form.get("csvfile")
-
-            if not isinstance(csv_file, UploadFile):
-                return ImportUploadResult(
-                    None,
-                    continue_on_error,
-                    "Invalid file upload. Expected a CSV file.",
-                )
-
-            if (
-                not csv_file
-                or not csv_file.filename
-                or not csv_file.filename.lower().endswith(".csv")
-            ):
-                return ImportUploadResult(None, continue_on_error)
-
-            allowed_content_types = {
-                None,
-                "",
-                "text/csv",
-                "application/csv",
-                "text/plain",
-                "application/vnd.ms-excel",
-            }
-            if csv_file.content_type not in allowed_content_types:
-                return ImportUploadResult(
-                    None,
-                    continue_on_error,
-                    "Invalid CSV file type.",
-                )
-
-            csv_content = await csv_file.read()
-            if len(csv_content) > model_view.max_import_file_size:
-                return ImportUploadResult(
-                    None,
-                    continue_on_error,
-                    "CSV file is too large.",
-                    413,
-                )
-        return ImportUploadResult(csv_content, continue_on_error)
-
-    @staticmethod
-    def _import_error_response(message: str, status_code: int = 400) -> Response:
-        return Response(
-            content=message,
-            status_code=status_code,
-            media_type="text/plain; charset=utf-8",
-        )
 
     @staticmethod
     def _normalize_wtform_data(obj: Any) -> dict:

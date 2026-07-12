@@ -285,6 +285,71 @@ def _coerce_bool(value: str) -> bool:
     raise ValueError(f"Invalid boolean value {value!r}.")
 
 
+def serialize_import_value_for_form(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, enum.Enum):
+        return value.name
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    return str(value)
+
+
+def build_import_form_row(
+    row: MultiDict,
+    merged: dict[str, Any],
+    import_columns: list[str],
+) -> MultiDict:
+    form_row = MultiDict()
+    for column_name in import_columns:
+        if column_name in merged:
+            form_row[column_name] = serialize_import_value_for_form(merged[column_name])
+        else:
+            form_row[column_name] = row.get(column_name) or ""
+    return form_row
+
+
+def merge_import_row_data(
+    model: Any,
+    import_columns: list[str],
+    row_data: dict[str, Any],
+    form_data_dict: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    """Build import row data with CSV values coerced to column Python types."""
+    mapper = sa_inspect(model)
+    merged: dict[str, Any] = {}
+    errors: dict[str, list[str]] = {}
+
+    for column_name in import_columns:
+        column = mapper.columns.get(column_name)
+        raw_value = row_data.get(column_name)
+
+        if column is None:
+            if column_name in form_data_dict:
+                merged[column_name] = form_data_dict[column_name]
+            elif column_name in row_data:
+                merged[column_name] = row_data[column_name]
+            continue
+
+        if raw_value in (None, ""):
+            if column.nullable:
+                merged[column_name] = None
+            elif column_name in form_data_dict:
+                merged[column_name] = form_data_dict[column_name]
+            continue
+
+        try:
+            merged[column_name] = coerce_column_value(column, raw_value)
+        except (TypeError, ValueError):
+            errors.setdefault(column_name, []).append(
+                f"Invalid value {raw_value!r} for column {column_name}."
+            )
+
+    return merged, errors
+
+
 def object_identifier_values(id_string: str, model: Any) -> tuple:
     values = []
     pks = get_primary_keys(model)

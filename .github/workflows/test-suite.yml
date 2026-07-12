@@ -70,71 +70,15 @@ jobs:
         with:
           files: coverage.xml
 
-  discover-wtforms:
-    name: "Discover WTForms versions"
-    runs-on: "ubuntu-latest"
-    outputs:
-      matrix: ${{ steps.discover.outputs.matrix }}
-
-    steps:
-      - uses: "actions/checkout@v3"
-      - uses: "actions/setup-python@v4"
-        with:
-          python-version: "3.12"
-      - name: "Discover supported WTForms versions"
-        id: discover
-        run: |
-          python << 'PYEOF'
-          import re, json, os, tomllib
-
-          with open("pyproject.toml", "rb") as f:
-              dependencies = tomllib.load(f)["project"]["dependencies"]
-
-          wtforms_spec = None
-          for dep in dependencies:
-              if dep.split()[0].lower() == "wtforms":
-                  wtforms_spec = dep
-                  break
-          if wtforms_spec is None:
-              raise SystemExit("wtforms dependency not found in pyproject.toml")
-
-          lower = re.search(r">=\s*(\d+)\.(\d+)", wtforms_spec)
-          upper = re.search(r"<\s*(\d+)\.(\d+)", wtforms_spec)
-          if not lower or not upper:
-              raise SystemExit(f"could not parse bounds from spec: {wtforms_spec}")
-
-          lower_major, lower_minor = int(lower.group(1)), int(lower.group(2))
-          upper_major, upper_minor = int(upper.group(1)), int(upper.group(2))
-
-          if lower_major != upper_major:
-              raise SystemExit(
-                  "WTForms discovery expects lower and upper bounds "
-                  "within the same major version"
-              )
-
-          entries = []
-          minor = lower_minor
-          while minor < upper_minor:
-              entries.append({
-                  "wtforms-version": f"{lower_major}.{minor}",
-                  "wtforms-spec": f"wtforms>={lower_major}.{minor},<{lower_major}.{minor + 1}",
-              })
-              minor += 1
-
-          if not entries:
-              raise SystemExit("no WTForms versions discovered; check dependency bounds")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"matrix={json.dumps({'include': entries})}\n")
-          PYEOF
-
   wtforms-compat:
-    name: "WTForms ${{ matrix.wtforms-version }}"
+    name: "WTForms ${{ matrix.wtforms-spec }}"
     runs-on: "ubuntu-latest"
-    needs: discover-wtforms
 
     strategy:
-      matrix: ${{ fromJSON(needs.discover-wtforms.outputs.matrix) }}
+      matrix:
+        wtforms-spec:
+          - "wtforms>=3.1,<3.2"
+          - "wtforms>=3.2,<3.3"
 
     steps:
       - uses: "actions/checkout@v3"
@@ -147,10 +91,8 @@ jobs:
           python-version: "3.12"
       - name: "Install dependencies"
         run: uv sync --all-groups
-      - name: "Install WTForms ${{ matrix.wtforms-version }}"
+      - name: "Install WTForms"
         run: uv pip install "${{ matrix.wtforms-spec }}"
-      - name: "Show WTForms version"
-        run: uv run --no-sync python -c "import wtforms; print(wtforms.__version__)"
       - name: "Run WTForms compatibility tests"
         env:
           TEST_DATABASE_URI_SYNC: "sqlite:///test.db?check_same_thread=False"

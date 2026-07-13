@@ -32,6 +32,7 @@ from wtforms import BooleanField, Field, Form, IntegerField, StringField, TimeFi
 from wtforms.fields.core import UnboundField
 
 from sqladmin import ModelView
+from sqladmin.ajax import create_ajax_loader
 from sqladmin.fields import Select2TagsField, SelectField
 from sqladmin.forms import ModelConverter, converts, get_model_form
 from tests.common import async_engine as engine
@@ -231,6 +232,32 @@ async def test_model_form_override() -> None:
     )
     assert isinstance(Form()._fields["name"], ExampleField)
     assert not isinstance(Form()._fields["email"], ExampleField)
+
+
+async def test_model_form_override_receives_ajax_loader() -> None:
+    class LoaderAwareField(Field):
+        def __init__(self, *args: Any, loader=None, **kwargs: Any) -> None:
+            self.loader = loader
+            kwargs.pop("allow_blank", None)
+            super().__init__(*args, **kwargs)
+
+    class AddressAdmin(ModelView, model=Address):
+        form_ajax_refs = {"user": {"fields": ("name",)}}
+
+    loader = create_ajax_loader(
+        model_admin=AddressAdmin(),
+        name="user",
+        options={"fields": ("name",)},
+    )
+
+    Form = await get_model_form(
+        model=Address,
+        session_maker=session_maker,
+        form_overrides={"user": LoaderAwareField},
+        form_ajax_refs={"user": loader},
+    )
+
+    assert Form()._fields["user"].loader is loader
 
 
 @pytest.mark.skipif(engine.name != "postgresql", reason="PostgreSQL only")

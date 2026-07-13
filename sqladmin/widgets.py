@@ -1,6 +1,7 @@
 # mypy: disable-error-code="override"
 
 import json
+import logging
 from typing import TYPE_CHECKING, Any
 
 from markupsafe import Markup, escape
@@ -16,6 +17,8 @@ __all__ = [
     "DateTimePickerWidget",
     "Select2TagsWidget",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class DatePickerWidget(widgets.TextInput):
@@ -43,7 +46,7 @@ class AjaxSelect2Widget(widgets.Select):
         self.multiple = multiple
         self.lookup_url = ""
 
-    def __call__(self, field: "AjaxSelectField", **kwargs: Any) -> Markup:
+    async def __call__(self, field: "AjaxSelectField", **kwargs: Any) -> Markup:
         kwargs.setdefault("data-role", "select2-ajax")
         kwargs.setdefault("data-url", field.loader.model_admin.ajax_lookup_url)
 
@@ -55,14 +58,59 @@ class AjaxSelect2Widget(widgets.Select):
         kwargs.setdefault("type", "hidden")
 
         if self.multiple:
-            result = [field.loader.format(value) for value in field.data]
+            result = []
+            for value in field.data:
+                try:
+                    result.append(field.loader.format(value))
+                    continue
+                except Exception:
+                    logger.debug(
+                        "Fallback to format_by_pk for ajax value=%r",
+                        value,
+                        exc_info=True,
+                    )
+
+                try:
+                    result_value = await field.loader.format_by_pk(value)
+                    if result_value == {}:
+                        continue
+                    else:
+                        result.append(result_value)
+                except Exception:
+                    logger.debug(
+                        "Unable to resolve ajax value by pk for field=%s value=%r",
+                        field.name,
+                        value,
+                        exc_info=True,
+                    )
+
             kwargs.setdefault("data-json", json.dumps(result))
             kwargs.setdefault("multiple", "1")
+
         else:
             try:
                 data = field.loader.format(field.data)
             except Exception:
-                data = None
+                logger.debug(
+                    "Fallback to format_by_pk for ajax field=%s value=%r",
+                    field.name,
+                    field.data,
+                    exc_info=True,
+                )
+                try:
+                    data = await field.loader.format_by_pk(field.data)
+                    if data == {}:
+                        data = None
+                except Exception:
+                    logger.debug(
+                        "Unable to resolve ajax single value by pk for "
+                        "field=%s value=%r",
+                        field.name,
+                        field.data,
+                        exc_info=True,
+                    )
+                    data = None
+
             if data:
                 kwargs.setdefault("data-json", json.dumps([data]))
 
@@ -106,24 +154,22 @@ class FileInputWidget(widgets.FileInput):
         return super().__call__(field, **kwargs)
 
 
-class BooleanInputWidget(widgets.Input):
+class BooleanInputWidget(widgets.CheckboxInput):
     """
     Render a checkbox.
 
     The ``checked`` HTML attribute is set if the field's data is a non-false value.
     """
 
-    input_type = "checkbox"
-
     def __call__(self, field: Field, **kwargs: Any) -> Markup:
         if field.data:
             kwargs.setdefault("checked", True)
 
-        return Markup(  # nosec B704
-            '<div class="form-switch d-flex align-items-center h-100">'
-            + str(Markup.escape(super().__call__(field, **kwargs)))
-            + "</div>"
+        template = Markup(
+            '<div class="form-switch d-flex align-items-center h-100">{text}</div>'
         )
+
+        return template.format(text=super().__call__(field, **kwargs))
 
 
 class TextAreaWidget(widgets.TextArea):

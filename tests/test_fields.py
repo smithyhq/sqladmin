@@ -6,8 +6,10 @@ import pytest
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
 from wtforms import Form
+from wtforms.validators import DataRequired
 
 from sqladmin.fields import (
+    BooleanField,
     DateField,
     DateTimeField,
     IntervalField,
@@ -203,6 +205,28 @@ def test_uuid_field() -> None:
 
     form = F(DummyData(uuid=["00000000-0000-000000000001"]))
     assert form.validate() is False
+
+
+def test_boolean_field() -> None:
+    class F(Form):
+        boolean = BooleanField()
+
+    form = F()
+    html = form.boolean()
+    assert '<div class="form-switch d-flex align-items-center h-100">' in html
+    assert 'type="checkbox"' in html
+    assert "checked" not in html
+
+    form = F(DummyData(boolean=["y"]))
+    html = form.boolean()
+    assert "checked" in html
+
+    class FRequired(Form):
+        boolean = BooleanField(validators=[DataRequired()])
+
+    form = FRequired()
+    html = form.boolean()
+    assert "required" in html
 
 
 def test_textarea_field() -> None:

@@ -1,0 +1,83 @@
+<div class="modal modal-blur fade" id="modal-import" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <form id="modal-import-form" action="import" method="POST" enctype="multipart/form-data">
+        <div class="modal-body text-center py-4">
+          <h3>Import CSV</h3>
+          <div class="mt-3 text-start">
+            <input id="csvfile" name="csvfile" type="file" accept="text/csv" class="import-csv-file-input" />
+            <label id="csvfile-button" for="csvfile" class="btn btn-outline-primary w-100">
+              Choose CSV file
+            </label>
+            <small id="csvfile-name" class="text-muted d-block mt-1">No file selected</small>
+          </div>
+          <label class="form-check mt-3 text-start">
+            <input id="continue-on-error" name="continue_on_error" type="checkbox" class="form-check-input" />
+            <span class="form-check-label">Skip invalid rows and continue import</span>
+          </label>
+          <div id="modal-import-progress" class="mt-3 d-none">
+            <div class="progress" role="progressbar" aria-label="Import progress">
+              <div id="modal-import-progress-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <small id="modal-import-progress-text" class="text-muted d-block mt-1">0/0 rows processed</small>
+          </div>
+        </div>
+        <div id="modal-import-text" style="white-space: pre-line" class="d-none" role="alert"></div>
+        <div class="modal-footer">
+          <div class="w-100">
+            <div class="row">
+              <div class="col">
+                <a id="modal-import-cancel" href="#" class="btn w-100" data-bs-dismiss="modal">
+                  Cancel
+                </a>
+              </div>
+              <div class="col">
+                <button id="modal-import-button" type="submit" data-url="" class="btn btn-green w-100">
+                  Import
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-blur fade" id="modal-import-result" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-body py-4">
+        <h3 id="modal-import-result-title">Import result</h3>
+        <p id="modal-import-result-summary" class="mb-2"></p>
+        <div id="modal-import-result-missed" class="d-none">
+          <h4 class="h6 mt-3">Missed rows</h4>
+          <div id="modal-import-result-files" class="d-flex gap-2 flex-wrap">
+            <a id="modal-import-download-csv" class="btn btn-outline-primary" download="missed_rows.csv" href="#">
+              Download CSV
+            </a>
+            <a id="modal-import-download-txt" class="btn btn-outline-secondary" download="missed_rows.txt" href="#">
+              Download TXT
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="w-100">
+          <div class="row">
+            <div class="col">
+              <a href="#" class="btn w-100" data-bs-dismiss="modal">Close</a>
+            </div>
+            <div class="col">
+              <button id="modal-import-refresh" type="button" class="btn btn-primary w-100">
+                Refresh list
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

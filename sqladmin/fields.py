@@ -8,23 +8,34 @@ from enum import Enum
 from typing import Any, Callable, Generator
 from uuid import UUID
 
+import wtforms
 from wtforms import Form, ValidationError, fields, widgets
 
 from sqladmin import widgets as sqladmin_widgets
 from sqladmin.ajax import QueryAjaxModelLoader
-from sqladmin.helpers import get_object_identifier, parse_interval
+from sqladmin.helpers import (
+    file_display_label,
+    get_object_identifier,
+    is_http_url,
+    parse_interval,
+    resolve_storage_path,
+    value_is_filepath,
+)
 
 __all__ = [
     "AjaxSelectField",
     "AjaxSelectMultipleField",
+    "CDNURLField",
     "DateField",
     "DateTimeField",
+    "FileField",
     "IntervalField",
     "JSONField",
     "QuerySelectField",
     "QuerySelectMultipleField",
     "SelectField",
     "Select2TagsField",
+    "file_display_formatter",
     "BooleanField",
     "FileField",
     "UuidField",
@@ -303,7 +314,7 @@ class QuerySelectMultipleField(QuerySelectField):
 
 
 class AjaxSelectField(fields.SelectFieldBase):
-    widget = sqladmin_widgets.AjaxSelect2Widget()
+    widget = sqladmin_widgets.AjaxSelect2Widget()  # type: ignore[assignment]
     separator = ","
 
     def __init__(
@@ -399,10 +410,93 @@ class Select2TagsField(fields.SelectField):
 
 class FileField(fields.FileField):
     """
-    File field which is clearable.
+    File upload field for local storage (e.g. fastapi-storages FileType).
+
+    ``FileType`` / ``ImageType`` columns use this field automatically via the
+    model converter. Override with ``form_overrides`` when needed.
+
+    For list/detail links, set ``column_formatters`` / ``column_formatters_detail``
+    to :func:`file_display_formatter`.
     """
 
     widget = sqladmin_widgets.FileInputWidget()
+
+
+class CDNURLField(fields.StringField):
+    """
+    URL field for CDN or remote file links (https://...).
+
+    Use via ``form_overrides`` together with :func:`file_display_formatter` in
+    ``column_formatters`` for list/detail pages.
+    """
+
+    widget = widgets.TextInput()
+
+    def __init__(
+        self,
+        label: str | None = None,
+        validators: list | None = None,
+        **kwargs: Any,
+    ) -> None:
+        merged_validators = list(validators or kwargs.pop("validators", None) or [])
+        merged_validators.append(wtforms.validators.Optional())
+        merged_validators.append(wtforms.validators.URL(require_tld=False))
+        super().__init__(label, validators=merged_validators, **kwargs)
+
+
+def file_display_formatter(obj: Any, prop: str, request: Any) -> Any:
+    """
+    Optional column formatter for file columns (local path, StorageFile, or CDN URL).
+
+    Register on ModelView explicitly:
+
+        form_overrides = {User.file: FileField}
+        column_formatters = {User.file: file_display_formatter}
+        column_formatters_detail = {User.file: file_display_formatter}
+    """
+    from markupsafe import Markup, escape
+
+    value = getattr(obj, prop, None)
+    if value is None or value == "":
+        return ""
+
+    label = escape(file_display_label(value))
+
+    if is_http_url(value):
+        url = escape(str(value))
+        return Markup(
+            '<a href="{url}" target="_blank" rel="noopener noreferrer">{label}</a>'
+        ).format(url=url, label=label)
+
+    path = resolve_storage_path(value)
+    identity = request.path_params["identity"]
+    pk = get_object_identifier(obj)
+
+    if path and value_is_filepath(path):
+        preview_url = request.url_for(
+            "admin:file_preview",
+            identity=identity,
+            pk=pk,
+            column_name=prop,
+        )
+        download_url = request.url_for(
+            "admin:file_download",
+            identity=identity,
+            pk=pk,
+            column_name=prop,
+        )
+        return Markup(
+            '<a href="{preview_url}">{label}</a> '
+            '<a href="{download_url}">'
+            '<span class="me-1"><i class="fa-solid fa-download"></i></span>'
+            "</a>"
+        ).format(
+            preview_url=preview_url,
+            download_url=download_url,
+            label=label,
+        )
+
+    return Markup("<span>{label}</span>").format(label=label)
 
 
 class BooleanField(fields.BooleanField):

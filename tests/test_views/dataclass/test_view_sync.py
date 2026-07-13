@@ -38,6 +38,8 @@ class User(Base):
 class UserAdmin(ModelView, model=User):
     column_list = ["name", "email"]
     column_labels = {"name": "Name", "email": "Email"}
+    can_import = True
+    column_import_list = ["name", "email"]
 
 
 app = Starlette()
@@ -79,3 +81,26 @@ def test_update_dataclass(client: TestClient) -> None:
         user = s.execute(stmt).scalar_one()
     assert user.name == "foo"
     assert user.email == "bar"
+
+
+def test_import_dataclass(client: TestClient) -> None:
+    response = client.post(
+        "/admin/user/import",
+        data={"continue_on_error": "1"},
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,email\r\nimported,imported@example.com\r\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    stmt = select(User)
+    with session_maker() as s:
+        user = s.execute(stmt).scalar_one()
+
+    assert user.name == "imported"
+    assert user.email == "imported@example.com"

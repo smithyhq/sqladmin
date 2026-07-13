@@ -34,6 +34,13 @@
                 </div>
                 {% endif %}
                 {% endif %}
+                {% if can_import %}
+                <div class="ms-3 d-inline-block">
+                  <a class="btn btn-primary" id="action-import" href="#" data-name="{{ model_view.name }}"
+                    data-url="{{ url_for('admin:import', identity=model_view.identity) }}" data-bs-toggle="modal"
+                    data-bs-target="#modal-import">Import CSV</a>
+                </div>
+                {% endif %}
                 {% if model_view.can_create %}
                 <div class="ms-3 d-inline-block">
                   <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
@@ -143,8 +150,8 @@
                       </a>
                       {% endif %}
                       {% if model_view.check_can_edit(request, row) %}
-                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="Edit">
+                      <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>
                       {% endif %}
@@ -160,22 +167,31 @@
                     </td>
                     {% for name in model_view._list_prop_names %}
                     {% set value, formatted_value = model_view.get_list_value(row, name, request) %}
+                    {% set render_as_link = name not in model_view._non_link_related_fields %}
                     {% if name in model_view._relation_names %}
                     {% if is_list( value ) %}
                     <td>
                       {% for elem, formatted_elem in zip(value, formatted_value) %}
-                      {% if model_view.show_compact_lists %}
+                      {% if render_as_link and model_view.show_compact_lists %}
                       <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">({{ formatted_elem
                         }})</a>
-                      {% else %}
+                      {% elif model_view.show_compact_lists %}
+                      ({{ formatted_elem }})
+                      {% elif render_as_link %}
                       <a href="{{ model_view._build_url_for('admin:details', request, elem) }}">{{ formatted_elem
                         }}</a><br />
+                      {% else %}
+                      {{ formatted_elem }}<br />
                       {% endif %}
                       {% endfor %}
                     </td>
                     {% else %}
+                    {% if render_as_link %}
                     <td><a href="{{ model_view._url_for_details_with_prop(request, row, name) }}">{{ formatted_value
                         }}</a></td>
+                    {% else %}
+                    <td>{{ formatted_value }}</td>
+                    {% endif %}
                     {% endif %}
                     {% else %}
                     <td>{{ formatted_value }}</td>
@@ -256,6 +272,9 @@
   </div>
   {% if model_view.can_delete %}
   {% include 'sqladmin/modals/delete.html' %}
+  {% endif %}
+  {% if can_import %}
+  {% include 'sqladmin/modals/import.html' %}
   {% endif %}
 
   {% for custom_action in model_view._custom_actions_in_list %}

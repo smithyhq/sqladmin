@@ -41,6 +41,7 @@ from wtforms.fields.core import UnboundField
 
 from sqladmin._queries import Query
 from sqladmin._types import (
+    _UNSET,
     MODEL_ATTR,
     SESSION_MAKER,
     ColumnFilter,
@@ -50,10 +51,16 @@ from sqladmin._types import (
 from sqladmin.ajax import create_ajax_loader
 from sqladmin.exceptions import InvalidModelError
 from sqladmin.formatters import BASE_FORMATTERS
-from sqladmin.forms import ModelConverter, ModelConverterBase, get_model_form
+from sqladmin.forms import (
+    WTFORMS_ATTRS,
+    ModelConverter,
+    ModelConverterBase,
+    get_model_form,
+)
 from sqladmin.helpers import (
     Writer,
     default_encoder,
+    get_direction,
     get_object_identifier,
     get_primary_keys,
     object_identifier_values,
@@ -115,6 +122,9 @@ class ModelViewMeta(type):
         )
         mcs._check_conflicting_options(
             ["column_export_list", "column_export_exclude_list"], attrs
+        )
+        mcs._check_conflicting_options(
+            ["column_import_list", "column_import_exclude_list"], attrs
         )
 
         return cls
@@ -241,6 +251,22 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     can_export: ClassVar[bool] = True
     """Permission for exporting lists of Models.
     Default value is set to `True`.
+    """
+
+    can_import: ClassVar[bool] = False
+    """Permission for importing lists of Models.
+    Default value is set to `False`.
+    """
+
+    max_import_file_size: ClassVar[int] = 5 * 1024 * 1024
+    """Maximum import CSV file size in bytes for this ModelView."""
+
+    max_reported_missed_rows: ClassVar[int] = 100
+    """Maximum missed rows included in import result payload."""
+
+    import_max_rows: ClassVar[int] = 0
+    """Maximum number of data rows allowed for import.
+    Unlimited by default.
     """
 
     # List page
@@ -463,7 +489,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     # Template configuration
     show_compact_lists: ClassVar[bool] = True
-    """Show compact lists. Default is `True`.
+    """Show compact lists. Default is `True`. 
     If False, when showing lists of objects, each object will be \
     displayed in a separate line."""
 
@@ -504,11 +530,34 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
     Enable export of CSV files using column labels and column formatters.
 
-    If set to True, the export will apply column labels and formatting logic
+    If set to True, the export will apply column labels and formatting logic 
     used in the list template.
     Otherwise, raw database values and field names will be used.
 
     You can override cell formatting per column by implementing `custom_export_cell`.
+    """
+
+    # Import
+    column_import_list: ClassVar[List[MODEL_ATTR]] = []
+    """List of columns to include when importing.
+    Columns can either be string names or SQLAlchemy columns.
+
+    ???+ example
+        ```python
+        class UserAdmin(ModelView, model=User):
+            column_import_list = [User.id, User.name]
+        ```
+    """
+
+    column_import_exclude_list: ClassVar[List[MODEL_ATTR]] = []
+    """List of columns to exclude when importing.
+    Columns can either be string names or SQLAlchemy columns.
+
+    ???+ example
+        ```python
+        class UserAdmin(ModelView, model=User):
+            column_import_exclude_list = [User.id, User.name]
+        ```
     """
 
     # Form
@@ -701,6 +750,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
+    non_link_related_fields: ClassVar[List[MODEL_ATTR]] = []
+    """Relationship fields that should be rendered as plain text instead of links.
+
+    Values can be relationship attributes or string field names.
+
+    ???+ example
+        ```python
+        class UserAdmin(ModelView, model=User):
+            non_link_related_fields = [User.profile, "addresses"]
+        ```
+    """
+
     def __init__(self) -> None:
         self._mapper = inspect(self.model)
         self._prop_names = [attr.key for attr in self._mapper.attrs]
@@ -708,6 +769,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             getattr(self.model, relation.key) for relation in self._mapper.relationships
         ]
         self._relation_names = [relation.key for relation in self._mapper.relationships]
+
+        self._non_link_related_fields = [
+            self._get_prop_name(item) for item in self.non_link_related_fields
+        ]
 
         self._column_labels = self._build_column_pairs(self.column_labels)
         self._column_labels_value_by_key = {
@@ -752,6 +817,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         self._export_prop_names = self.get_export_columns()
 
+        self._import_prop_names = self.get_import_columns()
+
         self._search_fields = [
             self._get_prop_name(attr) for attr in self.column_searchable_list
         ]
@@ -764,6 +831,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             self._form_ajax_refs[name] = create_ajax_loader(
                 model_admin=self, name=name, options=options
             )
+
+        self._ajax_relation_names: set[str] = set(self._form_ajax_refs.keys())
 
         self._refresh_form_rules_cache()
 
@@ -914,8 +983,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         for filter_ in self.get_filters():
             filter_param_name = filter_.parameter_name
             filter_value = request.query_params.get(filter_param_name)
+            default_value = getattr(filter_, "default_value", _UNSET)
 
-            if filter_value:
+            if filter_value or default_value is not _UNSET:
                 if hasattr(filter_, "has_operator") and filter_.has_operator:
                     # Use operation-based filtering
                     operation_filter = typing_cast(OperationColumnFilter, filter_)
@@ -978,6 +1048,43 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     async def get_object_for_edit(self, request: Request) -> Any:
         stmt = self.form_edit_query(request)
         return await self._get_object_by_pk(stmt)
+
+    async def get_form_data_for_edit(self, obj: Any) -> dict[str, Any]:
+        result = {}
+        pk_value = get_object_identifier(obj)
+        parent_stmt = self._stmt_by_identifier(str(pk_value))
+        for name in self._form_prop_names:
+            if name in self._ajax_relation_names:
+                relation = self._mapper.relationships[name]
+                target = relation.mapper.class_
+                direction = get_direction(relation)
+                if direction in ("ONETOMANY", "MANYTOMANY"):
+                    whereclause = parent_stmt.whereclause
+                    if whereclause is None:
+                        continue
+                    stmt = (
+                        select(target)
+                        .join(getattr(self.model, name))
+                        .where(whereclause)
+                        .distinct()
+                    )
+                    result[name] = await self._run_query(stmt)
+                else:
+                    fk_value = getattr(
+                        obj, relation.local_remote_pairs[0][0].name, None
+                    )
+                    if fk_value is not None:
+                        target_pk = get_primary_keys(target)[0]
+                        stmt = select(target).where(target_pk == fk_value)
+                        rows = await self._run_query(stmt)
+                        result[name] = rows[0] if rows else None
+                    else:
+                        result[name] = None
+            else:
+                value = getattr(obj, name, None)
+                wtf_key = WTFORMS_ATTRS.get(name, name)
+                result[wtf_key] = value
+        return result
 
     async def get_object_for_delete(self, value: Any) -> Any:
         stmt = self._stmt_by_identifier(value)
@@ -1163,6 +1270,18 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         return filters
 
+    def get_import_columns(self) -> List[str]:
+        """Get list of properties to import."""
+
+        columns = getattr(self, "column_import_list", None)
+        excluded_columns = getattr(self, "column_import_exclude_list", None)
+
+        return self._build_column_list(
+            include=columns,
+            exclude=excluded_columns,
+            defaults=self._list_prop_names,
+        )
+
     async def on_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
     ) -> None:
@@ -1228,13 +1347,26 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
         return self.can_delete
 
+    async def check_can_import(self, request: Request) -> bool:
+        """
+        You can add a custom model attribute checker before import.
+        """
+        return self.can_import
+
+    async def on_import_row(self, data: dict, model: Any, request: Request) -> None:
+        """Perform some actions on a validated import row before it is persisted.
+        By default does nothing.
+        """
+
     async def scaffold_form(self, rules: List[str] | None = None) -> Type[Form]:
         if self.form is not None:
             return self.form
 
+        self._ajax_relation_names = set(self._form_ajax_refs.keys())
+
         form = await get_model_form(
             model=self.model,
-            session_maker=self.session_maker,  # type: ignore[arg-type]
+            session_maker=self.session_maker,
             only=self._form_prop_names,
             column_labels=self._column_labels,
             form_args=self.form_args,
@@ -1245,10 +1377,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             form_include_pk=self.form_include_pk,
             form_converter=self.form_converter,
         )
-
         if rules:
             self._validate_form_class(rules, form)
-
         return form
 
     def search_placeholder(self) -> str:
@@ -1365,7 +1495,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         stmt = self._stmt_by_identifier(request.path_params["pk"])
         for relation in self._form_relations:
-            stmt = stmt.options(selectinload(relation))
+            name = relation.key
+            if name not in self._ajax_relation_names:
+                stmt = stmt.options(selectinload(relation))
         return stmt
 
     def count_query(self, request: Request) -> Select:

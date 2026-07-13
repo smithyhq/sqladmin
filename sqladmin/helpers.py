@@ -25,6 +25,7 @@ from sqlalchemy import Column
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import RelationshipProperty
+from starlette.datastructures import MultiDict
 
 from sqladmin._types import MODEL_PROPERTY, SESSION_MAKER
 
@@ -256,6 +257,39 @@ def stream_to_csv(
     return callback(writer)  # type: ignore
 
 
+def parse_csv(
+    csv_content: bytes, columns: list[str], delimiter: str = ","
+) -> list[MultiDict]:
+    if csv_content[:3] == b"\xef\xbb\xbf":
+        csv_content = csv_content[3:]
+    try:
+        _csv_content = csv_content.decode("utf-8").splitlines()
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV file must be UTF-8 encoded.") from exc
+
+    reader = csv.DictReader(_csv_content, delimiter=delimiter)
+    if not reader.fieldnames:
+        raise ValueError("CSV file is missing a header row.")
+
+    missing_columns = [column for column in columns if column not in reader.fieldnames]
+    if missing_columns:
+        raise ValueError(
+            "CSV file is missing required column(s): "
+            + ", ".join(missing_columns)
+            + "."
+        )
+
+    result = []
+    for row in reader:
+        md = MultiDict()
+        for column, value in row.items():
+            if column not in columns:
+                continue
+            md.append(column, value)
+        result.append(md)
+    return result
+
+
 def get_primary_keys(model: Any) -> tuple[Column, ...]:
     return tuple(sa_inspect(model).mapper.primary_key)
 
@@ -303,19 +337,98 @@ def _object_identifier_parts(id_string: str, model: type) -> tuple[str, ...]:
     return tuple(v.replace(r"\;", ";").replace(r"\\", "\\") for v in values)
 
 
+def coerce_column_value(column: Column, value: Any) -> Any:
+    """Coerce a value (typically from CSV import) to a column's Python type."""
+    if not isinstance(value, str):
+        return value
+
+    type_ = get_column_python_type(column)
+    if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
+        return type_.fromisoformat(value)
+    if inspect.isclass(type_) and issubclass(type_, bool):
+        return _coerce_bool(value)
+    return type_(value)  # type: ignore[call-arg]
+
+
+def _coerce_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"true", "1", "yes", "on", "t"}:
+        return True
+    if normalized in {"false", "0", "no", "off", "f", ""}:
+        return False
+    raise ValueError(f"Invalid boolean value {value!r}.")
+
+
+def serialize_import_value_for_form(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, enum.Enum):
+        return value.name
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    return str(value)
+
+
+def build_import_form_row(
+    row: MultiDict,
+    merged: dict[str, Any],
+    import_columns: list[str],
+) -> MultiDict:
+    form_row = MultiDict()
+    for column_name in import_columns:
+        if column_name in merged:
+            form_row[column_name] = serialize_import_value_for_form(merged[column_name])
+        else:
+            form_row[column_name] = row.get(column_name) or ""
+    return form_row
+
+
+def merge_import_row_data(
+    model: Any,
+    import_columns: list[str],
+    row_data: dict[str, Any],
+    form_data_dict: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    """Build import row data with CSV values coerced to column Python types."""
+    mapper = sa_inspect(model)
+    merged: dict[str, Any] = {}
+    errors: dict[str, list[str]] = {}
+
+    for column_name in import_columns:
+        column = mapper.columns.get(column_name)
+        raw_value = row_data.get(column_name)
+
+        if column is None:
+            if column_name in form_data_dict:
+                merged[column_name] = form_data_dict[column_name]
+            elif column_name in row_data:
+                merged[column_name] = row_data[column_name]
+            continue
+
+        if raw_value in (None, ""):
+            if column.nullable:
+                merged[column_name] = None
+            elif column_name in form_data_dict:
+                merged[column_name] = form_data_dict[column_name]
+            continue
+
+        try:
+            merged[column_name] = coerce_column_value(column, raw_value)
+        except (TypeError, ValueError):
+            errors.setdefault(column_name, []).append(
+                f"Invalid value {raw_value!r} for column {column_name}."
+            )
+
+    return merged, errors
+
+
 def object_identifier_values(id_string: str, model: Any) -> tuple:
     values = []
     pks = get_primary_keys(model)
     for pk, part in zip(pks, _object_identifier_parts(id_string, model)):
-        type_ = get_column_python_type(pk)
-        value: Any
-        if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
-            value = type_.fromisoformat(part)
-        elif inspect.isclass(type_) and issubclass(type_, bool):
-            value = False if part == "False" else type_(part)
-        else:
-            value = type_(part)  # type: ignore [call-arg]
-        values.append(value)
+        values.append(coerce_column_value(pk, part))
     return tuple(values)
 
 
@@ -422,3 +535,16 @@ def default_encoder(obj: Any) -> Any:
         return obj
     except TypeError:
         return str(obj)  # last resort
+
+
+def get_str_columns(model: Any) -> list[str]:
+    """Return names of String columns for a model, used for auto AJAX search."""
+    from sqlalchemy import String as SAString
+
+    mapper = sa_inspect(model).mapper
+    result = []
+    for prop in mapper.column_attrs:
+        col = prop.columns[0]
+        if isinstance(col.type, SAString):
+            result.append(prop.key)
+    return result

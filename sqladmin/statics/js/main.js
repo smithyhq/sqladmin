@@ -225,7 +225,7 @@ $('.autoresize-textarea').each(function() {
 });
 
 
-// Shows the number of characters in a textarea..
+// Displays the number of characters in the text field.
 $('.chars-count-label').each(function() {
   const $charsCountLabel = $(this);
   if (!$charsCountLabel) return;

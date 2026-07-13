@@ -126,7 +126,7 @@ class BooleanInputWidget(widgets.Input):
         )
 
 
-class TextAreaWidget(widgets.Input):
+class TextAreaWidget(widgets.TextArea):
     """
     Render a textarea that automatically resizes on input.
     """
@@ -145,7 +145,8 @@ class TextAreaWidget(widgets.Input):
             class_ = " ".join(filter(None, (class_, "autoresize-textarea")))
             kwargs.setdefault("rows", "1")
 
-        kwargs["class"] = class_
+        if class_:
+            kwargs["class"] = class_
 
         if hasattr(field, "_value") and callable(field._value):
             kwargs["value"] = field._value()
@@ -155,8 +156,10 @@ class TextAreaWidget(widgets.Input):
         else:
             chars_count = ""
 
+        value = kwargs.pop("value", "")
+
         return Markup(
             "<textarea %s>%s</textarea>"
-            % (html_params(name=field.name, **kwargs), escape(kwargs.get("value", "")))
+            % (html_params(name=field.name, **kwargs), escape(value))
             + chars_count
         )  # nosec: markupsafe_markup_xss

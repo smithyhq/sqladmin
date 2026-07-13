@@ -71,6 +71,7 @@ The following options are available:
 - `can_delete`: If the model instances can be deleted via SQLAdmin. Default value is `True`.
 - `can_view_details`: If the model instance details can be viewed via SQLAdmin. Default value is `True`.
 - `can_export`: If the model data can be exported in the list page. Default value is `True`.
+- `can_import`: If the model data can be imported from a CSV file in the list page. Default value is `False`.
 
 !!! example
 
@@ -428,7 +429,7 @@ The forms are based on `WTForms` package and include the following options:
 
 ### Related models
 
-To define how related model is displayed in the dropdown, `__str__` method must be difined in the related model.
+To define how related model is displayed in the dropdown, `__str__` method must be defined in the related model.
 
 ## Export options
 
@@ -484,6 +485,84 @@ class ExamResultAdmin(ModelView, model=ExamResult):
         return None
 ```
 
+## Import options
+
+SQLAdmin supports importing data from a UTF-8 CSV file on the list page.
+The import endpoint streams progress as **NDJSON** (`application/x-ndjson`): each line is a
+JSON object with `type` of `progress` or `result`.
+
+CSV headers must use **model property names** (for example `name`, `user_id`), not
+`column_labels` or pretty-export headers. When using `use_pretty_export=True` for export,
+re-import requires matching property names in the CSV header or a custom `column_import_list`.
+
+The file must use a `.csv` extension. A UTF-8 byte-order mark (BOM) at the start of the file
+is accepted and stripped automatically.
+
+The import options can be set per model:
+
+* `can_import`: If the model can be imported. Default value is `False`.
+* `column_import_list`: List of columns to include in the import data. When unset, defaults to the list page columns (`column_list`), or the model's primary key column(s) if `column_list` is not configured. Set this explicitly for production imports.
+* `column_import_exclude_list`: List of columns to exclude in the import data.
+* `max_import_file_size`: Maximum accepted CSV file size in bytes. Default is `5 * 1024 * 1024`.
+* `import_max_rows`: Maximum number of data rows allowed per import. `0` means unlimited (default).
+* `max_reported_missed_rows`: Maximum number of missed rows included in the import result payload. Default is `100`.
+
+Override `check_can_import(request)` to gate the import button and endpoint dynamically.
+
+Override `on_import_row(data, model, request)` to customize each validated row before it is
+persisted. `on_model_change` and `after_model_change` are not called during CSV import.
+
+The form field `continue_on_error` (`1` / `0`) controls whether invalid rows are skipped or
+abort the import.
+
+!!! example
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.status]
+        max_import_file_size = 20 * 1024 * 1024
+        import_max_rows = 10_000
+        max_reported_missed_rows = 500
+
+        async def check_can_import(self, request: Request) -> bool:
+            return self.can_import
+
+        async def on_import_row(self, data, model, request: Request) -> None:
+            if "name" in data:
+                data["name"] = data["name"].strip()
+    ```
+
+### CSV format
+
+* First row must be a header containing every column listed in `column_import_list` (or the default import columns).
+* Extra columns in the file are ignored.
+* Allowed upload content types include `text/csv`, `application/csv`, `text/plain`, and `application/vnd.ms-excel`.
+
+Upload validation failures (missing file, invalid extension, content type, encoding, row limit, or missing
+headers) return a plain-text response with HTTP `400` or `413`, not NDJSON.
+
+Row-level validation errors (form validation, foreign keys, and database constraints) are reported in the
+final NDJSON `result` payload. Foreign key values are coerced to the referenced column type before lookup;
+invalid types and missing references produce distinct error messages.
+
+### Reported missed rows vs total skipped rows
+
+During import, SQLAdmin can skip invalid rows (for example with "Skip invalid rows and continue").
+
+- `skipped`: Total number of rows skipped during import.
+- `missed_rows`: Detailed row reports (line, data, errors) included in the result payload.
+
+`missed_rows` is intentionally capped by `max_reported_missed_rows` to keep payloads and browser rendering responsive on large imports.
+
+When skipped rows exceed the cap:
+
+- `skipped` still shows the full total skipped count.
+- `missed_rows` contains only the first `max_reported_missed_rows` detailed entries.
+- `missed_rows_omitted_count` contains how many additional detailed missed rows were not included.
+
+In short: totals are complete, detailed preview may be truncated by design.
+
 ## Templates
 
 The template files are built using Jinja2 and can be completely overridden in the configurations.
@@ -508,6 +587,14 @@ For more information about working with template see [Working with Templates](./
 The following options are available to configure the templates:
 
 * `show_compact_lists`: If `False`, the list of objects will be displayed in a separate line for each object. Default is `True`.
+* `non_link_related_fields`: Relationship fields to render as plain text (no link) in list and details pages.
+
+!!! example
+
+    ```python
+    class UserAdmin(ModelView, model=User):
+        non_link_related_fields = [User.profile, "addresses"]
+    ```
 
 ## Events
 

@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
@@ -239,9 +240,7 @@ async def prepare_data() -> AsyncGenerator[None, None]:
 
 
 @pytest.fixture
-async def client(
-    prepare_database: Any, prepare_data: Any
-) -> AsyncGenerator[AsyncClient, None]:
+async def client(prepare_data: Any) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
@@ -359,6 +358,150 @@ async def test_static_values_filter_functionality(client: AsyncClient) -> None:
     assert "Admin User" in response.text
     assert "Regular User" not in response.text
     assert_records_count(1, 1, 1, response.text)
+
+
+@pytest.mark.anyio
+async def test_boolean_filter_default_value(prepare_data: Any) -> None:
+    """Test that BooleanFilter applies and overrides default_value correctly."""
+    boolean_filter = BooleanFilter(User.is_admin, default_value=False)
+
+    async with session_maker() as session:
+        stmt = await boolean_filter.get_filtered_query(select(User), None, User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Regular User", "Test User"]
+
+        stmt = await boolean_filter.get_filtered_query(select(User), "true", User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Admin User"]
+
+
+@pytest.mark.anyio
+async def test_static_values_filter_default_value(prepare_data: Any) -> None:
+    """Test that StaticValuesFilter applies and overrides default_value correctly."""
+    static_filter = StaticValuesFilter(
+        User.name,
+        [
+            ("Admin User", "adminadmin"),
+            ("Regular User", "regularregular"),
+        ],
+        default_value="Admin User",
+    )
+
+    async with session_maker() as session:
+        stmt = await static_filter.get_filtered_query(select(User), None, User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Admin User"]
+
+        stmt = await static_filter.get_filtered_query(
+            select(User), "Regular User", User
+        )
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Regular User"]
+
+
+@pytest.mark.anyio
+async def test_all_unique_string_filter_default_value(prepare_data: Any) -> None:
+    unique_filter = AllUniqueStringValuesFilter(User.title, default_value="Manager")
+
+    async with session_maker() as session:
+        stmt = await unique_filter.get_filtered_query(select(User), None, User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Admin User"]
+
+        stmt = await unique_filter.get_filtered_query(select(User), "Developer", User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Regular User"]
+
+        stmt = await unique_filter.get_filtered_query(select(User), "__all", User)
+        users = (await session.scalars(stmt)).all()
+        assert sorted(user.name for user in users) == [
+            "Admin User",
+            "Regular User",
+            "Test User",
+        ]
+
+
+@pytest.mark.anyio
+async def test_foreign_key_filter_default_value(prepare_data: Any) -> None:
+    foreign_key_filter = ForeignKeyFilter(
+        User.office_id,
+        Office.name,
+        default_value=1,
+    )
+
+    async with session_maker() as session:
+        stmt = await foreign_key_filter.get_filtered_query(select(User), None, User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Admin User", "Test User"]
+
+        stmt = await foreign_key_filter.get_filtered_query(select(User), "2", User)
+        users = (await session.scalars(stmt)).all()
+        assert [user.name for user in users] == ["Regular User"]
+
+        stmt = await foreign_key_filter.get_filtered_query(select(User), "__all", User)
+        users = (await session.scalars(stmt)).all()
+        assert sorted(user.name for user in users) == [
+            "Admin User",
+            "Regular User",
+            "Test User",
+        ]
+
+
+@pytest.mark.anyio
+async def test_legacy_empty_string_all_value_warns_and_still_works(
+    prepare_data: Any,
+) -> None:
+    unique_filter = AllUniqueStringValuesFilter(User.title, default_value="Manager")
+    static_filter = StaticValuesFilter(
+        User.name,
+        [
+            ("Admin User", "adminadmin"),
+            ("Regular User", "regularregular"),
+        ],
+        default_value="Admin User",
+    )
+    foreign_key_filter = ForeignKeyFilter(
+        User.office_id,
+        Office.name,
+        default_value=1,
+    )
+
+    async with session_maker() as session:
+        with pytest.warns(
+            DeprecationWarning,
+            match='empty string filter value for "All" is deprecated',
+        ):
+            stmt = await unique_filter.get_filtered_query(select(User), "", User)
+        users = (await session.scalars(stmt)).all()
+        assert sorted(user.name for user in users) == [
+            "Admin User",
+            "Regular User",
+            "Test User",
+        ]
+
+        with pytest.warns(
+            DeprecationWarning,
+            match='empty string filter value for "All" is deprecated',
+        ):
+            stmt = await static_filter.get_filtered_query(select(User), "", User)
+        users = (await session.scalars(stmt)).all()
+        assert sorted(user.name for user in users) == [
+            "Admin User",
+            "Regular User",
+            "Test User",
+        ]
+
+        with pytest.warns(
+            DeprecationWarning,
+            match='empty string filter value for "All" is deprecated',
+        ):
+            stmt = await foreign_key_filter.get_filtered_query(select(User), "", User)
+        users = (await session.scalars(stmt)).all()
+        assert sorted(user.name for user in users) == [
+            "Admin User",
+            "Regular User",
+            "Test User",
+        ]
 
 
 @pytest.mark.anyio

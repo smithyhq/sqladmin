@@ -10,6 +10,7 @@ from typing import (
     Protocol,
     Tuple,
     Type,
+    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -40,6 +41,22 @@ ENGINE_TYPE = Union[Engine, AsyncEngine]
 MODEL_ATTR = Union[str, InstrumentedAttribute]
 SESSION_MAKER = Union[sessionmaker, async_sessionmaker]
 
+T = TypeVar("T")
+
+
+class _UnsetType:
+    def __repr__(self) -> str:
+        return "_UNSET"
+
+
+_UNSET = _UnsetType()
+
+Unset = Union[T, _UnsetType]
+UnsetN = Union[T, _UnsetType, None]
+
+UnsetAny = UnsetN[Any]
+UnsetBool = UnsetN[bool]
+
 
 @runtime_checkable
 class SimpleColumnFilter(Protocol):
@@ -47,6 +64,7 @@ class SimpleColumnFilter(Protocol):
 
     title: str
     parameter_name: str
+    default_value: UnsetAny = _UNSET
     template: str
 
     async def lookups(

@@ -1,5 +1,6 @@
 import datetime
 import re
+import warnings
 from typing import Any, Callable, List, Optional, Tuple, Type
 
 from sqlalchemy import (
@@ -17,7 +18,21 @@ from sqlalchemy.sql.expression import Select, select
 from sqlalchemy.sql.sqltypes import TypeEngine, _Binary
 from starlette.requests import Request
 
-from sqladmin._types import MODEL_ATTR
+from sqladmin._types import _UNSET, MODEL_ATTR, UnsetAny, UnsetBool
+
+
+def _is_all_value(value: Any) -> bool:
+    return value in ("", "__all")
+
+
+def _warn_legacy_all_value() -> None:
+    warnings.warn(
+        'Using an empty string filter value for "All" is deprecated;'
+        ' use "__all" instead.',
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
 
 # Try to import UUID type for SQLAlchemy 2.0+
 try:
@@ -74,10 +89,12 @@ class BooleanFilter:
         column: MODEL_ATTR,
         title: Optional[str] = None,
         parameter_name: Optional[str] = None,
+        default_value: UnsetBool = _UNSET,
     ):
         self.column = column
         self.title = title or get_title(column)
         self.parameter_name = parameter_name or get_parameter_name(column)
+        self.default_value = default_value
 
     async def lookups(
         self,
@@ -95,10 +112,12 @@ class BooleanFilter:
         column_obj = get_column_obj(self.column, model)
         if value == "true":
             return query.filter(column_obj.is_(True))
-
         if value == "false":
             return query.filter(column_obj.is_(False))
-
+        if value == "":
+            _warn_legacy_all_value()
+        if value is None and self.default_value is not _UNSET:
+            return query.filter(column_obj.is_(self.default_value))
         return query
 
 
@@ -111,10 +130,12 @@ class AllUniqueStringValuesFilter:
         column: MODEL_ATTR,
         title: Optional[str] = None,
         parameter_name: Optional[str] = None,
+        default_value: UnsetAny = _UNSET,
     ):
         self.column = column
         self.title = title or get_title(column)
         self.parameter_name = parameter_name or get_parameter_name(column)
+        self.default_value = default_value
 
     async def lookups(
         self,
@@ -124,14 +145,22 @@ class AllUniqueStringValuesFilter:
     ) -> List[Tuple[str, str]]:
         column_obj = get_column_obj(self.column, model)
 
-        return [("", "All")] + [
+        return [("__all", "All")] + [
             (value[0], value[0])
             for value in await run_query(select(column_obj).distinct())
         ]
 
     async def get_filtered_query(self, query: Select, value: Any, model: Any) -> Select:
         if value == "":
+            _warn_legacy_all_value()
+
+        if _is_all_value(value):
             return query
+
+        if value is None:
+            if self.default_value is _UNSET:
+                return query
+            value = self.default_value
 
         column_obj = get_column_obj(self.column, model)
         return query.filter(column_obj == value)
@@ -147,11 +176,20 @@ class StaticValuesFilter:
         values: List[Tuple[str, str]],
         title: Optional[str] = None,
         parameter_name: Optional[str] = None,
+        default_value: UnsetAny = _UNSET,
     ):
         self.column = column
         self.title = title or get_title(column)
         self.parameter_name = parameter_name or get_parameter_name(column)
         self.values = values
+        self.default_value = default_value
+
+        if (
+            default_value is not _UNSET
+            and default_value is not None
+            and default_value not in [v[0] for v in values]
+        ):
+            raise ValueError("Default value must be one of the provided values")
 
     async def lookups(
         self,
@@ -159,12 +197,21 @@ class StaticValuesFilter:
         model: Any,
         run_query: Callable[[Select], Any],
     ) -> List[Tuple[str, str]]:
-        return [("", "All")] + self.values
+        return [("__all", "All")] + self.values
 
     async def get_filtered_query(self, query: Select, value: Any, model: Any) -> Select:
         column_obj = get_column_obj(self.column, model)
+
         if value == "":
+            _warn_legacy_all_value()
+
+        if _is_all_value(value):
             return query
+
+        if value is None:
+            if self.default_value is _UNSET:
+                return query
+            value = self.default_value
         return query.filter(column_obj == value)
 
 
@@ -179,12 +226,14 @@ class ForeignKeyFilter:
         foreign_model: Any = None,
         title: Optional[str] = None,
         parameter_name: Optional[str] = None,
+        default_value: UnsetAny = _UNSET,
     ):
         self.foreign_key = foreign_key
         self.foreign_display_field = foreign_display_field
         self.foreign_model = foreign_model
         self.title = title or get_title(foreign_key)
         self.parameter_name = parameter_name or get_parameter_name(foreign_key)
+        self.default_value = default_value
 
     async def lookups(
         self,
@@ -209,7 +258,7 @@ class ForeignKeyFilter:
         foreign_model_key_name = get_foreign_column_name(foreign_key_obj)
         foreign_model_key_obj = getattr(self.foreign_model, foreign_model_key_name)
 
-        return [("", "All")] + [
+        return [("__all", "All")] + [
             (str(key), str(value))
             for key, value in await run_query(
                 select(foreign_model_key_obj, foreign_display_field_obj).distinct()
@@ -217,7 +266,19 @@ class ForeignKeyFilter:
         ]
 
     async def get_filtered_query(self, query: Select, value: Any, model: Any) -> Select:
+        if value == "":
+            _warn_legacy_all_value()
+
+        if _is_all_value(value):
+            return query
+
         foreign_key_obj = get_column_obj(self.foreign_key, model)
+
+        if value is None:
+            if self.default_value is _UNSET:
+                return query
+            value = self.default_value
+
         column_type = foreign_key_obj.type
         if isinstance(column_type, Integer):
             value = int(value)

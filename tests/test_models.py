@@ -860,7 +860,7 @@ def test_expose_decorator(client: TestClient) -> None:
         async def profile(self, request: Request):
             user: User = await self.get_object_for_edit(request)
             return await self.templates.TemplateResponse(
-                request, "user.html", {"user": user}
+                request=request, name="user.html", context={"user": user}
             )
 
     admin.add_view(UserAdmin)

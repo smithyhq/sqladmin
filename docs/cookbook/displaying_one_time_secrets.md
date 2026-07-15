@@ -43,7 +43,7 @@ built-in create/edit handlers stamp anti-cache headers on the response
 automatically; custom views must do so explicitly:
 
 ```python
-response = await self.templates.TemplateResponse(request, "your_template.html", context)
+response = await self.templates.TemplateResponse(request=request, name="your_template.html", context=context)
 Secret.apply_no_store_headers(response)
 return response
 ```

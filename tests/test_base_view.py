@@ -21,17 +21,17 @@ class CustomAdmin(BaseView):
 
     @expose("/custom", methods=["GET"])
     async def custom(self, request: Request):
-        return await self.templates.TemplateResponse(request, "custom.html")
+        return await self.templates.TemplateResponse(request=request, name="custom.html")
 
     @expose("/custom/report")
     async def custom_report(self, request: Request):
-        return await self.templates.TemplateResponse(request, "custom.html")
+        return await self.templates.TemplateResponse(request=request, name="custom.html")
 
     # Add this for second test: Before alphabetically (!)
     # first `expose` was BaseView url, now it's first by `order`
     @expose("/a")
     async def a(self, request: Request):
-        return await self.templates.TemplateResponse(request, "custom.html")
+        return await self.templates.TemplateResponse(request=request, name="custom.html")
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ class IndexNamedView(BaseView):
 
     @expose("/activity-analytics", methods=["GET"])
     async def index(self, request: Request):
-        return await self.templates.TemplateResponse(request, "custom.html")
+        return await self.templates.TemplateResponse(request=request, name="custom.html")
 
 
 def test_menu_view_url_with_index_method(client: TestClient) -> None:

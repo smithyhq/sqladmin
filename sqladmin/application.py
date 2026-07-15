@@ -283,7 +283,7 @@ class BaseAdmin:
 
                 @expose("/custom", methods=["GET"])
                 async def test_page(self, request: Request):
-                    return await self.templates.TemplateResponse(request, "custom.html")
+                    return await self.templates.TemplateResponse(request=request, name="custom.html")
 
             admin.add_base_view(CustomAdmin)
             ```
@@ -508,7 +508,7 @@ class Admin(BaseAdminView):
                 "message": exc.detail,
             }
             return await self.templates.TemplateResponse(
-                request, "sqladmin/error.html", context, status_code=exc.status_code
+                request=request, name="sqladmin/error.html", context=context, status_code=exc.status_code
             )
 
         routes = [
@@ -573,7 +573,7 @@ class Admin(BaseAdminView):
     async def index(self, request: Request) -> Response:
         """Index route which can be overridden to create dashboards."""
 
-        return await self.templates.TemplateResponse(request, "sqladmin/index.html")
+        return await self.templates.TemplateResponse(request=request, name="sqladmin/index.html")
 
     @login_required
     async def list(self, request: Request) -> Response:
@@ -604,7 +604,7 @@ class Admin(BaseAdminView):
             context["error"] = request.query_params["error"]
 
         return await self.templates.TemplateResponse(
-            request, model_view.list_template, context
+            request=request, name=model_view.list_template, context=context
         )
 
     @login_required
@@ -625,7 +625,7 @@ class Admin(BaseAdminView):
         }
 
         return await self.templates.TemplateResponse(
-            request, model_view.details_template, context
+            request=request, name=model_view.details_template, context=context
         )
 
     @login_required
@@ -678,7 +678,7 @@ class Admin(BaseAdminView):
             context["secret_next_url"] = str(
                 request.url_for("admin:list", identity=identity)
             )
-            response = await self.templates.TemplateResponse(request, template, context)
+            response = await self.templates.TemplateResponse(request=request, name=template, context=context)
             Secret.apply_no_store_headers(response)
             return response
 
@@ -701,7 +701,7 @@ class Admin(BaseAdminView):
                 "form": form,
             }
             return await self.templates.TemplateResponse(
-                request, model_view.create_template, context
+                request=request, name=model_view.create_template, context=context
             )
 
         form_data = await self._handle_form_data(request)
@@ -714,7 +714,7 @@ class Admin(BaseAdminView):
 
         if not form.validate():
             return await self.templates.TemplateResponse(
-                request, model_view.create_template, context, status_code=400
+                request=request, name=model_view.create_template, context=context, status_code=400
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
@@ -724,7 +724,7 @@ class Admin(BaseAdminView):
             logger.exception(e)
             context["error"] = str(e)
             return await self.templates.TemplateResponse(
-                request, model_view.create_template, context, status_code=400
+                request=request, name=model_view.create_template, context=context, status_code=400
             )
 
         override = await self._resolve_after_change_response(
@@ -763,7 +763,7 @@ class Admin(BaseAdminView):
 
         if request.method == "GET":
             return await self.templates.TemplateResponse(
-                request, model_view.edit_template, context
+                request=request, name=model_view.edit_template, context=context
             )
 
         form_data = await self._handle_form_data(request, model)
@@ -772,7 +772,7 @@ class Admin(BaseAdminView):
 
         if not form.validate():
             return await self.templates.TemplateResponse(
-                request, model_view.edit_template, context, status_code=400
+                request=request, name=model_view.edit_template, context=context, status_code=400
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model)
@@ -787,7 +787,7 @@ class Admin(BaseAdminView):
             logger.exception(e)
             context["error"] = str(e)
             return await self.templates.TemplateResponse(
-                request, model_view.edit_template, context, status_code=400
+                request=request, name=model_view.edit_template, context=context, status_code=400
             )
 
         override = await self._resolve_after_change_response(
@@ -855,13 +855,13 @@ class Admin(BaseAdminView):
 
         context = {}
         if request.method == "GET":
-            return await self.templates.TemplateResponse(request, "sqladmin/login.html")
+            return await self.templates.TemplateResponse(request=request, name="sqladmin/login.html")
 
         response = await self.authentication_backend.login(request)
         if not response:
             context["error"] = "Invalid credentials."
             return await self.templates.TemplateResponse(
-                request, "sqladmin/login.html", context, status_code=400
+                request=request, name="sqladmin/login.html", context=context, status_code=400
             )
 
         if isinstance(response, Response):

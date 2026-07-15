@@ -15,7 +15,7 @@ To add custom views to the Admin interface, you can use the `BaseView` included 
 
         @expose("/report", methods=["GET"])
         async def report_page(self, request):
-            return await self.templates.TemplateResponse(request, "report.html")
+            return await self.templates.TemplateResponse(request=request, name="report.html")
 
     admin.add_view(ReportView)
     ```

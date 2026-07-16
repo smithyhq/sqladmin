@@ -1,7 +1,8 @@
 import io
 import re
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import pytest
 from fastapi_storages import FileSystemStorage, StorageFile

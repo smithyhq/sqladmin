@@ -93,7 +93,12 @@ module = "tests.*"
 ignore_errors = true
 
 [tool.ruff]
-lint.select = ["E", "F", "I"]
+lint.select = [
+  "E", # Pycodestyle
+  "F", # Pyflakes
+  "I", # isort
+  "UP",  # pyupgrade (modern typing / syntax fixes)
+]
 
 [tool.coverage.run]
 source_pkgs = ["sqladmin", "tests"]

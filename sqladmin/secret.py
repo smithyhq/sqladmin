@@ -1,5 +1,3 @@
-from typing import Dict, Optional
-
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -33,7 +31,7 @@ class Secret:
         )
 
     @classmethod
-    def get(cls, request: Request) -> Optional[Dict[str, str]]:
+    def get(cls, request: Request) -> dict[str, str] | None:
         """Return the secret stashed via `reveal_once`, if any."""
         return getattr(request.state, cls.STATE_KEY, None)
 

@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from markupsafe import Markup

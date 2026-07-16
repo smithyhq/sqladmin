@@ -1,6 +1,7 @@
 import enum
 import inspect
-from typing import Any, AsyncGenerator, Dict, Tuple
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 from sqlalchemy import (
@@ -53,7 +54,7 @@ class Point:  # pragma: no cover
         self.x = x
         self.y = y
 
-    def __composite_values__(self) -> Tuple[int, int]:
+    def __composite_values__(self) -> tuple[int, int]:
         return self.x, self.y
 
     def __eq__(self, other: "Point") -> bool:
@@ -339,7 +340,7 @@ async def test_form_override_form_converter() -> None:
             self,
             model: type,
             prop: ColumnProperty,
-            kwargs: Dict[str, Any],
+            kwargs: dict[str, Any],
         ) -> UnboundField:
             return EmailField(**kwargs)
 

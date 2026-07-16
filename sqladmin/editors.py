@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, List
+from collections.abc import Iterable
+from typing import Any
 
 from wtforms import Form
 from wtforms.fields import TextAreaField
@@ -20,10 +21,10 @@ class FieldMedia:
         css: Iterable[str] = (),
         js: Iterable[str] = (),
     ) -> None:
-        self.css: List[str] = list(css)
-        self.js: List[str] = list(js)
+        self.css: list[str] = list(css)
+        self.js: list[str] = list(js)
 
-    def __add__(self, other: "FieldMedia") -> "FieldMedia":
+    def __add__(self, other: FieldMedia) -> FieldMedia:
         seen_css = set(self.css)
         seen_js = set(self.js)
         return FieldMedia(
@@ -191,7 +192,7 @@ class SummernoteField(TextAreaField):
 
     @property
     def media(self) -> FieldMedia:
-        js: List[str] = []
+        js: list[str] = []
         if self.include_jquery:
             js.append("https://code.jquery.com/jquery-3.6.0.min.js")
         js.append(

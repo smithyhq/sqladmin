@@ -1,7 +1,8 @@
 import datetime
 import re
 import warnings
-from typing import Any, Callable, List, Optional, Tuple, Type
+from collections.abc import Callable
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -87,8 +88,8 @@ class BooleanFilter:
     def __init__(
         self,
         column: MODEL_ATTR,
-        title: Optional[str] = None,
-        parameter_name: Optional[str] = None,
+        title: str | None = None,
+        parameter_name: str | None = None,
         default_value: UnsetBool = _UNSET,
     ):
         self.column = column
@@ -101,7 +102,7 @@ class BooleanFilter:
         request: Request,
         model: Any,
         run_query: Callable[[Select], Any],
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         return [
             ("all", "All"),
             ("true", "Yes"),
@@ -128,8 +129,8 @@ class AllUniqueStringValuesFilter:
     def __init__(
         self,
         column: MODEL_ATTR,
-        title: Optional[str] = None,
-        parameter_name: Optional[str] = None,
+        title: str | None = None,
+        parameter_name: str | None = None,
         default_value: UnsetAny = _UNSET,
     ):
         self.column = column
@@ -142,7 +143,7 @@ class AllUniqueStringValuesFilter:
         request: Request,
         model: Any,
         run_query: Callable[[Select], Any],
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         column_obj = get_column_obj(self.column, model)
 
         return [("__all", "All")] + [
@@ -173,9 +174,9 @@ class StaticValuesFilter:
     def __init__(
         self,
         column: MODEL_ATTR,
-        values: List[Tuple[str, str]],
-        title: Optional[str] = None,
-        parameter_name: Optional[str] = None,
+        values: list[tuple[str, str]],
+        title: str | None = None,
+        parameter_name: str | None = None,
         default_value: UnsetAny = _UNSET,
     ):
         self.column = column
@@ -196,7 +197,7 @@ class StaticValuesFilter:
         request: Request,
         model: Any,
         run_query: Callable[[Select], Any],
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         return [("__all", "All")] + self.values
 
     async def get_filtered_query(self, query: Select, value: Any, model: Any) -> Select:
@@ -224,8 +225,8 @@ class ForeignKeyFilter:
         foreign_key: MODEL_ATTR,
         foreign_display_field: MODEL_ATTR,
         foreign_model: Any = None,
-        title: Optional[str] = None,
-        parameter_name: Optional[str] = None,
+        title: str | None = None,
+        parameter_name: str | None = None,
         default_value: UnsetAny = _UNSET,
     ):
         self.foreign_key = foreign_key
@@ -240,7 +241,7 @@ class ForeignKeyFilter:
         request: Request,
         model: Any,
         run_query: Callable[[Select], Any],
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         foreign_key_obj = get_column_obj(self.foreign_key, model)
         if self.foreign_model is None and isinstance(self.foreign_display_field, str):
             raise ValueError("foreign_model is required for string foreign key filters")
@@ -295,14 +296,14 @@ class OperationColumnFilter:
     def __init__(
         self,
         column: MODEL_ATTR,
-        title: Optional[str] = None,
-        parameter_name: Optional[str] = None,
+        title: str | None = None,
+        parameter_name: str | None = None,
     ):
         self.column = column
         self.title = title or get_title(column)
         self.parameter_name = parameter_name or get_parameter_name(column)
 
-    def get_operation_options(self, column_obj: Any) -> List[Tuple[str, str]]:
+    def get_operation_options(self, column_obj: Any) -> list[tuple[str, str]]:
         """Return operation options based on column type"""
         if self._is_string_type(column_obj):
             return [
@@ -337,7 +338,7 @@ class OperationColumnFilter:
             ("equals", "Equals"),
         ]
 
-    def get_operation_options_for_model(self, model: Any) -> List[Tuple[str, str]]:
+    def get_operation_options_for_model(self, model: Any) -> list[tuple[str, str]]:
         """Return operation options based on column type for given model"""
         column_obj = get_column_obj(self.column, model)
         return self.get_operation_options(column_obj)
@@ -365,7 +366,7 @@ class OperationColumnFilter:
 
         column_type = column_obj.type
 
-        converters: List[Tuple[Tuple[Type[TypeEngine], ...], Callable[[str], Any]]] = [
+        converters: list[tuple[tuple[type[TypeEngine], ...], Callable[[str], Any]]] = [
             ((String, Text, _Binary), str),
             ((Integer, BigInteger, SmallInteger), int),
             ((Numeric, Float), float),
@@ -395,7 +396,7 @@ class OperationColumnFilter:
         request: Request,
         model: Any,
         run_query: Callable[[Select], Any],
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         # This method is not used for has_operator=True filters
         # The UI uses get_operation_options_for_model instead
         return []

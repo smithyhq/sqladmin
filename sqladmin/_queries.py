@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class Query:
-    def __init__(self, model_view: "ModelView") -> None:
+    def __init__(self, model_view: ModelView) -> None:
         self.model_view = model_view
 
     def _get_to_many_stmt(self, relation: MODEL_PROPERTY, values: list[Any]) -> Select:

@@ -1,4 +1,5 @@
-from typing import Any, Generator, List
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -42,9 +43,9 @@ class UserAdmin(ModelView, model=User):
     async def _action_stub(self, request: Request) -> Response:
         pks = request.query_params.get("pks", "")
 
-        obj_strs: List[str] = []
+        obj_strs: list[str] = []
 
-        class RequestObject(object):
+        class RequestObject:
             pass
 
         for pk in pks.split(","):

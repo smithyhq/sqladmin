@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Annotated, Any
@@ -9,6 +10,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     String,
@@ -93,6 +95,16 @@ class Flagged(Base):
     __tablename__ = "flagged"
     id = Column(Integer, primary_key=True)
     active = Column(Boolean, nullable=False)
+
+
+class AnimalEnum(str, enum.Enum):
+    DOG = "dog"
+    CAT = "cat"
+
+
+class Animal(Base):
+    __tablename__ = "animal"
+    id = Column(Enum(AnimalEnum), primary_key=True)
 
 
 def test_coerce_column_value() -> None:
@@ -234,6 +246,12 @@ def test_single_pk_identifier():
 
     assert get_object_identifier(Profile(id=0)) == 0
     assert get_object_identifier(Profile(id=3217)) == 3217
+
+
+def test_single_pk_identifier_with_enum():
+    identifier = get_object_identifier(Animal(id=AnimalEnum.DOG))
+    assert identifier == "dog"
+    assert isinstance(identifier, str)
 
 
 def test_single_pk_id_values():

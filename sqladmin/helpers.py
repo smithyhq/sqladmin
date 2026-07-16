@@ -298,6 +298,7 @@ def get_object_identifier(obj: Any) -> Any:
     """Returns a value that uniquely identifies this object."""
     primary_keys = get_primary_keys(obj)
     values = [getattr(obj, pk.name) for pk in primary_keys]
+    values = [v.value if isinstance(v, enum.Enum) else v for v in values]
 
     # Unaltered value for tables with a single primary key
     if len(values) == 1:

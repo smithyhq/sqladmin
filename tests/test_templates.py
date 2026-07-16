@@ -1,5 +1,5 @@
 # tests/test_templates.py
-from typing import Callable, Generator
+from collections.abc import Callable, Generator
 
 import pytest
 from sqlalchemy import Column, Integer, String, create_engine

@@ -8,14 +8,11 @@ import os
 import re
 import unicodedata
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator, Callable, Generator, Sequence
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import (
     Any,
-    AsyncGenerator,
-    Callable,
-    Generator,
-    Sequence,
     TypeVar,
     get_args,
     get_origin,
@@ -434,7 +431,7 @@ def object_identifier_values(id_string: str, model: Any) -> tuple:
 
 def get_direction(prop: MODEL_PROPERTY) -> str:
     if not isinstance(prop, RelationshipProperty):
-        raise TypeError("Expected RelationshipProperty, got %s" % type(prop))
+        raise TypeError(f"Expected RelationshipProperty, got {type(prop)}")
 
     name = prop.direction.name
     if name == "ONETOMANY" and not prop.uselist:

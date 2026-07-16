@@ -1,4 +1,4 @@
-from typing import Generator, Union
+from collections.abc import Generator
 
 import pytest
 from sqlalchemy import Column, ForeignKey, Integer, String
@@ -39,7 +39,7 @@ class CustomBackend(AuthenticationBackend):
         request.session.clear()
         return True
 
-    async def authenticate(self, request: Request) -> Union[bool, RedirectResponse]:
+    async def authenticate(self, request: Request) -> bool | RedirectResponse:
         if "token" not in request.session:
             return RedirectResponse(request.url_for("admin:login"), status_code=302)
         return True

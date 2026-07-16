@@ -22,7 +22,7 @@ class QueryAjaxModelLoader:
         self,
         name: str,
         model: type,
-        model_admin: "ModelView",
+        model_admin: ModelView,
         **options: Any,
     ):
         self.name = name
@@ -103,7 +103,7 @@ class QueryAjaxModelLoader:
 
         # no type casting to string if a ColumnAssociationProxyInstance is given
         filters = [
-            cast(field, String).ilike("%%%s%%" % term) for field in self._cached_fields
+            cast(field, String).ilike(f"%{term}%") for field in self._cached_fields
         ]
 
         stmt = stmt.filter(or_(*filters))
@@ -122,7 +122,7 @@ class QueryAjaxModelLoader:
 
 def create_ajax_loader(
     *,
-    model_admin: "ModelView",
+    model_admin: ModelView,
     name: str,
     options: dict,
 ) -> QueryAjaxModelLoader:

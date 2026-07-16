@@ -1,5 +1,5 @@
 import enum
-from typing import Generator
+from collections.abc import Generator
 from uuid import UUID as PyUUID
 
 import pytest
@@ -657,7 +657,7 @@ async def test_form_edit_query() -> None:
 
     view = UserAdmin()
 
-    class RequestObject(object):
+    class RequestObject:
         pass
 
     request_object = RequestObject()

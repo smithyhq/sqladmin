@@ -3,13 +3,11 @@ from __future__ import annotations
 import inspect
 import io
 import logging
+from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 from types import MethodType
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Sequence,
     cast,
     no_type_check,
 )
@@ -501,7 +499,7 @@ class Admin(BaseAdminView):
             request: Request, exc: Exception
         ) -> Response | Awaitable[Response]:
             if not isinstance(exc, HTTPException):
-                raise TypeError("Expected HTTPException, got %s" % type(exc))
+                raise TypeError(f"Expected HTTPException, got {type(exc)}")
 
             context = {
                 "status_code": exc.status_code,

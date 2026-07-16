@@ -1,17 +1,12 @@
 import sys
+from collections.abc import Callable, Iterable
 from enum import Enum
 from typing import (
     Any,
     AnyStr,
-    Callable,
-    Dict,
-    Iterable,
-    List,
     Protocol,
-    Tuple,
-    Type,
+    TypeAlias,
     TypeVar,
-    Union,
     runtime_checkable,
 )
 
@@ -26,7 +21,6 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql.expression import Select
 from starlette.requests import Request
-from typing_extensions import TypeAlias
 
 if sys.version_info < (3, 11):
 
@@ -36,10 +30,10 @@ if sys.version_info < (3, 11):
 else:
     from enum import StrEnum as StrEnum  # noqa: F401
 
-MODEL_PROPERTY = Union[ColumnProperty, RelationshipProperty]
-ENGINE_TYPE = Union[Engine, AsyncEngine]
-MODEL_ATTR = Union[str, InstrumentedAttribute]
-SESSION_MAKER = Union[sessionmaker, async_sessionmaker]
+MODEL_PROPERTY = ColumnProperty | RelationshipProperty
+ENGINE_TYPE = Engine | AsyncEngine
+MODEL_ATTR = str | InstrumentedAttribute
+SESSION_MAKER = sessionmaker | async_sessionmaker
 
 T = TypeVar("T")
 
@@ -51,11 +45,11 @@ class _UnsetType:
 
 _UNSET = _UnsetType()
 
-Unset = Union[T, _UnsetType]
-UnsetN = Union[T, _UnsetType, None]
+Unset: TypeAlias = T | _UnsetType
+UnsetN: TypeAlias = T | _UnsetType | None
 
-UnsetAny = UnsetN[Any]
-UnsetBool = UnsetN[bool]
+UnsetAny: TypeAlias = UnsetN[Any]
+UnsetBool: TypeAlias = UnsetN[bool]
 
 
 @runtime_checkable
@@ -69,7 +63,7 @@ class SimpleColumnFilter(Protocol):
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]
-    ) -> List[Tuple[str, str]]: ...  # pragma: no cover
+    ) -> list[tuple[str, str]]: ...  # pragma: no cover
 
     async def get_filtered_query(
         self, query: Select, value: Any, model: Any
@@ -87,16 +81,16 @@ class OperationColumnFilter(Protocol):
 
     async def lookups(
         self, request: Request, model: Any, run_query: Callable[[Select], Any]
-    ) -> List[Tuple[str, str]]: ...  # pragma: no cover
+    ) -> list[tuple[str, str]]: ...  # pragma: no cover
 
     async def get_filtered_query(
         self, query: Select, operation: str, value: Any, model: Any
     ) -> Select: ...  # pragma: no cover
 
 
-ColumnFilter = Union[SimpleColumnFilter, OperationColumnFilter]
+ColumnFilter = SimpleColumnFilter | OperationColumnFilter
 
-BASE_FORMATTERS_TYPE: TypeAlias = Dict[
-    Type[Any],
-    Callable[[Any], Union[Markup, Iterable[Markup], AnyStr, Iterable[AnyStr]]],
+BASE_FORMATTERS_TYPE: TypeAlias = dict[
+    type[Any],
+    Callable[[Any], Markup | Iterable[Markup] | AnyStr | Iterable[AnyStr]],
 ]

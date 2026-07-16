@@ -1,5 +1,5 @@
+from collections.abc import Generator
 from datetime import date, datetime, timedelta
-from typing import Generator
 from uuid import UUID
 
 import pytest

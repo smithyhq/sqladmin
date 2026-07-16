@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, AsyncGenerator, Callable, List, NamedTuple, Tuple, Type
+from collections.abc import AsyncGenerator, Callable
+from typing import Any, NamedTuple
 
 import anyio
 from sqlalchemy import func as sa_func
@@ -99,7 +100,7 @@ def validate_import_row(
     row: MultiDict,
     import_columns: list[str],
     model: Any,
-    form_class: Type[Form],
+    form_class: type[Form],
     denormalize_wtform_data: Callable[[dict, Any], dict],
 ) -> tuple[dict[str, Any], dict[str, list[str]], dict[str, Any]]:
     """Coerce CSV values, then run WTForms validation on coerced form input."""
@@ -239,9 +240,9 @@ def persist_import_row_sync(
 async def persist_import_models_with_count_check(
     model_view: ModelView,
     request: Request,
-    import_models: List[dict[str, Any]],
+    import_models: list[dict[str, Any]],
     continue_on_error: bool,
-) -> Tuple[bool, int, str | None, List[dict[str, Any]]]:
+) -> tuple[bool, int, str | None, list[dict[str, Any]]]:
     if model_view.is_async:
         return await persist_import_models_with_count_check_async(
             model_view,
@@ -262,11 +263,11 @@ async def persist_import_models_with_count_check(
 async def persist_import_models_with_count_check_async(
     model_view: ModelView,
     request: Request,
-    import_models: List[dict[str, Any]],
+    import_models: list[dict[str, Any]],
     continue_on_error: bool,
-) -> Tuple[bool, int, str | None, List[dict[str, Any]]]:
+) -> tuple[bool, int, str | None, list[dict[str, Any]]]:
     query = Query(model_view)
-    failed_rows: List[dict[str, Any]] = []
+    failed_rows: list[dict[str, Any]] = []
     session: AsyncSession
     try:
         async with model_view.session_maker(expire_on_commit=False) as session:
@@ -328,11 +329,11 @@ async def persist_import_models_with_count_check_async(
 def persist_import_models_with_count_check_sync(
     model_view: ModelView,
     request: Request,
-    import_models: List[dict[str, Any]],
+    import_models: list[dict[str, Any]],
     continue_on_error: bool,
-) -> Tuple[bool, int, str | None, List[dict[str, Any]]]:
+) -> tuple[bool, int, str | None, list[dict[str, Any]]]:
     query = Query(model_view)
-    failed_rows: List[dict[str, Any]] = []
+    failed_rows: list[dict[str, Any]] = []
     session: Session
     try:
         with model_view.session_maker(expire_on_commit=False) as session:
@@ -395,7 +396,7 @@ async def stream_import_response(
     request: Request,
     model_view: ModelView,
     data: list[MultiDict],
-    form_class: Type[Form],
+    form_class: type[Form],
     continue_on_error: bool,
     denormalize_wtform_data: Callable[[dict, Any], dict],
 ) -> StreamingResponse:

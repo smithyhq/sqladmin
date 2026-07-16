@@ -13,10 +13,10 @@ class ItemMenu:
     def __init__(self, name: str, icon: str | None = None) -> None:
         self.name = name
         self.icon = icon
-        self.parent: "ItemMenu" | None = None
-        self.children: list["ItemMenu"] = []
+        self.parent: ItemMenu | None = None
+        self.children: list[ItemMenu] = []
 
-    def add_child(self, item: "ItemMenu") -> None:
+    def add_child(self, item: ItemMenu) -> None:
         item.parent = self
         self.children.append(item)
 
@@ -55,7 +55,7 @@ class CategoryMenu(ItemMenu):
 class ViewMenu(ItemMenu):
     def __init__(
         self,
-        view: "BaseView" | "ModelView",
+        view: BaseView | ModelView,
         name: str,
         icon: str | None = None,
     ) -> None:

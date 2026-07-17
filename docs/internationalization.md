@@ -1,6 +1,6 @@
 SQLAdmin can translate its interface into multiple languages using
-[Babel](https://babel.pocoo.org/). Compiled catalogs for English (`en`), German (`de`),  Azerbaijani (`az`),
- Russian (`ru`) and Turkish (`tr`) ship with the
+[Babel](https://babel.pocoo.org/). Compiled catalogs for Azerbaijani (`az`),
+German (`de`), English (`en`), Russian (`ru`) and Turkish (`tr`) ship with the
 package.
 
 Translation is optional. Install the extra to enable it:
@@ -25,7 +25,7 @@ language switcher in the navigation:
         engine,
         i18n_config=I18nConfig(
             default_locale="en",
-            language_switcher=["en", "de", "az", "ru", "tr"],
+            language_switcher=["en", "az", "de", "ru", "tr"],
         ),
     )
     ```

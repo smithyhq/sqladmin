@@ -49,7 +49,7 @@ secure:
 # Extract translatable strings into the .pot template and sync every catalog.
 i18n-extract:
 	uv run python -c "import os; os.makedirs('sqladmin/translations', exist_ok=True)"
-	uv run pybabel extract -F babel.cfg -o sqladmin/translations/admin.pot .
+	uv run pybabel extract -F pyproject.toml -o sqladmin/translations/admin.pot .
 	uv run pybabel update -i sqladmin/translations/admin.pot -d sqladmin/translations -D admin
 
 # Create a catalog for a new locale, e.g. `make i18n-init LOCALE=fr`.

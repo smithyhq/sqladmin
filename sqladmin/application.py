@@ -153,13 +153,18 @@ class BaseAdmin:
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
         templates.env.globals["Secret"] = Secret
         templates.env.globals["collect_form_media"] = collect_form_media
-        templates.env.globals["i18n_config"] = self.i18n_config or I18nConfig()
-        templates.env.globals["get_locale"] = get_locale
-        templates.env.globals["get_locale_display_name"] = get_locale_display_name
+
         templates.env.add_extension("jinja2.ext.i18n")
-        templates.env.install_gettext_callables(  # type: ignore[attr-defined]
-            gettext, ngettext, newstyle=True
-        )
+        if self.i18n_config is not None:
+            templates.env.globals["i18n_config"] = self.i18n_config
+            templates.env.globals["get_locale"] = get_locale
+            templates.env.globals["get_locale_display_name"] = get_locale_display_name
+            templates.env.install_gettext_callables(  # type: ignore[attr-defined]
+                gettext, ngettext, newstyle=True
+            )
+        else:
+            templates.env.globals["i18n_config"] = I18nConfig()
+            templates.env.install_null_translations(newstyle=True)  # type: ignore[attr-defined]
 
         return templates
 

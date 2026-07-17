@@ -26,12 +26,14 @@
   </aside>
   <div class="page-wrapper">
     {% block topbar %}
+    {% set show_switcher = i18n_config.language_switcher and i18n_config.language_switcher | length > 1 %}
+    {% if show_switcher or admin.authentication_backend %}
     <header class="navbar navbar-expand-md navbar-dark d-print-none sticky-top" data-bs-theme="dark"
-      style="background:#1f2937; box-shadow:0 2px 6px rgba(0,0,0,0.18);min-height:44px; padding-top:1; padding-bottom:1; z-index:1030;">
+      style="background:#1f2937; box-shadow:0 2px 6px rgba(0,0,0,0.18); min-height:56px; z-index:1030;">
       <div class="container-fluid">
         {# Language switcher and account actions, aligned to the right. #}
         <div class="navbar-nav flex-row ms-auto align-items-center gap-2" id="topbar-end">
-          {% if i18n_config.language_switcher and i18n_config.language_switcher | length > 1 %}
+          {% if show_switcher %}
           <div class="nav-item dropdown">
             <a href="#" class="btn btn-outline-light dropdown-toggle d-flex align-items-center px-3"
               data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('Language') }}">
@@ -58,6 +60,7 @@
         </div>
       </div>
     </header>
+    {% endif %}
     {% endblock %}
     <div class="container-fluid">
       <div class="page-header d-print-none">

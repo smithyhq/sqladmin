@@ -3,11 +3,12 @@
 # This file is distributed under the same license as the SQLAdmin project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 21:19+0000\n"
+"POT-Creation-Date: 2026-07-17 13:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,56 +20,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-msgid "Logout"
-msgstr "Выход"
-
-msgid "Login"
-msgstr "Вход"
-
-msgid "Login to"
-msgstr "Вход в"
-
-msgid "Username"
-msgstr "Имя пользователя"
-
-msgid "Enter username"
-msgstr "Введите имя пользователя"
-
-msgid "Password"
-msgstr "Пароль"
-
-msgid "Search"
-msgstr "Поиск"
-
-msgid "Filters"
-msgstr "Фильтры"
+msgid "Actions"
+msgstr "Действия"
 
 msgid "Apply Filter"
 msgstr "Применить фильтр"
 
-msgid "Save"
-msgstr "Сохранить"
+msgid "Cancel"
+msgstr "Отмена"
 
-msgid "Save and continue editing"
-msgstr "Сохранить и продолжить редактирование"
+msgid "Clear filter"
+msgstr "Очистить фильтр"
 
-msgid "Save and add another"
-msgstr "Сохранить и добавить ещё"
-
-msgid "Save as new"
-msgstr "Сохранить как новое"
+msgid "Close"
+msgstr "Закрыть"
 
 msgid "Column"
 msgstr "Столбец"
-
-msgid "Value"
-msgstr "Значение"
-
-msgid "Please confirm"
-msgstr "Подтвердите"
-
-msgid "Cancel"
-msgstr "Отмена"
 
 msgid "Delete"
 msgstr "Удалить"
@@ -76,74 +44,8 @@ msgstr "Удалить"
 msgid "Delete selected items"
 msgstr "Удалить выбранные элементы"
 
-msgid "Showing"
-msgstr "Показано"
-
-msgid "Language"
-msgstr "Язык"
-
-msgid "Export"
-msgstr "Экспорт"
-
-msgid "Import CSV"
-msgstr "Импорт CSV"
-
-msgid "New"
-msgstr "Создать"
-
-msgid "Edit"
-msgstr "Изменить"
-
-msgid "Actions"
-msgstr "Действия"
-
-msgid "View"
-msgstr "Просмотр"
-
-msgid "to"
-msgstr "–"
-
-msgid "of"
-msgstr "из"
-
-msgid "items"
-msgstr "элементов"
-
-msgid "prev"
-msgstr "назад"
-
-msgid "next"
-msgstr "вперёд"
-
-msgid "Show"
-msgstr "Показать"
-
-msgid "Page"
-msgstr "страница"
-
-msgid "Go Back"
-msgstr "Назад"
-
-msgid "Yes"
-msgstr "Да"
-
-msgid "Close"
-msgstr "Закрыть"
-
-msgid "No file selected"
-msgstr "Файл не выбран"
-
-msgid "Skip invalid rows and continue import"
-msgstr "Пропустить неверные строки и продолжить импорт"
-
-msgid "Import result"
-msgstr "Результат импорта"
-
-msgid "Missed rows"
-msgstr "Пропущенные строки"
-
-msgid "Import"
-msgstr "Импорт"
+msgid "Done"
+msgstr "Готово"
 
 msgid "Download CSV"
 msgstr "Скачать CSV"
@@ -151,14 +53,80 @@ msgstr "Скачать CSV"
 msgid "Download TXT"
 msgstr "Скачать TXT"
 
+msgid "Edit"
+msgstr "Изменить"
+
+msgid "Enter username"
+msgstr "Введите имя пользователя"
+
+msgid "Export"
+msgstr "Экспорт"
+
+msgid "Filters"
+msgstr "Фильтры"
+
+msgid "Go Back"
+msgstr "Назад"
+
+msgid "Import"
+msgstr "Импорт"
+
+msgid "Import CSV"
+msgstr "Импорт CSV"
+
+msgid "Import progress"
+msgstr "Ход импорта"
+
+msgid "Import result"
+msgstr "Результат импорта"
+
+msgid "Language"
+msgstr "Язык"
+
+msgid "Login"
+msgstr "Вход"
+
+msgid "Login to"
+msgstr "Вход в"
+
+msgid "Logout"
+msgstr "Выход"
+
+msgid "Missed rows"
+msgstr "Пропущенные строки"
+
+msgid "New"
+msgstr "Создать"
+
+msgid "No file selected"
+msgstr "Файл не выбран"
+
+msgid "Page"
+msgstr "страница"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "Please confirm"
+msgstr "Подтвердите"
+
 msgid "Refresh list"
 msgstr "Обновить список"
 
-msgid "Clear filter"
-msgstr "Очистить фильтр"
+msgid "Save"
+msgstr "Сохранить"
 
-msgid "Done"
-msgstr "Готово"
+msgid "Save and add another"
+msgstr "Сохранить и добавить ещё"
+
+msgid "Save and continue editing"
+msgstr "Сохранить и продолжить редактирование"
+
+msgid "Save as new"
+msgstr "Сохранить как новое"
+
+msgid "Search"
+msgstr "Поиск"
 
 msgid "Select all"
 msgstr "Выбрать всё"
@@ -166,6 +134,39 @@ msgstr "Выбрать всё"
 msgid "Select item"
 msgstr "Выбрать элемент"
 
-msgid "Import progress"
-msgstr "Ход импорта"
+msgid "Show"
+msgstr "Показать"
+
+msgid "Showing"
+msgstr "Показано"
+
+msgid "Skip invalid rows and continue import"
+msgstr "Пропустить неверные строки и продолжить импорт"
+
+msgid "Username"
+msgstr "Имя пользователя"
+
+msgid "Value"
+msgstr "Значение"
+
+msgid "View"
+msgstr "Просмотр"
+
+msgid "Yes"
+msgstr "Да"
+
+msgid "items"
+msgstr "элементов"
+
+msgid "next"
+msgstr "вперёд"
+
+msgid "of"
+msgstr "из"
+
+msgid "prev"
+msgstr "назад"
+
+msgid "to"
+msgstr "–"
 

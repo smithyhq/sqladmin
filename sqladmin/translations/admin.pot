@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 21:19+0000\n"
+"POT-Creation-Date: 2026-07-17 13:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,55 +17,22 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-msgid "Logout"
-msgstr ""
-
-msgid "Login"
-msgstr ""
-
-msgid "Login to"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Enter username"
-msgstr ""
-
-msgid "Password"
-msgstr ""
-
-msgid "Search"
-msgstr ""
-
-msgid "Filters"
+msgid "Actions"
 msgstr ""
 
 msgid "Apply Filter"
 msgstr ""
 
-msgid "Save"
+msgid "Cancel"
 msgstr ""
 
-msgid "Save and continue editing"
+msgid "Clear filter"
 msgstr ""
 
-msgid "Save and add another"
-msgstr ""
-
-msgid "Save as new"
+msgid "Close"
 msgstr ""
 
 msgid "Column"
-msgstr ""
-
-msgid "Value"
-msgstr ""
-
-msgid "Please confirm"
-msgstr ""
-
-msgid "Cancel"
 msgstr ""
 
 msgid "Delete"
@@ -74,73 +41,7 @@ msgstr ""
 msgid "Delete selected items"
 msgstr ""
 
-msgid "Showing"
-msgstr ""
-
-msgid "Language"
-msgstr ""
-
-msgid "Export"
-msgstr ""
-
-msgid "Import CSV"
-msgstr ""
-
-msgid "New"
-msgstr ""
-
-msgid "Edit"
-msgstr ""
-
-msgid "Actions"
-msgstr ""
-
-msgid "View"
-msgstr ""
-
-msgid "to"
-msgstr ""
-
-msgid "of"
-msgstr ""
-
-msgid "items"
-msgstr ""
-
-msgid "prev"
-msgstr ""
-
-msgid "next"
-msgstr ""
-
-msgid "Show"
-msgstr ""
-
-msgid "Page"
-msgstr ""
-
-msgid "Go Back"
-msgstr ""
-
-msgid "Yes"
-msgstr ""
-
-msgid "Close"
-msgstr ""
-
-msgid "No file selected"
-msgstr ""
-
-msgid "Skip invalid rows and continue import"
-msgstr ""
-
-msgid "Import result"
-msgstr ""
-
-msgid "Missed rows"
-msgstr ""
-
-msgid "Import"
+msgid "Done"
 msgstr ""
 
 msgid "Download CSV"
@@ -149,13 +50,79 @@ msgstr ""
 msgid "Download TXT"
 msgstr ""
 
+msgid "Edit"
+msgstr ""
+
+msgid "Enter username"
+msgstr ""
+
+msgid "Export"
+msgstr ""
+
+msgid "Filters"
+msgstr ""
+
+msgid "Go Back"
+msgstr ""
+
+msgid "Import"
+msgstr ""
+
+msgid "Import CSV"
+msgstr ""
+
+msgid "Import progress"
+msgstr ""
+
+msgid "Import result"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+msgid "Login to"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Missed rows"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "No file selected"
+msgstr ""
+
+msgid "Page"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Please confirm"
+msgstr ""
+
 msgid "Refresh list"
 msgstr ""
 
-msgid "Clear filter"
+msgid "Save"
 msgstr ""
 
-msgid "Done"
+msgid "Save and add another"
+msgstr ""
+
+msgid "Save and continue editing"
+msgstr ""
+
+msgid "Save as new"
+msgstr ""
+
+msgid "Search"
 msgstr ""
 
 msgid "Select all"
@@ -164,6 +131,39 @@ msgstr ""
 msgid "Select item"
 msgstr ""
 
-msgid "Import progress"
+msgid "Show"
+msgstr ""
+
+msgid "Showing"
+msgstr ""
+
+msgid "Skip invalid rows and continue import"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "items"
+msgstr ""
+
+msgid "next"
+msgstr ""
+
+msgid "of"
+msgstr ""
+
+msgid "prev"
+msgstr ""
+
+msgid "to"
 msgstr ""
 

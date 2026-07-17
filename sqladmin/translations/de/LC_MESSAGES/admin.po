@@ -3,11 +3,12 @@
 # This file is distributed under the same license as the SQLAdmin project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 21:19+0000\n"
+"POT-Creation-Date: 2026-07-17 13:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -18,56 +19,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-msgid "Logout"
-msgstr "Abmelden"
-
-msgid "Login"
-msgstr "Anmelden"
-
-msgid "Login to"
-msgstr "Anmelden bei"
-
-msgid "Username"
-msgstr "Benutzername"
-
-msgid "Enter username"
-msgstr "Benutzername eingeben"
-
-msgid "Password"
-msgstr "Passwort"
-
-msgid "Search"
-msgstr "Suche"
-
-msgid "Filters"
-msgstr "Filter"
+msgid "Actions"
+msgstr "Aktionen"
 
 msgid "Apply Filter"
 msgstr "Filter anwenden"
 
-msgid "Save"
-msgstr "Speichern"
+msgid "Cancel"
+msgstr "Abbrechen"
 
-msgid "Save and continue editing"
-msgstr "Speichern und weiter bearbeiten"
+msgid "Clear filter"
+msgstr "Filter löschen"
 
-msgid "Save and add another"
-msgstr "Speichern und weiteres hinzufügen"
-
-msgid "Save as new"
-msgstr "Als neu speichern"
+msgid "Close"
+msgstr "Schließen"
 
 msgid "Column"
 msgstr "Spalte"
-
-msgid "Value"
-msgstr "Wert"
-
-msgid "Please confirm"
-msgstr "Bitte bestätigen"
-
-msgid "Cancel"
-msgstr "Abbrechen"
 
 msgid "Delete"
 msgstr "Löschen"
@@ -75,74 +43,8 @@ msgstr "Löschen"
 msgid "Delete selected items"
 msgstr "Ausgewählte Einträge löschen"
 
-msgid "Showing"
-msgstr "Anzeige"
-
-msgid "Language"
-msgstr "Sprache"
-
-msgid "Export"
-msgstr "Exportieren"
-
-msgid "Import CSV"
-msgstr "CSV importieren"
-
-msgid "New"
-msgstr "Neu"
-
-msgid "Edit"
-msgstr "Bearbeiten"
-
-msgid "Actions"
-msgstr "Aktionen"
-
-msgid "View"
-msgstr "Ansehen"
-
-msgid "to"
-msgstr "bis"
-
-msgid "of"
-msgstr "von"
-
-msgid "items"
-msgstr "Einträge"
-
-msgid "prev"
-msgstr "zurück"
-
-msgid "next"
-msgstr "weiter"
-
-msgid "Show"
-msgstr "Zeige"
-
-msgid "Page"
-msgstr "Seite"
-
-msgid "Go Back"
-msgstr "Zurück"
-
-msgid "Yes"
-msgstr "Ja"
-
-msgid "Close"
-msgstr "Schließen"
-
-msgid "No file selected"
-msgstr "Keine Datei ausgewählt"
-
-msgid "Skip invalid rows and continue import"
-msgstr "Ungültige Zeilen überspringen und Import fortsetzen"
-
-msgid "Import result"
-msgstr "Importergebnis"
-
-msgid "Missed rows"
-msgstr "Übersprungene Zeilen"
-
-msgid "Import"
-msgstr "Importieren"
+msgid "Done"
+msgstr "Fertig"
 
 msgid "Download CSV"
 msgstr "CSV herunterladen"
@@ -150,14 +52,80 @@ msgstr "CSV herunterladen"
 msgid "Download TXT"
 msgstr "TXT herunterladen"
 
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Enter username"
+msgstr "Benutzername eingeben"
+
+msgid "Export"
+msgstr "Exportieren"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Go Back"
+msgstr "Zurück"
+
+msgid "Import"
+msgstr "Importieren"
+
+msgid "Import CSV"
+msgstr "CSV importieren"
+
+msgid "Import progress"
+msgstr "Importfortschritt"
+
+msgid "Import result"
+msgstr "Importergebnis"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "Login"
+msgstr "Anmelden"
+
+msgid "Login to"
+msgstr "Anmelden bei"
+
+msgid "Logout"
+msgstr "Abmelden"
+
+msgid "Missed rows"
+msgstr "Übersprungene Zeilen"
+
+msgid "New"
+msgstr "Neu"
+
+msgid "No file selected"
+msgstr "Keine Datei ausgewählt"
+
+msgid "Page"
+msgstr "Seite"
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Please confirm"
+msgstr "Bitte bestätigen"
+
 msgid "Refresh list"
 msgstr "Liste aktualisieren"
 
-msgid "Clear filter"
-msgstr "Filter löschen"
+msgid "Save"
+msgstr "Speichern"
 
-msgid "Done"
-msgstr "Fertig"
+msgid "Save and add another"
+msgstr "Speichern und weiteres hinzufügen"
+
+msgid "Save and continue editing"
+msgstr "Speichern und weiter bearbeiten"
+
+msgid "Save as new"
+msgstr "Als neu speichern"
+
+msgid "Search"
+msgstr "Suche"
 
 msgid "Select all"
 msgstr "Alle auswählen"
@@ -165,6 +133,39 @@ msgstr "Alle auswählen"
 msgid "Select item"
 msgstr "Eintrag auswählen"
 
-msgid "Import progress"
-msgstr "Importfortschritt"
+msgid "Show"
+msgstr "Zeige"
+
+msgid "Showing"
+msgstr "Anzeige"
+
+msgid "Skip invalid rows and continue import"
+msgstr "Ungültige Zeilen überspringen und Import fortsetzen"
+
+msgid "Username"
+msgstr "Benutzername"
+
+msgid "Value"
+msgstr "Wert"
+
+msgid "View"
+msgstr "Ansehen"
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "items"
+msgstr "Einträge"
+
+msgid "next"
+msgstr "weiter"
+
+msgid "of"
+msgstr "von"
+
+msgid "prev"
+msgstr "zurück"
+
+msgid "to"
+msgstr "bis"
 

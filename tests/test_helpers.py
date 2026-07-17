@@ -251,7 +251,11 @@ def test_single_pk_identifier():
 def test_single_pk_identifier_with_enum():
     identifier = get_object_identifier(Animal(id=AnimalEnum.DOG))
     assert identifier == "dog"
-    assert isinstance(identifier, str)
+    # `AnimalEnum` subclasses `str`, so an unwrapped enum member already
+    # equals and isinstance-checks as "dog" even without the fix in
+    # `get_object_identifier` -- assert the exact type to actually catch
+    # a regression back to returning the raw enum member.
+    assert type(identifier) is str
 
 
 def test_single_pk_id_values():

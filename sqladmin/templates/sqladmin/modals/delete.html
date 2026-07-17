@@ -5,7 +5,7 @@
       <div class="modal-status bg-danger"></div>
       <div class="modal-body text-center py-4">
         <i class="text-danger fa-solid fa-triangle-exclamation fa-2x"></i>
-        <h3>Please confirm</h3>
+        <h3>{{ _("Please confirm") }}</h3>
         <div id="modal-delete-text" class="text-muted"></div>
       </div>
       <div class="modal-footer">
@@ -13,12 +13,12 @@
           <div class="row">
             <div class="col">
               <a href="#" class="btn w-100" data-bs-dismiss="modal">
-                Cancel
+                {{ _("Cancel") }}
               </a>
             </div>
             <div class="col">
               <button id="modal-delete-button" data-url="" class="btn btn-danger w-100">
-                Delete
+                {{ _("Delete") }}
               </button>
             </div>
           </div>

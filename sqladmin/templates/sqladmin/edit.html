@@ -4,7 +4,7 @@
 <div class="col-12">
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">Edit {{ model_view.name }}</h3>
+      <h3 class="card-title">{{ _("Edit") }} {{ model_view.name }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
       {% block edit_form %}
@@ -23,19 +23,19 @@
           <div class="col-md-2">
             <a href="{{ url_for('admin:list', identity=model_view.identity) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}"
               class="btn">
-              Cancel
+              {{ _("Cancel") }}
             </a>
           </div>
           <div class="col-md-6">
             <div class="btn-group flex-wrap">
               {% block submit_buttons_bottom %}
-              <input type="submit" name="save" value="Save" class="btn">
-              <input type="submit" name="save" value="Save and continue editing" class="btn">
+              <input type="submit" name="save" value="{{ _('Save') }}" class="btn">
+              <input type="submit" name="save" value="{{ _('Save and continue editing') }}" class="btn">
               {% if model_view.can_create %}
               {% if model_view.save_as %}
-              <input type="submit" name="save" value="Save as new" class="btn">
+              <input type="submit" name="save" value="{{ _('Save as new') }}" class="btn">
               {% else %}
-              <input type="submit" name="save" value="Save and add another" class="btn">
+              <input type="submit" name="save" value="{{ _('Save and add another') }}" class="btn">
               {% endif %}
               {% endif %}
               {% endblock %}

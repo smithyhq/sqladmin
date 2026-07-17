@@ -29,6 +29,7 @@ nav:
   - Working with Templates: "working_with_templates.md"
   - Working with Custom Views: "writing_custom_views.md"
   - Working with Files and Images: "working_with_files.md"
+  - Internationalization: "internationalization.md"
   - Model convertors: "model_convertors.md"
   - Cookbook:
       - Deployment with HTTPS: "cookbook/deployment_with_https.md"

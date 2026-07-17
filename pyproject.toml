@@ -38,11 +38,13 @@ dependencies = [
   "jinja2",
   "python-multipart",
   "sqlalchemy >= 2.0",
+  "uvicorn>=0.51.0",
 ]
 
 
 [project.optional-dependencies]
 full = ["itsdangerous"]
+i18n = ["babel"]
 
 [project.urls]
 Documentation = "https://smithyhq.github.io/sqladmin/"

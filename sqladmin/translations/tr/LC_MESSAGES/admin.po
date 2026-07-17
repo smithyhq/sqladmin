@@ -1,0 +1,170 @@
+# Turkish translations for SQLAdmin.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the SQLAdmin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SQLAdmin VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-16 21:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: tr\n"
+"Language-Team: tr <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "Logout"
+msgstr "Çıkış"
+
+msgid "Login"
+msgstr "Giriş"
+
+msgid "Login to"
+msgstr "Giriş:"
+
+msgid "Username"
+msgstr "Kullanıcı adı"
+
+msgid "Enter username"
+msgstr "Kullanıcı adını girin"
+
+msgid "Password"
+msgstr "Parola"
+
+msgid "Search"
+msgstr "Ara"
+
+msgid "Filters"
+msgstr "Filtreler"
+
+msgid "Apply Filter"
+msgstr "Filtreyi uygula"
+
+msgid "Save"
+msgstr "Kaydet"
+
+msgid "Save and continue editing"
+msgstr "Kaydet ve düzenlemeye devam et"
+
+msgid "Save and add another"
+msgstr "Kaydet ve başka ekle"
+
+msgid "Save as new"
+msgstr "Yeni olarak kaydet"
+
+msgid "Column"
+msgstr "Sütun"
+
+msgid "Value"
+msgstr "Değer"
+
+msgid "Please confirm"
+msgstr "Lütfen onaylayın"
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "Delete selected items"
+msgstr "Seçili öğeleri sil"
+
+msgid "Showing"
+msgstr "Gösteriliyor"
+
+msgid "Language"
+msgstr "Dil"
+
+msgid "Export"
+msgstr "Dışa aktar"
+
+msgid "Import CSV"
+msgstr "CSV içe aktar"
+
+msgid "New"
+msgstr "Yeni"
+
+msgid "Edit"
+msgstr "Düzenle"
+
+msgid "Actions"
+msgstr "İşlemler"
+
+msgid "View"
+msgstr "Görüntüle"
+
+msgid "to"
+msgstr "-"
+
+msgid "of"
+msgstr "/"
+
+msgid "items"
+msgstr "öğe"
+
+msgid "prev"
+msgstr "önceki"
+
+msgid "next"
+msgstr "sonraki"
+
+msgid "Show"
+msgstr "Göster"
+
+msgid "Page"
+msgstr "Sayfa"
+
+msgid "Go Back"
+msgstr "Geri dön"
+
+msgid "Yes"
+msgstr "Evet"
+
+msgid "Close"
+msgstr "Kapat"
+
+msgid "No file selected"
+msgstr "Dosya seçilmedi"
+
+msgid "Skip invalid rows and continue import"
+msgstr "Geçersiz satırları atla ve içe aktarmaya devam et"
+
+msgid "Import result"
+msgstr "İçe aktarma sonucu"
+
+msgid "Missed rows"
+msgstr "Atlanan satırlar"
+
+msgid "Import"
+msgstr "İçe aktar"
+
+msgid "Download CSV"
+msgstr "CSV indir"
+
+msgid "Download TXT"
+msgstr "TXT indir"
+
+msgid "Refresh list"
+msgstr "Listeyi yenile"
+
+msgid "Clear filter"
+msgstr "Filtreyi temizle"
+
+msgid "Done"
+msgstr "Tamam"
+
+msgid "Select all"
+msgstr "Tümünü seç"
+
+msgid "Select item"
+msgstr "Öğeyi seç"
+
+msgid "Import progress"
+msgstr "İçe aktarma ilerlemesi"
+

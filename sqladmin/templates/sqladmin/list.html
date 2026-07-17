@@ -15,7 +15,7 @@
                 <div class="ms-3 d-inline-block dropdown">
                   <a href="#" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1"
                     data-bs-toggle="dropdown" aria-expanded="false">
-                    Export
+                    {{ _("Export") }}
                   </a>
                   <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     {% for export_type in model_view.export_types %}
@@ -29,7 +29,7 @@
                 <div class="ms-3 d-inline-block">
                   <a href="{{ url_for('admin:export', identity=model_view.identity, export_type=model_view.export_types[0]) }}"
                     class="btn btn-secondary">
-                    Export
+                    {{ _("Export") }}
                   </a>
                 </div>
                 {% endif %}
@@ -38,13 +38,13 @@
                 <div class="ms-3 d-inline-block">
                   <a class="btn btn-primary" id="action-import" href="#" data-name="{{ model_view.name }}"
                     data-url="{{ url_for('admin:import', identity=model_view.identity) }}" data-bs-toggle="modal"
-                    data-bs-target="#modal-import">Import CSV</a>
+                    data-bs-target="#modal-import">{{ _("Import CSV") }}</a>
                 </div>
                 {% endif %}
                 {% if model_view.can_create %}
                 <div class="ms-3 d-inline-block">
                   <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
-                    + New {{ model_view.name }}
+                    + {{ _("New") }} {{ model_view.name }}
                   </a>
                 </div>
                 {% endif %}
@@ -63,14 +63,14 @@
                   <button {% if not model_view.can_delete and not model_view._custom_actions_in_list %} disabled {%
                     endif %} class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Actions
+                    {{ _("Actions") }}
                   </button>
                   {% if model_view.can_delete or model_view._custom_actions_in_list %}
                   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {% if model_view.can_delete %}
                     <a class="dropdown-item" id="action-delete" href="#" data-name="{{ model_view.name }}"
                       data-url="{{ url_for('admin:delete', identity=model_view.identity) }}" data-bs-toggle="modal"
-                      data-bs-target="#modal-delete">Delete selected items</a>
+                      data-bs-target="#modal-delete">{{ _("Delete selected items") }}</a>
                     {% endif %}
                     {% for custom_action, label in model_view._custom_actions_in_list.items() %}
                     {% if custom_action in model_view._custom_actions_confirmation %}
@@ -93,9 +93,9 @@
                   <div class="input-group">
                     <input id="search-input" type="text" class="form-control"
                       data-search-auto-submit="{{ 'true' if model_view.search_auto_submit else 'false' }}"
-                      placeholder="Search: {{ model_view.search_placeholder() }}"
+                      placeholder="{{ _('Search') }}: {{ model_view.search_placeholder() }}"
                       value="{{ request.query_params.get('search', '') }}">
-                    <button id="search-button" class="btn" type="button">Search</button>
+                    <button id="search-button" class="btn" type="button">{{ _("Search") }}</button>
                     <button id="search-reset" class="btn" type="button" {% if not request.query_params.get('search')
                       %}disabled{% endif %}><i class="fa-solid fa-times"></i></button>
                   </div>
@@ -109,7 +109,7 @@
                 <thead>
                   <tr>
                     <th class="w-1"><input class="form-check-input m-0 align-middle" type="checkbox"
-                        aria-label="Select all" id="select-all"></th>
+                        aria-label="{{ _('Select all') }}" id="select-all"></th>
                     <th class="w-1"></th>
                     {% for name in model_view._list_prop_names %}
                     {% set label = model_view._column_labels.get(name, name) %}
@@ -140,18 +140,18 @@
                     <td>
                       <input type="hidden" value="{{ get_object_identifier(row) }}">
                       <input class="form-check-input m-0 align-middle select-box" type="checkbox"
-                        aria-label="Select item">
+                        aria-label="{{ _('Select item') }}">
                     </td>
                     <td class="text-end">
                       {% if model_view.check_can_view_details(request, row) %}
                       <a href="{{ model_view._build_url_for('admin:details', request, row) }}" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="View">
+                        data-bs-placement="top" title="{{ _('View') }}">
                         <span class="me-1"><i class="fa-solid fa-eye"></i></span>
                       </a>
                       {% endif %}
                       {% if model_view.check_can_edit(request, row) %}
                       <a href="{{ model_view._build_url_for('admin:edit', request, row) }}{% if request.url.query %}?{{ request.url.query }}{% endif %}"
-                        data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="{{ _('Edit') }}">
                         <span class="me-1"><i class="fa-solid fa-pen-to-square"></i></span>
                       </a>
                       {% endif %}
@@ -159,7 +159,7 @@
                       <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(row) }}"
                         data-url="{{ model_view._url_for_delete(request, row) }}" data-bs-toggle="modal"
                         data-bs-target="#modal-delete">
-                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="{{ _('Delete') }}">
                           <span class="me-1"><i class="fa-solid fa-trash"></i></span>
                         </span>
                       </a>
@@ -204,10 +204,10 @@
             </div>
             {% endblock %}
             <div class="card-footer d-flex justify-content-between align-items-center gap-2">
-              <p class="m-0 text-muted">Showing <span>{{ ((pagination.page - 1) * pagination.page_size) + 1 }}</span> to
-                <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> of <span>{{
+              <p class="m-0 text-muted">{{ _("Showing") }} <span>{{ ((pagination.page - 1) * pagination.page_size) + 1 }}</span> {{ _("to") }}
+                <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> {{ _("of") }} <span>{{
                   pagination.count
-                  }}</span> items
+                  }}</span> {{ _("items") }}
               </p>
               <ul class="pagination m-0 ms-auto">
                 <li class="page-item {% if not pagination.has_previous %}disabled{% endif %}">
@@ -217,7 +217,7 @@
                     <a class="page-link" href="#">
                       {% endif %}
                       <i class="fa-solid fa-chevron-left"></i>
-                      prev
+                      {{ _("prev") }}
                     </a>
                 </li>
                 {% for page_control in pagination.page_controls %}
@@ -230,22 +230,22 @@
                     {% else %}
                     <a class="page-link" href="#">
                       {% endif %}
-                      next
+                      {{ _("next") }}
                       <i class="fa-solid fa-chevron-right"></i>
                     </a>
                 </li>
               </ul>
               <div class="dropdown text-muted">
-                Show
+                {{ _("Show") }}
                 <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true"
                   aria-expanded="false">
-                  {{ request.query_params.get("pageSize") or model_view.page_size }} / Page
+                  {{ request.query_params.get("pageSize") or model_view.page_size }} / {{ _("Page") }}
                 </a>
                 <div class="dropdown-menu">
                   {% for page_size_option in model_view.page_size_options %}
                   <a class="dropdown-item"
                     href="{{ request.url.include_query_params(pageSize=page_size_option, page=pagination.resize(page_size_option).page) }}">
-                    {{ page_size_option }} / Page
+                    {{ page_size_option }} / {{ _("Page") }}
                   </a>
                   {% endfor %}
                 </div>
@@ -257,7 +257,7 @@
         <div class="col-md-3 filter-sidebar-col">
           <div id="filter-sidebar" class="card">
             <div class="card-header">
-              <h3 class="card-title">Filters</h3>
+              <h3 class="card-title">{{ _("Filters") }}</h3>
             </div>
             <div class="card-body">
               {% for filter in model_view.get_filters() %}

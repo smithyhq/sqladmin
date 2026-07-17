@@ -1,0 +1,246 @@
+# French translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-17 01:46+0400\n"
+"PO-Revision-Date: 2026-07-17 01:46+0400\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: fr\n"
+"Language-Team: fr <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: sqladmin/templates/sqladmin/create.html:7
+#: sqladmin/templates/sqladmin/list.html:47
+msgid "New"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:24
+#: sqladmin/templates/sqladmin/edit.html:26
+#: sqladmin/templates/sqladmin/modals/delete.html:16
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:16
+#: sqladmin/templates/sqladmin/modals/import.html:32
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:16
+msgid "Cancel"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:30
+#: sqladmin/templates/sqladmin/edit.html:32
+msgid "Save"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:32
+#: sqladmin/templates/sqladmin/edit.html:33
+msgid "Save and continue editing"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:34
+#: sqladmin/templates/sqladmin/edit.html:38
+msgid "Save and add another"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:18
+msgid "Column"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:19
+msgid "Value"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:65
+msgid "Go Back"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/templates/sqladmin/list.html:162
+#: sqladmin/templates/sqladmin/modals/delete.html:21
+msgid "Delete"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/templates/sqladmin/edit.html:7
+#: sqladmin/templates/sqladmin/list.html:154
+msgid "Edit"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/edit.html:36
+msgid "Save as new"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/layout.html:37
+msgid "Language"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/layout.html:54
+msgid "Logout"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:18
+#: sqladmin/templates/sqladmin/list.html:32
+msgid "Export"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:41
+#: sqladmin/templates/sqladmin/modals/import.html:7
+msgid "Import CSV"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:66
+msgid "Actions"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:73
+msgid "Delete selected items"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:96
+#: sqladmin/templates/sqladmin/list.html:98
+msgid "Search"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:112
+msgid "Select all"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:143
+msgid "Select item"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:148
+msgid "View"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:207
+msgid "Showing"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:207
+msgid "to"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:208
+msgid "of"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:210
+msgid "items"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:220
+msgid "prev"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:233
+msgid "next"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:239
+msgid "Show"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:242
+#: sqladmin/templates/sqladmin/list.html:248
+msgid "Page"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:260
+msgid "Filters"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:6
+msgid "Login to"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:8
+msgid "Username"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:10
+#: sqladmin/templates/sqladmin/login.html:14
+msgid "Enter username"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:19
+#: sqladmin/templates/sqladmin/login.html:23
+#: sqladmin/templates/sqladmin/login.html:27
+msgid "Password"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:32
+msgid "Login"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/modals/import.html:4
+#: sqladmin/templates/sqladmin/modals/import.html:51
+#: sqladmin/templates/sqladmin/modals/import.html:71
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/secret_modal.html:9
+msgid "Close"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/secret_modal.html:26
+msgid "Done"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/filters/lookup_filter.html:12
+msgid "Clear filter"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/filters/operation_filter.html:36
+msgid "Apply Filter"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/delete.html:8
+msgid "Please confirm"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:21
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:21
+msgid "Yes"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:13
+msgid "No file selected"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:17
+msgid "Skip invalid rows and continue import"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:20
+msgid "Import progress"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:37
+msgid "Import"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:53
+msgid "Import result"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:56
+msgid "Missed rows"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:59
+msgid "Download CSV"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:62
+msgid "Download TXT"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:75
+msgid "Refresh list"
+msgstr ""
+

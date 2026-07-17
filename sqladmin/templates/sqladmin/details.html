@@ -15,8 +15,8 @@
         <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
           <thead>
             <tr>
-              <th class="w-1">Column</th>
-              <th class="w-1">Value</th>
+              <th class="w-1">{{ _("Column") }}</th>
+              <th class="w-1">{{ _("Value") }}</th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +62,7 @@
         <div class="row row-gap-2">
           <div class="col-auto">
             <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
-              Go Back
+              {{ _("Go Back") }}
             </a>
           </div>
           {% if model_view.check_can_delete(request, model) %}
@@ -70,14 +70,14 @@
             <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(model) }}"
               data-url="{{ model_view._url_for_delete(request, model) }}" data-bs-toggle="modal"
               data-bs-target="#modal-delete" class="btn btn-danger">
-              Delete
+              {{ _("Delete") }}
             </a>
           </div>
           {% endif %}
           {% if model_view.check_can_edit(request, model) %}
           <div class="col-auto">
             <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
-              Edit
+              {{ _("Edit") }}
             </a>
           </div>
           {% endif %}

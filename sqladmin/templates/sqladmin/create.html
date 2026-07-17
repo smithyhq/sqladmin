@@ -4,7 +4,7 @@
 <div class="col-12">
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">New {{ model_view.name }}</h3>
+      <h3 class="card-title">{{ _("New") }} {{ model_view.name }}</h3>
     </div>
     <div class="card-body border-bottom py-3">
       {% block create_form %}
@@ -21,17 +21,17 @@
         <div class="row">
           <div class="col-md-2">
             <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
-              Cancel
+              {{ _("Cancel") }}
             </a>
           </div>
           <div class="col-md-6">
             <div class="btn-group flex-wrap">
               {% block submit_buttons_bottom  %}
-                <input type="submit" name="save" value="Save" class="btn">
+                <input type="submit" name="save" value="{{ _('Save') }}" class="btn">
                 {% if model_view.can_edit %}
-                <input type="submit" name="save" value="Save and continue editing" class="btn">
+                <input type="submit" name="save" value="{{ _('Save and continue editing') }}" class="btn">
                 {% endif %}
-                <input type="submit" name="save" value="Save and add another" class="btn">
+                <input type="submit" name="save" value="{{ _('Save and add another') }}" class="btn">
               {% endblock %}
             </div>
           </div>

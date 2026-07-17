@@ -1,0 +1,170 @@
+# Azerbaijani translations for SQLAdmin.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the SQLAdmin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SQLAdmin VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-16 21:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: az\n"
+"Language-Team: az <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "Logout"
+msgstr "Çıxış"
+
+msgid "Login"
+msgstr "Daxil ol"
+
+msgid "Login to"
+msgstr "Daxil ol:"
+
+msgid "Username"
+msgstr "İstifadəçi adı"
+
+msgid "Enter username"
+msgstr "İstifadəçi adını daxil edin"
+
+msgid "Password"
+msgstr "Şifrə"
+
+msgid "Search"
+msgstr "Axtarış"
+
+msgid "Filters"
+msgstr "Filtrlər"
+
+msgid "Apply Filter"
+msgstr "Filtri tətbiq et"
+
+msgid "Save"
+msgstr "Yadda saxla"
+
+msgid "Save and continue editing"
+msgstr "Yadda saxla və redaktəyə davam et"
+
+msgid "Save and add another"
+msgstr "Yadda saxla və başqasını əlavə et"
+
+msgid "Save as new"
+msgstr "Yeni kimi yadda saxla"
+
+msgid "Column"
+msgstr "Sütun"
+
+msgid "Value"
+msgstr "Dəyər"
+
+msgid "Please confirm"
+msgstr "Təsdiq edin"
+
+msgid "Cancel"
+msgstr "Ləğv et"
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "Delete selected items"
+msgstr "Seçilmiş elementləri sil"
+
+msgid "Showing"
+msgstr "Göstərilir"
+
+msgid "Language"
+msgstr "Dil"
+
+msgid "Export"
+msgstr "İxrac et"
+
+msgid "Import CSV"
+msgstr "CSV idxal et"
+
+msgid "New"
+msgstr "Yeni"
+
+msgid "Edit"
+msgstr "Redaktə et"
+
+msgid "Actions"
+msgstr "Əməliyyatlar"
+
+msgid "View"
+msgstr "Bax"
+
+msgid "to"
+msgstr "-"
+
+msgid "of"
+msgstr "/"
+
+msgid "items"
+msgstr "element"
+
+msgid "prev"
+msgstr "əvvəlki"
+
+msgid "next"
+msgstr "növbəti"
+
+msgid "Show"
+msgstr "Göstər"
+
+msgid "Page"
+msgstr "Səhifə"
+
+msgid "Go Back"
+msgstr "Geri qayıt"
+
+msgid "Yes"
+msgstr "Bəli"
+
+msgid "Close"
+msgstr "Bağla"
+
+msgid "No file selected"
+msgstr "Fayl seçilməyib"
+
+msgid "Skip invalid rows and continue import"
+msgstr "Yanlış sətirləri ötür və idxalı davam etdir"
+
+msgid "Import result"
+msgstr "İdxal nəticəsi"
+
+msgid "Missed rows"
+msgstr "Buraxılmış sətirlər"
+
+msgid "Import"
+msgstr "İdxal et"
+
+msgid "Download CSV"
+msgstr "CSV yüklə"
+
+msgid "Download TXT"
+msgstr "TXT yüklə"
+
+msgid "Refresh list"
+msgstr "Siyahını yenilə"
+
+msgid "Clear filter"
+msgstr "Filtri təmizlə"
+
+msgid "Done"
+msgstr "Hazır"
+
+msgid "Select all"
+msgstr "Hamısını seç"
+
+msgid "Select item"
+msgstr "Elementi seç"
+
+msgid "Import progress"
+msgstr "İdxal gedişatı"
+

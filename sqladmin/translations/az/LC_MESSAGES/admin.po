@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-17 13:11+0000\n"
+"POT-Creation-Date: 2026-07-18 11:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: az\n"
@@ -18,6 +18,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s / Səhifə"
 
 msgid "Actions"
 msgstr "Əməliyyatlar"
@@ -55,6 +59,10 @@ msgstr "TXT yüklə"
 msgid "Edit"
 msgstr "Redaktə et"
 
+#, python-format
+msgid "Edit %(name)s"
+msgstr "Redaktə: %(name)s"
+
 msgid "Enter username"
 msgstr "İstifadəçi adını daxil edin"
 
@@ -85,8 +93,9 @@ msgstr "Dil"
 msgid "Login"
 msgstr "Daxil ol"
 
-msgid "Login to"
-msgstr "Daxil ol:"
+#, python-format
+msgid "Login to %(title)s"
+msgstr "%(title)s hesabına daxil olun"
 
 msgid "Logout"
 msgstr "Çıxış"
@@ -94,14 +103,12 @@ msgstr "Çıxış"
 msgid "Missed rows"
 msgstr "Buraxılmış sətirlər"
 
-msgid "New"
-msgstr "Yeni"
+#, python-format
+msgid "New %(name)s"
+msgstr "Yeni %(name)s"
 
 msgid "No file selected"
 msgstr "Fayl seçilməyib"
-
-msgid "Page"
-msgstr "Səhifə"
 
 msgid "Password"
 msgstr "Şifrə"
@@ -136,8 +143,9 @@ msgstr "Elementi seç"
 msgid "Show"
 msgstr "Göstər"
 
-msgid "Showing"
-msgstr "Göstərilir"
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "%(count)s elementdən %(start)s-%(end)s göstərilir"
 
 msgid "Skip invalid rows and continue import"
 msgstr "Yanlış sətirləri ötür və idxalı davam etdir"
@@ -154,18 +162,9 @@ msgstr "Bax"
 msgid "Yes"
 msgstr "Bəli"
 
-msgid "items"
-msgstr "element"
-
 msgid "next"
 msgstr "növbəti"
 
-msgid "of"
-msgstr "/"
-
 msgid "prev"
 msgstr "əvvəlki"
-
-msgid "to"
-msgstr "-"
 

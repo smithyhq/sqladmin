@@ -32,6 +32,9 @@ DEFAULT_LOCALE = "en"
 LOCALE_QUERY_PARAM = "lang"
 """Query string key read by `LocaleMiddleware` to switch the active locale."""
 
+LANGUAGE_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
+"""Lifetime in seconds of the persisted language cookie (one year)."""
+
 SUPPORTED_LOCALES = [
     "en",  # English
     "de",  # German
@@ -119,7 +122,7 @@ try:
             _("Logout")
             ```
         """
-        return _current_translation.get().ugettext(message)  # type: ignore[attr-defined]
+        return _current_translation.get().gettext(message)
 
     def ngettext(msgid1: str, msgid2: str, n: int) -> str:
         """Translate a pluralised message using the active locale.
@@ -143,7 +146,7 @@ try:
             ngettext("%(num)d item", "%(num)d items", 5)
             ```
         """
-        return _current_translation.get().ungettext(msgid1, msgid2, n)  # type: ignore[attr-defined]
+        return _current_translation.get().ngettext(msgid1, msgid2, n)
 
     def lazy_gettext(message: str) -> str:
         """Return a lazily evaluated translation of `message`.
@@ -217,13 +220,15 @@ try:
         """Return the native display name of a locale.
 
         Resolved through Babel's CLDR data, so the result is the language's own
-        endonym (e.g. ``"Azərbaycan"`` for ``az``).
+        endonym (e.g. ``"Azərbaycan"`` for ``az``). Only the first character is
+        upper-cased, which keeps multi-word names such as ``"português (Brasil)"``
+        intact.
 
         Args:
             locale: The locale code.
 
         Returns:
-            The capitalized native display name.
+            The native display name, or the locale code when unavailable.
 
         Example:
             ```python
@@ -233,11 +238,13 @@ try:
             ```
         """
         display_name = Locale.parse(locale).display_name
-        return display_name.capitalize() if display_name else ""
+        if not display_name:
+            return locale
+        return display_name[0].upper() + display_name[1:]
 
 except ImportError:
-    # Provide a degraded but functional i18n surface when babel is absent.
-    # `Admin` raises a helpful error if i18n is actually requested without it.
+    # Provide a degraded but functional i18n surface when babel is absent:
+    # every message is returned untranslated so the admin keeps rendering.
 
     def set_locale(locale: str) -> None:
         pass
@@ -412,7 +419,8 @@ class LocaleMiddleware:
                 headers.append(
                     "set-cookie",
                     f"{config.language_cookie_name}={locale}; "
-                    f"Path={self.cookie_path}; SameSite=lax",
+                    f"Path={self.cookie_path}; Max-Age={LANGUAGE_COOKIE_MAX_AGE}; "
+                    "SameSite=lax",
                 )
             await send(message)
 

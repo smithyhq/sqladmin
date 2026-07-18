@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-17 13:11+0000\n"
+"POT-Creation-Date: 2026-07-18 11:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: tr\n"
@@ -18,6 +18,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s / Sayfa"
 
 msgid "Actions"
 msgstr "İşlemler"
@@ -55,6 +59,10 @@ msgstr "TXT indir"
 msgid "Edit"
 msgstr "Düzenle"
 
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)s düzenle"
+
 msgid "Enter username"
 msgstr "Kullanıcı adını girin"
 
@@ -85,8 +93,9 @@ msgstr "Dil"
 msgid "Login"
 msgstr "Giriş"
 
-msgid "Login to"
-msgstr "Giriş:"
+#, python-format
+msgid "Login to %(title)s"
+msgstr "%(title)s girişi"
 
 msgid "Logout"
 msgstr "Çıkış"
@@ -94,14 +103,12 @@ msgstr "Çıkış"
 msgid "Missed rows"
 msgstr "Atlanan satırlar"
 
-msgid "New"
-msgstr "Yeni"
+#, python-format
+msgid "New %(name)s"
+msgstr "Yeni %(name)s"
 
 msgid "No file selected"
 msgstr "Dosya seçilmedi"
-
-msgid "Page"
-msgstr "Sayfa"
 
 msgid "Password"
 msgstr "Parola"
@@ -136,8 +143,9 @@ msgstr "Öğeyi seç"
 msgid "Show"
 msgstr "Göster"
 
-msgid "Showing"
-msgstr "Gösteriliyor"
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "%(count)s öğeden %(start)s-%(end)s gösteriliyor"
 
 msgid "Skip invalid rows and continue import"
 msgstr "Geçersiz satırları atla ve içe aktarmaya devam et"
@@ -154,18 +162,9 @@ msgstr "Görüntüle"
 msgid "Yes"
 msgstr "Evet"
 
-msgid "items"
-msgstr "öğe"
-
 msgid "next"
 msgstr "sonraki"
 
-msgid "of"
-msgstr "/"
-
 msgid "prev"
 msgstr "önceki"
-
-msgid "to"
-msgstr "-"
 

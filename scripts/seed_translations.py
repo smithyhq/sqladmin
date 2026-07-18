@@ -1,3 +1,32 @@
+"""Generate SQLAdmin's compiled translation catalogs from a JSON mapping.
+
+The script is data-driven: all translations live in a JSON file, so adding or
+updating a language never requires editing this script. Run it from the
+repository root::
+
+    # uses scripts/translations.json
+    uv run python scripts/seed_translations.py
+
+    # or a custom mappings file
+    uv run python scripts/seed_translations.py path/to/mappings.json
+
+The JSON maps each locale code to a ``{source string: translation}`` object.
+English is the source language, so its object is empty. For example::
+
+    {
+      "en": {},
+      "fr": {"Logout": "Déconnexion", "Save": "Enregistrer"}
+    }
+
+For every locale it writes ``sqladmin/translations/<locale>/LC_MESSAGES/admin.po``
+(source) and ``admin.mo`` (compiled), plus the ``admin.pot`` template. Locales
+are created with Babel, so the correct CLDR ``Plural-Forms`` header is filled in
+automatically. After adding a new locale, list its code in ``SUPPORTED_LOCALES``
+in ``sqladmin/i18n.py``.
+"""
+
+from __future__ import annotations
+
 import json
 import os
 import sys

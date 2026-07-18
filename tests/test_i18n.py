@@ -13,6 +13,7 @@ from starlette.testclient import TestClient
 from sqladmin import Admin, ModelView
 from sqladmin.i18n import (
     DEFAULT_LOCALE,
+    LANGUAGE_COOKIE_MAX_AGE,
     SUPPORTED_LOCALES,
     I18nConfig,
     LocaleMiddleware,
@@ -132,6 +133,20 @@ def test_ngettext_english_default() -> None:
 ######################################################
 ################ DISPLAY / FORMATTING ################
 ######################################################
+def test_get_locale_display_name_preserves_multi_word_names() -> None:
+    # Only the first character is upper-cased, so names like "português (Brasil)"
+    # keep their inner casing instead of being flattened by ``str.capitalize()``.
+    with mock.patch("sqladmin.i18n.Locale") as locale_cls:
+        locale_cls.parse.return_value.display_name = "português (Brasil)"
+        assert get_locale_display_name("pt-BR") == "Português (Brasil)"
+
+
+def test_get_locale_display_name_falls_back_to_code() -> None:
+    with mock.patch("sqladmin.i18n.Locale") as locale_cls:
+        locale_cls.parse.return_value.display_name = ""
+        assert get_locale_display_name("xx") == "xx"
+
+
 def test_get_locale_display_name_uses_cldr() -> None:
     assert get_locale_display_name("az") == "Azərbaycan"
     assert get_locale_display_name("ru") == "Русский"
@@ -201,7 +216,7 @@ def test_query_param_switches_locale(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert "Axtarış" in response.text
-    assert "Göstərilir" in response.text
+    assert "göstərilir" in response.text  # pagination placeholder message
 
 
 def test_query_param_sets_cookie(client: TestClient) -> None:
@@ -214,7 +229,7 @@ def test_cookie_persists_locale(client: TestClient) -> None:
     client.cookies.set("language", "tr")
     response = client.get("/admin/user/list")
 
-    assert "Gösteriliyor" in response.text
+    assert "gösteriliyor" in response.text  # pagination placeholder message
 
 
 def test_accept_language_header_negotiated(client: TestClient) -> None:
@@ -223,7 +238,63 @@ def test_accept_language_header_negotiated(client: TestClient) -> None:
         headers={"accept-language": "de-DE,de;q=0.9"},
     )
 
-    assert "Anzeige" in response.text
+    assert "Zeige" in response.text  # pagination placeholder message
+
+
+def test_default_locale_is_used_without_any_preference() -> None:
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        i18n_config=I18nConfig(default_locale="de", language_switcher=SWITCHER),
+    )
+    admin.add_view(UserAdmin)
+
+    with TestClient(app) as c:
+        response = c.get("/admin/user/list")
+
+    assert response.status_code == 200
+    assert "Suche" in response.text
+
+
+def test_default_locale_used_when_header_does_not_match() -> None:
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        i18n_config=I18nConfig(default_locale="ru", language_switcher=SWITCHER),
+    )
+    admin.add_view(UserAdmin)
+
+    with TestClient(app) as c:
+        response = c.get(
+            "/admin/user/list",
+            headers={"accept-language": "fr-FR,fr;q=0.9"},
+        )
+
+    assert "Поиск" in response.text
+
+
+def test_query_param_overrides_default_locale() -> None:
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        i18n_config=I18nConfig(default_locale="de", language_switcher=SWITCHER),
+    )
+    admin.add_view(UserAdmin)
+
+    with TestClient(app) as c:
+        response = c.get("/admin/user/list?lang=az")
+
+    assert "Axtarış" in response.text
+
+
+def test_language_cookie_is_persisted_with_max_age(client: TestClient) -> None:
+    response = client.get("/admin/user/list?lang=az")
+
+    cookie_header = response.headers["set-cookie"]
+    assert f"Max-Age={LANGUAGE_COOKIE_MAX_AGE}" in cookie_header
 
 
 def test_unsupported_query_locale_ignored(client: TestClient) -> None:
@@ -260,7 +331,7 @@ def test_switcher_absent_without_i18n_config() -> None:
     [
         ("az", "Export", "İxrac et"),
         ("az", "Actions", "Əməliyyatlar"),
-        ("az", "New", "Yeni"),
+        ("az", "New %(name)s", "Yeni %(name)s"),
         ("az", "prev", "əvvəlki"),
         ("az", "Show", "Göstər"),
         ("de", "Export", "Exportieren"),

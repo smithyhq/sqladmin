@@ -3,7 +3,7 @@
 <div class="d-flex align-items-center justify-content-center vh-100">
   <form class="Fcol-lg-6 col-md-6 card card-md" action="{{ url_for('admin:login') }}" method="POST" autocomplete="off">
     <div class="card-body">
-      <h2 class="card-title text-center mb-4">{{ _("Login to") }} {{ admin.title }}</h2>
+      <h2 class="card-title text-center mb-4">{{ _("Login to %(title)s", title=admin.title) }}</h2>
       <div class="mb-3">
         <label class="form-label">{{ _("Username") }}</label>
         {% if error %}

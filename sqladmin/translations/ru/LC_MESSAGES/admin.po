@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-17 13:11+0000\n"
+"POT-Creation-Date: 2026-07-18 11:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,6 +19,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s / страница"
 
 msgid "Actions"
 msgstr "Действия"
@@ -56,6 +60,10 @@ msgstr "Скачать TXT"
 msgid "Edit"
 msgstr "Изменить"
 
+#, python-format
+msgid "Edit %(name)s"
+msgstr "Изменить: %(name)s"
+
 msgid "Enter username"
 msgstr "Введите имя пользователя"
 
@@ -86,8 +94,9 @@ msgstr "Язык"
 msgid "Login"
 msgstr "Вход"
 
-msgid "Login to"
-msgstr "Вход в"
+#, python-format
+msgid "Login to %(title)s"
+msgstr "Вход в %(title)s"
 
 msgid "Logout"
 msgstr "Выход"
@@ -95,14 +104,12 @@ msgstr "Выход"
 msgid "Missed rows"
 msgstr "Пропущенные строки"
 
-msgid "New"
-msgstr "Создать"
+#, python-format
+msgid "New %(name)s"
+msgstr "Создать: %(name)s"
 
 msgid "No file selected"
 msgstr "Файл не выбран"
-
-msgid "Page"
-msgstr "страница"
 
 msgid "Password"
 msgstr "Пароль"
@@ -137,8 +144,9 @@ msgstr "Выбрать элемент"
 msgid "Show"
 msgstr "Показать"
 
-msgid "Showing"
-msgstr "Показано"
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "Показано %(start)s–%(end)s из %(count)s элементов"
 
 msgid "Skip invalid rows and continue import"
 msgstr "Пропустить неверные строки и продолжить импорт"
@@ -155,18 +163,9 @@ msgstr "Просмотр"
 msgid "Yes"
 msgstr "Да"
 
-msgid "items"
-msgstr "элементов"
-
 msgid "next"
 msgstr "вперёд"
 
-msgid "of"
-msgstr "из"
-
 msgid "prev"
 msgstr "назад"
-
-msgid "to"
-msgstr "–"
 

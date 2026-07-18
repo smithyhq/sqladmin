@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-17 13:11+0000\n"
+"POT-Creation-Date: 2026-07-18 11:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,6 +18,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr ""
 
 msgid "Actions"
 msgstr ""
@@ -55,6 +59,10 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
+#, python-format
+msgid "Edit %(name)s"
+msgstr ""
+
 msgid "Enter username"
 msgstr ""
 
@@ -85,7 +93,8 @@ msgstr ""
 msgid "Login"
 msgstr ""
 
-msgid "Login to"
+#, python-format
+msgid "Login to %(title)s"
 msgstr ""
 
 msgid "Logout"
@@ -94,13 +103,11 @@ msgstr ""
 msgid "Missed rows"
 msgstr ""
 
-msgid "New"
+#, python-format
+msgid "New %(name)s"
 msgstr ""
 
 msgid "No file selected"
-msgstr ""
-
-msgid "Page"
 msgstr ""
 
 msgid "Password"
@@ -136,7 +143,8 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-msgid "Showing"
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
 msgstr ""
 
 msgid "Skip invalid rows and continue import"
@@ -154,18 +162,9 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-msgid "items"
-msgstr ""
-
 msgid "next"
 msgstr ""
 
-msgid "of"
-msgstr ""
-
 msgid "prev"
-msgstr ""
-
-msgid "to"
 msgstr ""
 

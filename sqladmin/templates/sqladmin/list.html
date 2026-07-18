@@ -44,7 +44,7 @@
                 {% if model_view.can_create %}
                 <div class="ms-3 d-inline-block">
                   <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
-                    + {{ _("New") }} {{ model_view.name }}
+                    + {{ _("New %(name)s", name=model_view.name) }}
                   </a>
                 </div>
                 {% endif %}
@@ -204,10 +204,11 @@
             </div>
             {% endblock %}
             <div class="card-footer d-flex justify-content-between align-items-center gap-2">
-              <p class="m-0 text-muted">{{ _("Showing") }} <span>{{ ((pagination.page - 1) * pagination.page_size) + 1 }}</span> {{ _("to") }}
-                <span>{{ min(pagination.page * pagination.page_size, pagination.count) }}</span> {{ _("of") }} <span>{{
-                  pagination.count
-                  }}</span> {{ _("items") }}
+              <p class="m-0 text-muted">
+                {{ _("Showing %(start)s to %(end)s of %(count)s items",
+                start=((pagination.page - 1) * pagination.page_size) + 1,
+                end=min(pagination.page * pagination.page_size, pagination.count),
+                count=pagination.count) }}
               </p>
               <ul class="pagination m-0 ms-auto">
                 <li class="page-item {% if not pagination.has_previous %}disabled{% endif %}">
@@ -239,13 +240,13 @@
                 {{ _("Show") }}
                 <a href="#" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true"
                   aria-expanded="false">
-                  {{ request.query_params.get("pageSize") or model_view.page_size }} / {{ _("Page") }}
+                  {{ _("%(size)s / Page", size=request.query_params.get("pageSize") or model_view.page_size) }}
                 </a>
                 <div class="dropdown-menu">
                   {% for page_size_option in model_view.page_size_options %}
                   <a class="dropdown-item"
                     href="{{ request.url.include_query_params(pageSize=page_size_option, page=pagination.resize(page_size_option).page) }}">
-                    {{ page_size_option }} / {{ _("Page") }}
+                    {{ _("%(size)s / Page", size=page_size_option) }}
                   </a>
                   {% endfor %}
                 </div>

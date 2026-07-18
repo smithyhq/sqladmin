@@ -49,6 +49,7 @@ from sqladmin.fields import (
     BooleanField,
     DateField,
     DateTimeField,
+    DateTimeLocalField,
     FileField,
     IntervalField,
     JSONField,
@@ -411,6 +412,14 @@ class ModelConverter(ModelConverterBase):
         prop: ColumnProperty,
         kwargs: dict[str, Any],
     ) -> UnboundField:
+        column = prop.columns[0]
+        # Use DateTimeLocalField for timezone-aware columns so that the
+        # UTC offset is not silently dropped when pre-populating the edit
+        # form, which would cause the stored time to shift on save.
+        # See https://github.com/aminalaee/sqladmin/issues/796
+        if getattr(column.type, "timezone", False):
+            kwargs["timezone"] = True
+            return DateTimeLocalField(**kwargs)
         return DateTimeField(**kwargs)
 
     @converts("Enum")

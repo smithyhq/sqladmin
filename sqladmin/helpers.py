@@ -294,10 +294,28 @@ def get_primary_keys(model: Any) -> tuple[Column, ...]:
     return tuple(sa_inspect(model).mapper.primary_key)
 
 
+def _coerce_pk_value(value: Any) -> Any:
+    """Return the primitive value of a primary key.
+
+    When a model uses an Enum column as its primary key, SQLAlchemy
+    returns the Enum *instance* (e.g. ``AnimalEnum.DOG``) rather than
+    its underlying value (``"dog"``).  Passing the raw instance into URL
+    construction produces malformed paths such as
+    ``/admin/animal/edit/AnimalEnum.DOG``.
+
+    This helper unwraps the ``.value`` attribute for any
+    :class:`enum.Enum` subclass so that URL-safe primitive values are
+    always used.  For all other types the value is returned unchanged.
+    """
+    if isinstance(value, enum.Enum):
+        return value.value
+    return value
+
+
 def get_object_identifier(obj: Any) -> Any:
     """Returns a value that uniquely identifies this object."""
     primary_keys = get_primary_keys(obj)
-    values = [getattr(obj, pk.name) for pk in primary_keys]
+    values = [_coerce_pk_value(getattr(obj, pk.name)) for pk in primary_keys]
 
     # Unaltered value for tables with a single primary key
     if len(values) == 1:

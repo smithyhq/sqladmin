@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import io
 import logging
+import warnings
 from pathlib import Path
 from types import MethodType
 from typing import (
@@ -48,6 +49,7 @@ from sqladmin.helpers import (
     slugify_action_name,
 )
 from sqladmin.i18n import (
+    BABEL_INSTALLED,
     I18nConfig,
     LocaleMiddleware,
     get_locale,
@@ -101,6 +103,14 @@ class BaseAdmin:
         self.logo_height = logo_height
         self.favicon_url = favicon_url
         self.i18n_config = i18n_config
+        if i18n_config is not None and not BABEL_INSTALLED:
+            warnings.warn(
+                "i18n_config was provided but the 'babel' package is not "
+                "installed; the interface will not be translated. Install it "
+                "with `pip install sqladmin[i18n]`.",
+                UserWarning,
+                stacklevel=3,
+            )
 
         if session_maker:
             self.session_maker = session_maker
@@ -163,6 +173,8 @@ class BaseAdmin:
                 gettext, ngettext, newstyle=True
             )
         else:
+            # No i18n configured: keep templates that use ``_("...")`` working
+            # by installing identity (null) translation callables.
             templates.env.globals["i18n_config"] = I18nConfig()
             templates.env.install_null_translations(newstyle=True)  # type: ignore[attr-defined]
 

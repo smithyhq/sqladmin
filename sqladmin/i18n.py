@@ -11,6 +11,7 @@ from starlette.requests import HTTPConnection
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 __all__ = [
+    "BABEL_INSTALLED",
     "DEFAULT_LOCALE",
     "SUPPORTED_LOCALES",
     "I18nConfig",
@@ -48,6 +49,8 @@ SUPPORTED_LOCALES = [
 try:
     from babel import Locale, dates
     from babel.support import LazyProxy, NullTranslations, Translations
+
+    BABEL_INSTALLED = True
 
     translations: Dict[str, NullTranslations] = {
         locale: Translations.load(
@@ -245,6 +248,7 @@ try:
 except ImportError:
     # Provide a degraded but functional i18n surface when babel is absent:
     # every message is returned untranslated so the admin keeps rendering.
+    BABEL_INSTALLED = False
 
     def set_locale(locale: str) -> None:
         pass

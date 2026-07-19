@@ -114,7 +114,8 @@ catalog and open a pull request.
 SQLAdmin marks its translatable text with `_("...")` in the Jinja templates.
 The workflow uses [Babel](https://babel.pocoo.org/) through the `Makefile`
 targets (each wraps the equivalent `pybabel` command). The extraction config
-lives in `babel.cfg` at the repository root — run these commands from there:
+lives in the `[tool.babel]` table of `pyproject.toml` — run these commands from
+the repository root:
 
 ```shell
 # 1. Refresh the .pot template and sync every existing catalog

@@ -42,8 +42,9 @@ dependencies = [
 
 
 [project.optional-dependencies]
-full = ["itsdangerous"]
+auth = ["itsdangerous"]
 i18n = ["babel"]
+full = ["itsdangerous", "babel"]
 
 [project.urls]
 Documentation = "https://smithyhq.github.io/sqladmin/"

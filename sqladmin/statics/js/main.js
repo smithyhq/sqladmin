@@ -44,19 +44,24 @@ $(document).on('shown.bs.modal', '#modal-import', function (event) {
   }
 
   $('#csvfile').val('');
-  $('#csvfile-name').text('No file selected');
+  $('#csvfile-name').text($('#csvfile-name').data('empty-text'));
   $('#csvfile-button').removeClass('disabled').attr('aria-disabled', 'false');
   $('#continue-on-error').prop('checked', false);
   $('#modal-import-text').text('').attr('class', 'd-none');
   $('#modal-import-progress').addClass('d-none');
   $('#modal-import-progress-bar').css('width', '0%');
-  $('#modal-import-progress-text').text('0/0 rows processed');
+  $('#modal-import-progress-text').text(
+    formatImportTemplate(
+      $('#modal-import-progress-text').data('initial-template'),
+      { processed: 0, total: 0 }
+    )
+  );
 });
 
 $(document).on('change', '#csvfile', function () {
   const fileInput = this;
   const file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
-  $('#csvfile-name').text(file ? file.name : 'No file selected');
+  $('#csvfile-name').text(file ? file.name : $('#csvfile-name').data('empty-text'));
 });
 
 function setImportInputsDisabled(disabled) {
@@ -94,10 +99,16 @@ function renderPersistingProgressText() {
   );
 
   $('#modal-import-progress-text').text(
-    lastProgressSnapshot.imported + ' imported, ' +
-    lastProgressSnapshot.skipped + ' skipped, ' +
-    lastProgressSnapshot.processed + '/' + lastProgressSnapshot.total +
-    ' rows processed - saving valid rows... (' + elapsedSeconds + 's)'
+    formatImportTemplate(
+      $('#modal-import-progress-text').data('persisting-template'),
+      {
+        imported: lastProgressSnapshot.imported,
+        skipped: lastProgressSnapshot.skipped,
+        processed: lastProgressSnapshot.processed,
+        total: lastProgressSnapshot.total,
+        seconds: elapsedSeconds,
+      }
+    )
   );
 }
 
@@ -140,8 +151,10 @@ function updateImportProgress(processed, total, imported, skipped) {
 
   stopPersistingTicker();
   $('#modal-import-progress-text').text(
-    imported + ' imported, ' + skipped + ' skipped, ' +
-    processed + '/' + total + ' rows processed'
+    formatImportTemplate(
+      $('#modal-import-progress-text').data('progress-template'),
+      { imported: imported, skipped: skipped, processed: processed, total: total }
+    )
   );
 }
 
@@ -601,3 +614,11 @@ $('.chars-count-label').each(function () {
 
   updateCharsCountLabel(); // Show on start
 });
+
+// Substitute %(name)s placeholders in a translated template with values, so
+// scripts only inject numbers and the surrounding text keeps its language.
+function formatImportTemplate(template, values) {
+  return String(template || '').replace(/%\((\w+)\)s/g, function (match, key) {
+    return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : match;
+  });
+}

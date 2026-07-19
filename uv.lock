@@ -1615,7 +1615,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+auth = [
+    { name = "itsdangerous" },
+]
 full = [
+    { name = "babel" },
     { name = "itsdangerous" },
 ]
 i18n = [
@@ -1658,7 +1662,9 @@ lint = [
 
 [package.metadata]
 requires-dist = [
+    { name = "babel", marker = "extra == 'full'" },
     { name = "babel", marker = "extra == 'i18n'" },
+    { name = "itsdangerous", marker = "extra == 'auth'" },
     { name = "itsdangerous", marker = "extra == 'full'" },
     { name = "jinja2" },
     { name = "python-multipart" },
@@ -1666,7 +1672,7 @@ requires-dist = [
     { name = "starlette", specifier = ">=0.50,<2.0.0" },
     { name = "wtforms", specifier = ">=3.1,<3.3" },
 ]
-provides-extras = ["full", "i18n"]
+provides-extras = ["auth", "i18n", "full"]
 
 [package.metadata.requires-dev]
 dev = [

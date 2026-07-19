@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-18 11:06+0000\n"
+"POT-Creation-Date: 2026-07-19 12:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,6 +19,27 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed"
+msgstr ""
+"%(imported)s импортировано, %(skipped)s пропущено, обработано "
+"%(processed)s/%(total)s строк"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed - saving valid rows... (%(seconds)ss)"
+msgstr ""
+"%(imported)s импортировано, %(skipped)s пропущено, обработано "
+"%(processed)s/%(total)s строк — сохранение корректных строк... "
+"(%(seconds)s с)"
+
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr "Обработано %(processed)s/%(total)s строк"
 
 #, python-format
 msgid "%(size)s / Page"
@@ -32,6 +53,9 @@ msgstr "Применить фильтр"
 
 msgid "Cancel"
 msgstr "Отмена"
+
+msgid "Choose CSV file"
+msgstr "Выберите CSV-файл"
 
 msgid "Clear filter"
 msgstr "Очистить фильтр"

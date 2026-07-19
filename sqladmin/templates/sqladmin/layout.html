@@ -22,18 +22,23 @@
           {{ display_menu(admin._menu, request) }}
         </div>
       </nav>
+      {% if admin.authentication_backend %}
+      <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon m-2 px-2">
+        <span class="me-2">{{ _("Logout") }}</span>
+        <i class="fa fa-sign-out"></i>
+      </a>
+      {% endif %}
     </div>
   </aside>
   <div class="page-wrapper">
     {% block topbar %}
     {% set show_switcher = i18n_config.language_switcher and i18n_config.language_switcher | length > 1 %}
-    {% if show_switcher or admin.authentication_backend %}
+    {% if show_switcher %}
     <header class="navbar navbar-expand-md navbar-dark d-print-none sticky-top" data-bs-theme="dark"
       style="background:#1f2937; box-shadow:0 2px 6px rgba(0,0,0,0.18); min-height:56px; z-index:1030;">
       <div class="container-fluid">
-        {# Language switcher and account actions, aligned to the right. #}
+        {# Language switcher, aligned to the right. #}
         <div class="navbar-nav flex-row ms-auto align-items-center gap-2" id="topbar-end">
-          {% if show_switcher %}
           <div class="nav-item dropdown">
             <a href="#" class="btn btn-outline-light dropdown-toggle d-flex align-items-center px-3"
               data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('Language') }}">
@@ -49,14 +54,6 @@
               {% endfor %}
             </div>
           </div>
-          {% endif %}
-          {% if admin.authentication_backend %}
-          <a href="{{ request.url_for('admin:logout') }}"
-            class="btn btn-outline-light d-flex align-items-center px-3">
-            <span class="me-2">{{ _("Logout") }}</span>
-            <i class="fa fa-sign-out"></i>
-          </a>
-          {% endif %}
         </div>
       </div>
     </header>

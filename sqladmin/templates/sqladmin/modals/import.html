@@ -8,9 +8,10 @@
           <div class="mt-3 text-start">
             <input id="csvfile" name="csvfile" type="file" accept="text/csv" class="import-csv-file-input" />
             <label id="csvfile-button" for="csvfile" class="btn btn-outline-primary w-100">
-              Choose CSV file
+              {{ _("Choose CSV file") }}
             </label>
-            <small id="csvfile-name" class="text-muted d-block mt-1">{{ _("No file selected") }}</small>
+            <small id="csvfile-name" class="text-muted d-block mt-1"
+              data-empty-text="{{ _('No file selected') }}">{{ _("No file selected") }}</small>
           </div>
           <label class="form-check mt-3 text-start">
             <input id="continue-on-error" name="continue_on_error" type="checkbox" class="form-check-input" />
@@ -20,7 +21,13 @@
             <div class="progress" role="progressbar" aria-label="{{ _('Import progress') }}">
               <div id="modal-import-progress-bar" class="progress-bar" style="width: 0%"></div>
             </div>
-            <small id="modal-import-progress-text" class="text-muted d-block mt-1">0/0 rows processed</small>
+            <small id="modal-import-progress-text" class="text-muted d-block mt-1"
+              data-initial-template="{{ _('%(processed)s/%(total)s rows processed',
+                processed='%(processed)s', total='%(total)s') }}"
+              data-progress-template="{{ _('%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed',
+                imported='%(imported)s', skipped='%(skipped)s', processed='%(processed)s', total='%(total)s') }}"
+              data-persisting-template="{{ _('%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed - saving valid rows... (%(seconds)ss)',
+                imported='%(imported)s', skipped='%(skipped)s', processed='%(processed)s', total='%(total)s', seconds='%(seconds)s') }}">{{ _("%(processed)s/%(total)s rows processed", processed="0", total="0") }}</small>
           </div>
         </div>
         <div id="modal-import-text" style="white-space: pre-line" class="d-none" role="alert"></div>

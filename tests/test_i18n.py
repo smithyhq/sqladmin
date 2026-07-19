@@ -30,7 +30,7 @@ from sqladmin.i18n import (
 )
 from tests.common import sync_engine as engine
 
-Base = declarative_base()
+Base = declarative_base()  # type: ignore
 
 SWITCHER = ["en", "az", "de", "ru", "tr"]
 
@@ -370,6 +370,23 @@ def test_switcher_rendered_in_top_navbar(client: TestClient) -> None:
     # The switcher and its locale options live inside the top navbar header.
     assert "Azərbaycan" in header.group(0)
     assert "Deutsch" in header.group(0)
+
+
+def test_warns_when_i18n_config_passed_without_babel() -> None:
+    app = Starlette()
+
+    with mock.patch("sqladmin.application.BABEL_INSTALLED", False):
+        with pytest.warns(UserWarning, match="babel"):
+            Admin(app=app, engine=engine, i18n_config=I18nConfig())
+
+
+def test_no_warning_without_i18n_config() -> None:
+    import warnings as warnings_module
+
+    app = Starlette()
+    with warnings_module.catch_warnings():
+        warnings_module.simplefilter("error")
+        Admin(app=app, engine=engine)
 
 
 @pytest.mark.anyio

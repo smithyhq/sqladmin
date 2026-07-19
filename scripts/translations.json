@@ -48,7 +48,11 @@
     "New %(name)s": "Yeni %(name)s",
     "Edit %(name)s": "Redaktə: %(name)s",
     "Login to %(title)s": "%(title)s hesabına daxil olun",
-    "%(size)s / Page": "%(size)s / Səhifə"
+    "%(size)s / Page": "%(size)s / Səhifə",
+    "Choose CSV file": "CSV faylı seçin",
+    "%(processed)s/%(total)s rows processed": "%(processed)s/%(total)s sətir emal olundu",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed": "%(imported)s idxal olundu, %(skipped)s ötürüldü, %(processed)s/%(total)s sətir emal olundu",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed - saving valid rows... (%(seconds)ss)": "%(imported)s idxal olundu, %(skipped)s ötürüldü, %(processed)s/%(total)s sətir emal olundu - düzgün sətirlər yadda saxlanılır... (%(seconds)s san)"
   },
   "de": {
     "Logout": "Abmelden",
@@ -98,7 +102,11 @@
     "New %(name)s": "Neu: %(name)s",
     "Edit %(name)s": "%(name)s bearbeiten",
     "Login to %(title)s": "Anmelden bei %(title)s",
-    "%(size)s / Page": "%(size)s / Seite"
+    "%(size)s / Page": "%(size)s / Seite",
+    "Choose CSV file": "CSV-Datei auswählen",
+    "%(processed)s/%(total)s rows processed": "%(processed)s/%(total)s Zeilen verarbeitet",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed": "%(imported)s importiert, %(skipped)s übersprungen, %(processed)s/%(total)s Zeilen verarbeitet",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed - saving valid rows... (%(seconds)ss)": "%(imported)s importiert, %(skipped)s übersprungen, %(processed)s/%(total)s Zeilen verarbeitet - gültige Zeilen werden gespeichert... (%(seconds)s s)"
   },
   "ru": {
     "Logout": "Выход",
@@ -148,7 +156,11 @@
     "New %(name)s": "Создать: %(name)s",
     "Edit %(name)s": "Изменить: %(name)s",
     "Login to %(title)s": "Вход в %(title)s",
-    "%(size)s / Page": "%(size)s / страница"
+    "%(size)s / Page": "%(size)s / страница",
+    "Choose CSV file": "Выберите CSV-файл",
+    "%(processed)s/%(total)s rows processed": "Обработано %(processed)s/%(total)s строк",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed": "%(imported)s импортировано, %(skipped)s пропущено, обработано %(processed)s/%(total)s строк",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed - saving valid rows... (%(seconds)ss)": "%(imported)s импортировано, %(skipped)s пропущено, обработано %(processed)s/%(total)s строк — сохранение корректных строк... (%(seconds)s с)"
   },
   "tr": {
     "Logout": "Çıkış",
@@ -198,6 +210,10 @@
     "New %(name)s": "Yeni %(name)s",
     "Edit %(name)s": "%(name)s düzenle",
     "Login to %(title)s": "%(title)s girişi",
-    "%(size)s / Page": "%(size)s / Sayfa"
+    "%(size)s / Page": "%(size)s / Sayfa",
+    "Choose CSV file": "CSV dosyası seçin",
+    "%(processed)s/%(total)s rows processed": "%(processed)s/%(total)s satır işlendi",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed": "%(imported)s içe aktarıldı, %(skipped)s atlandı, %(processed)s/%(total)s satır işlendi",
+    "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows processed - saving valid rows... (%(seconds)ss)": "%(imported)s içe aktarıldı, %(skipped)s atlandı, %(processed)s/%(total)s satır işlendi - geçerli satırlar kaydediliyor... (%(seconds)s sn)"
   }
 }

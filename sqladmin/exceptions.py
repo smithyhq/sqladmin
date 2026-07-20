@@ -1,3 +1,8 @@
+from typing import cast
+
+from wtforms import Form
+
+
 class SQLAdminException(Exception):
     pass
 
@@ -15,12 +20,12 @@ class ValidationError(SQLAdminException):
         self.form_errors = form_errors
         self.field_errors = field_errors
 
-    def enrich_form(self, form):
+    def enrich_form(self, form: Form) -> None:
         for field_name, error in self.field_errors.items():
-            form._fields[field_name].errors.append(error)
+            cast(list[str], form._fields[field_name].errors).append(error)
 
         if self.form_errors:
-            form.form_errors.append(self.form_errors)
+            form.form_errors += self.form_errors
         elif not self.field_errors:
             # default error
             form.form_errors.append("Validation error")

@@ -24,6 +24,7 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 
 from sqladmin import Admin, ModelView
+from sqladmin.exceptions import ValidationError
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -174,6 +175,12 @@ class WithDefaults(Base):
     is_active = Column(Boolean, nullable=False, default=True)
 
 
+class AsyncValidation(Base):
+    __tablename__ = "async_validation"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+
 @pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
@@ -288,6 +295,16 @@ class WithDefaultsAdmin(ModelView, model=WithDefaults):
     pass
 
 
+class AsyncValidationAdmin(ModelView, model=AsyncValidation):
+    column_list = [AsyncValidation.name]
+
+    async def on_model_change(
+        self, data: dict, model: Any, is_created: bool, request: Request
+) -> None:
+        if data.get("name") == "invalid":
+            raise ValidationError(name="This name is forbidden")
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
@@ -296,6 +313,7 @@ admin.add_view(EachRowActionAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(PersonAdmin)
 admin.add_view(WithDefaultsAdmin)
+admin.add_view(AsyncValidationAdmin)
 
 
 def _parse_ndjson_events(content: str) -> list[dict]:
@@ -1850,3 +1868,22 @@ async def test_hybrid_property(client: AsyncClient) -> None:
 
     response = await client.get("/admin/person/details/1")
     assert response.status_code == 200
+
+
+async def test_async_validation_error(client: AsyncClient):
+    # Test creation with invalid data
+    response = await client.post(
+        "/admin/async-validation/create",
+        data={"name": "invalid"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"This name is forbidden" in response.content
+
+    # Test creation with valid data
+    response = await client.post(
+        "/admin/async-validation/create",
+        data={"name": "valid"},
+    )
+
+    assert response.status_code == 302, response.content  # Redirect after success

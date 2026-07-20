@@ -11,8 +11,7 @@ class NoConverterFound(SQLAdminException):
 
 
 class ValidationError(SQLAdminException):
-
-    def __init__(self, *form_errors, **field_errors):
+    def __init__(self, *form_errors: str, **field_errors: str):
         self.form_errors = form_errors
         self.field_errors = field_errors
 

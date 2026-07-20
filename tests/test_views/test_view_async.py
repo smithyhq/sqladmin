@@ -300,7 +300,7 @@ class AsyncValidationAdmin(ModelView, model=AsyncValidation):
 
     async def on_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
-) -> None:
+    ) -> None:
         if data.get("name") == "invalid":
             raise ValidationError(name="This name is forbidden")
 
@@ -1886,4 +1886,5 @@ async def test_async_validation_error(client: AsyncClient):
         data={"name": "valid"},
     )
 
-    assert response.status_code == 302, response.content  # Redirect after success
+    # Redirect after success
+    assert response.status_code == 302, response.content

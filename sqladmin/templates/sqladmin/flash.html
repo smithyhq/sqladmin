@@ -19,7 +19,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     let toasts = document.querySelectorAll('.toast');
     toasts.forEach(function (toastEl) {
-      let toast = new bootstrap.Toast(toastEl, { "delay": 3000 });
+      let toast = new window.tabler.bootstrap.Toast(toastEl, { "delay": 3000 });
       toast.show()
     })
   })

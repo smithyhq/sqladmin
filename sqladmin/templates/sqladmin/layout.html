@@ -34,8 +34,7 @@
     {% block topbar %}
     {% set show_switcher = i18n_config.language_switcher and i18n_config.language_switcher | length > 1 %}
     {% if show_switcher %}
-    <header class="navbar navbar-expand-md navbar-dark d-print-none sticky-top" data-bs-theme="dark"
-      style="background:#1f2937; box-shadow:0 2px 6px rgba(0,0,0,0.18); min-height:56px; z-index:1030;">
+    <header class="navbar navbar-expand-md d-print-none sticky-top shadow-sm" data-bs-theme="dark">
       <div class="container-fluid">
         {# Language switcher, aligned to the right. #}
         <div class="navbar-nav flex-row ms-auto align-items-center gap-2" id="topbar-end">

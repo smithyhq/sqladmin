@@ -56,8 +56,13 @@ markdown_extensions:
   - pymdownx.tabbed
   - pymdownx.superfences
 
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
 watch:
   - sqladmin/
+  - README.md
 
 plugins:
   - search

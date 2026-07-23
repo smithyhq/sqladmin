@@ -1399,6 +1399,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         By default do nothing.
         """
 
+    async def check_can_create(self, request: Request) -> bool:
+        """
+        You can add a custom checker before create.
+        """
+        return self.can_create
+
     async def check_can_view_details(self, request: Request, model: Any) -> bool:
         """
         You can add a custom model attribute checker before view details.

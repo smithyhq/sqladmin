@@ -72,3 +72,7 @@
         - after_model_delete
         - save_as
         - save_as_continue
+        - check_can_create
+        - check_can_edit
+        - check_can_view_details
+        - check_can_delete

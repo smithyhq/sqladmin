@@ -264,6 +264,9 @@ class EachRowActionAdmin(ModelView, model=EachRowAction):
         "can_delete",
     ]
 
+    async def check_can_create(self, request: Request) -> bool:
+        return False
+
     async def check_can_view_details(
         self, request: Request, model: EachRowAction
     ) -> bool:
@@ -716,6 +719,8 @@ async def test_check_can_view_details(client: AsyncClient) -> None:
     assert result.scalar_one() == 3
 
     response = await client.get("admin/each-row-action/list")
+
+    assert 'href="http://testserver/admin/each-row-action/create"' not in response.text
 
     assert 'href="http://testserver/admin/each-row-action/edit/1"' in response.text
     assert (

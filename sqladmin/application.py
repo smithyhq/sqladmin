@@ -19,6 +19,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
+from starlette import status
 from starlette.applications import Starlette
 from starlette.datastructures import URL, FormData, MultiDict, UploadFile
 from starlette.exceptions import HTTPException
@@ -321,7 +322,12 @@ class BaseAdminView(BaseAdmin):
     async def _create(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.can_create or not model_view.is_accessible(request):
-            raise HTTPException(status_code=403)
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        if hasattr(model_view, "check_can_create"):
+            can_create = await model_view.check_can_create(request)
+            if can_create is not True:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     async def _details(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])

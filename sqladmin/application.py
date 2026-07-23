@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import io
 import logging
+import warnings
 from pathlib import Path
 from types import MethodType
 from typing import (
@@ -47,6 +48,15 @@ from sqladmin.helpers import (
     is_async_session_maker,
     slugify_action_name,
 )
+from sqladmin.i18n import (
+    BABEL_INSTALLED,
+    I18nConfig,
+    LocaleMiddleware,
+    get_locale,
+    get_locale_display_name,
+    gettext,
+    ngettext,
+)
 from sqladmin.models import BaseView, ModelView
 from sqladmin.secret import Secret
 from sqladmin.templating import Jinja2Templates
@@ -81,6 +91,7 @@ class BaseAdmin:
         templates_dir: str = "templates",
         middlewares: Sequence[Middleware] | None = None,
         authentication_backend: AuthenticationBackend | None = None,
+        i18n_config: I18nConfig | None = None,
     ) -> None:
         self.app = app
         self.engine = engine
@@ -91,6 +102,15 @@ class BaseAdmin:
         self.logo_width = logo_width
         self.logo_height = logo_height
         self.favicon_url = favicon_url
+        self.i18n_config = i18n_config
+        if i18n_config is not None and not BABEL_INSTALLED:
+            warnings.warn(
+                "i18n_config was provided but the 'babel' package is not "
+                "installed; the interface will not be translated. Install it "
+                "with `pip install sqladmin[i18n]`.",
+                UserWarning,
+                stacklevel=3,
+            )
 
         if session_maker:
             self.session_maker = session_maker
@@ -109,6 +129,15 @@ class BaseAdmin:
         self.authentication_backend = authentication_backend
         if authentication_backend:
             middlewares.extend(authentication_backend.middlewares)
+
+        if self.i18n_config is not None:
+            middlewares.append(
+                Middleware(
+                    LocaleMiddleware,
+                    i18n_config=self.i18n_config,
+                    cookie_path=self.base_url or "/",
+                )
+            )
 
         self.admin = Starlette(middleware=middlewares)
         self.templates = self.init_templating_engine()
@@ -134,6 +163,20 @@ class BaseAdmin:
         templates.env.globals["get_flashed_messages"] = get_flashed_messages
         templates.env.globals["Secret"] = Secret
         templates.env.globals["collect_form_media"] = collect_form_media
+
+        templates.env.add_extension("jinja2.ext.i18n")
+        if self.i18n_config is not None:
+            templates.env.globals["i18n_config"] = self.i18n_config
+            templates.env.globals["get_locale"] = get_locale
+            templates.env.globals["get_locale_display_name"] = get_locale_display_name
+            templates.env.install_gettext_callables(  # type: ignore[attr-defined]
+                gettext, ngettext, newstyle=True
+            )
+        else:
+            # No i18n configured: keep templates that use ``_("...")`` working
+            # by installing identity (null) translation callables.
+            templates.env.globals["i18n_config"] = I18nConfig()
+            templates.env.install_null_translations(newstyle=True)  # type: ignore[attr-defined]
 
         return templates
 
@@ -464,6 +507,7 @@ class Admin(BaseAdminView):
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
         static_files_kwargs: dict[str, Any] | None = None,
+        i18n_config: I18nConfig | None = None,
     ) -> None:
         """
         Args:
@@ -477,6 +521,9 @@ class Admin(BaseAdminView):
             logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
             static_files_kwargs: Extra keyword arguments for Starlette StaticFiles.
+            i18n_config: Internationalization configuration. When provided, the
+                interface is translated per request and, if
+                ``language_switcher`` is set, a language switcher is shown.
         """
 
         super().__init__(
@@ -492,6 +539,7 @@ class Admin(BaseAdminView):
             templates_dir=templates_dir,
             middlewares=middlewares,
             authentication_backend=authentication_backend,
+            i18n_config=i18n_config,
         )
 
         static_files_kwargs = {**(static_files_kwargs or {}), "packages": ["sqladmin"]}

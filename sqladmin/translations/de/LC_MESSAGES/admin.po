@@ -1,0 +1,194 @@
+# German translations for SQLAdmin.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the SQLAdmin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: SQLAdmin VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: de\n"
+"Language-Team: de <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed"
+msgstr ""
+"%(imported)s importiert, %(skipped)s übersprungen, "
+"%(processed)s/%(total)s Zeilen verarbeitet"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed - saving valid rows... (%(seconds)ss)"
+msgstr ""
+"%(imported)s importiert, %(skipped)s übersprungen, "
+"%(processed)s/%(total)s Zeilen verarbeitet - gültige Zeilen werden "
+"gespeichert... (%(seconds)s s)"
+
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr "%(processed)s/%(total)s Zeilen verarbeitet"
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s / Seite"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Apply Filter"
+msgstr "Filter anwenden"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Choose CSV file"
+msgstr "CSV-Datei auswählen"
+
+msgid "Clear filter"
+msgstr "Filter löschen"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Column"
+msgstr "Spalte"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Delete selected items"
+msgstr "Ausgewählte Einträge löschen"
+
+msgid "Done"
+msgstr "Fertig"
+
+msgid "Download CSV"
+msgstr "CSV herunterladen"
+
+msgid "Download TXT"
+msgstr "TXT herunterladen"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)s bearbeiten"
+
+msgid "Enter username"
+msgstr "Benutzername eingeben"
+
+msgid "Export"
+msgstr "Exportieren"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Go Back"
+msgstr "Zurück"
+
+msgid "Import"
+msgstr "Importieren"
+
+msgid "Import CSV"
+msgstr "CSV importieren"
+
+msgid "Import progress"
+msgstr "Importfortschritt"
+
+msgid "Import result"
+msgstr "Importergebnis"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "Login"
+msgstr "Anmelden"
+
+#, python-format
+msgid "Login to %(title)s"
+msgstr "Anmelden bei %(title)s"
+
+msgid "Logout"
+msgstr "Abmelden"
+
+msgid "Missed rows"
+msgstr "Übersprungene Zeilen"
+
+#, python-format
+msgid "New %(name)s"
+msgstr "Neu: %(name)s"
+
+msgid "No file selected"
+msgstr "Keine Datei ausgewählt"
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Please confirm"
+msgstr "Bitte bestätigen"
+
+msgid "Refresh list"
+msgstr "Liste aktualisieren"
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "Save and add another"
+msgstr "Speichern und weiteres hinzufügen"
+
+msgid "Save and continue editing"
+msgstr "Speichern und weiter bearbeiten"
+
+msgid "Save as new"
+msgstr "Als neu speichern"
+
+msgid "Search"
+msgstr "Suche"
+
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgid "Select item"
+msgstr "Eintrag auswählen"
+
+msgid "Show"
+msgstr "Zeige"
+
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "Zeige %(start)s bis %(end)s von %(count)s Einträgen"
+
+msgid "Skip invalid rows and continue import"
+msgstr "Ungültige Zeilen überspringen und Import fortsetzen"
+
+msgid "Username"
+msgstr "Benutzername"
+
+msgid "Value"
+msgstr "Wert"
+
+msgid "View"
+msgstr "Ansehen"
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "next"
+msgstr "weiter"
+
+msgid "prev"
+msgstr "zurück"
+

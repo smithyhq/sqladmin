@@ -2,7 +2,7 @@
   aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
     <div class="modal-content">
-      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
       <div class="modal-status bg-blue"></div>
       <div class="modal-body text-center py-4">
         <h3>{{ confirmation_message }}</h3>
@@ -13,12 +13,12 @@
           <div class="row">
             <div class="col">
               <a href="#" class="btn w-100" data-bs-dismiss="modal">
-                Cancel
+                {{ _("Cancel") }}
               </a>
             </div>
             <div class="col">
               <a href="#" class="btn btn-blue w-100" id="action-custom-modal-{{ custom_action }}" data-url="{{ url }}">
-                Yes
+                {{ _("Yes") }}
               </a>
             </div>
           </div>

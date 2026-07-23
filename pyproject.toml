@@ -42,7 +42,9 @@ dependencies = [
 
 
 [project.optional-dependencies]
-full = ["itsdangerous"]
+auth = ["itsdangerous"]
+i18n = ["babel"]
+full = ["itsdangerous", "babel"]
 
 [project.urls]
 Documentation = "https://smithyhq.github.io/sqladmin/"
@@ -109,3 +111,11 @@ exclude_lines = [
 fail_under = 95
 show_missing = true
 skip_covered = true
+
+[tool.babel]
+# Message extraction mapping for `pybabel extract -F pyproject.toml`.
+# Only Jinja templates are scanned; SQLAdmin marks UI strings with _("...").
+[[tool.babel.mappings]]
+method = "jinja2"
+pattern = "sqladmin/templates/**.html"
+extensions = "jinja2.ext.i18n"

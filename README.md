@@ -53,9 +53,17 @@ Install using `pip`:
 $ pip install sqladmin
 ```
 
-This will install the full version of sqladmin with optional dependencies:
+Some features need extra packages, which are grouped into optional extras:
+
+| Extra | Installs | Enables |
+| --- | --- | --- |
+| `auth` | `itsdangerous` | Session-backed [authentication](https://smithyhq.github.io/sqladmin/authentication/) |
+| `i18n` | `babel` | [Internationalization](https://smithyhq.github.io/sqladmin/internationalization/) and localization |
+| `full` | both of the above | Everything |
 
 ```shell
+$ pip install "sqladmin[auth]"
+$ pip install "sqladmin[i18n]"
 $ pip install "sqladmin[full]"
 ```
 

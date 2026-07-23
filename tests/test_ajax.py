@@ -148,6 +148,7 @@ class MemberAdmin(ModelView, model=Member):
     form_ajax_refs = {
         "team": {
             "fields": ("name",),
+            "where": (Team.name != "BB",),
         }
     }
 
@@ -397,6 +398,26 @@ async def test_edit_validation_error_preserves_selected_ajax_value(
         'data-json="[{&#34;id&#34;: &#34;2&#34;, &#34;text&#34;: &#34;Team 2&#34;}]"'
         in response.text
     )
+
+
+async def test_ajax_where_condition(
+    client: AsyncClient,
+) -> None:
+    """It was supposed to return two records, but the filter dropped one"""
+
+    async with session_maker() as s:
+        s.add_all([Team(name="AB"), Team(name="BB")])
+        await s.commit()
+
+    async with session_maker() as s:
+        member = Member(name="John", team_id=1)
+        s.add(member)
+        await s.commit()
+
+    response = await client.get("/admin/member/ajax/lookup?name=team&term=B")
+
+    assert response.status_code == 200
+    assert '{"results":[{"id":"1","text":"Team 1"}]}' == response.text
 
 
 async def test_format_by_pk_single_pk() -> None:

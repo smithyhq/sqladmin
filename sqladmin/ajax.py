@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 from sqlalchemy import String, cast, inspect, or_, select
+from sqlalchemy.sql.elements import ColumnElement
 
 from sqladmin.helpers import (
     get_object_identifier,
@@ -29,6 +30,7 @@ class QueryAjaxModelLoader:
         self.model = model
         self.model_admin = model_admin
         self.fields = options.get("fields", {})
+        self.where = options.get("where", tuple())
         self.order_by = options.get("order_by")
         self.limit = options.get("limit", DEFAULT_PAGE_SIZE)
 
@@ -39,6 +41,16 @@ class QueryAjaxModelLoader:
             raise ValueError(
                 "AJAX loading requires `fields` to be specified for "
                 f"{self.model}.{self.name}"
+            )
+
+        if isinstance(self.where, Iterable) is False or any(
+            not isinstance(item, ColumnElement) for item in self.where
+        ):
+            raise ValueError(
+                f'The "where" field only accepts an iterable of '
+                f"SQLAlchemy ColumnElement expressions. "
+                f"Got: {self.where}. "
+                f'Example: "where": (and_(User.name == "example"),)'
             )
 
         self._cached_fields = self._process_fields()
@@ -107,6 +119,9 @@ class QueryAjaxModelLoader:
         ]
 
         stmt = stmt.filter(or_(*filters))
+
+        if self.where:
+            stmt = stmt.where(*self.where)
 
         if self.order_by:
             if isinstance(self.order_by, list):

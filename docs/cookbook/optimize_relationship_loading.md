@@ -42,6 +42,7 @@ class ParentAdmin(ModelView, model=Parent):
         "children": {
             "fields": ("id",),
             "order_by": "id",
+            "where": (Children.id > 1,),
         }
     }
 ```

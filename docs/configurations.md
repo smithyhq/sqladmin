@@ -421,6 +421,7 @@ The forms are based on `WTForms` package and include the following options:
             "address": {
                 "fields": ("zip_code", "street"),
                 "order_by": ("id",),
+                "where": (Address.active.is_(True),),
             }
         }
         form_create_rules = ["name", "password"]

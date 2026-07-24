@@ -6,10 +6,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import Column, ForeignKey, Integer, String, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, foreign, relationship, selectinload
+from sqlalchemy.sql.elements import ColumnElement
 from starlette.applications import Starlette
+from starlette.requests import Request
 
 from sqladmin import Admin, ModelView
-from sqladmin.ajax import QueryAjaxModelLoader, create_ajax_loader
+from sqladmin.ajax import AjaxWhereClause, QueryAjaxModelLoader, create_ajax_loader
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -173,11 +175,16 @@ class RoomAdmin(ModelView, model=Room):
     }
 
 
+class TeamAjaxWhereClause(AjaxWhereClause):
+    async def __call__(self, request: Request, term: str) -> ColumnElement:
+        return Team.name != "BB"
+
+
 class MemberAdmin(ModelView, model=Member):
     form_ajax_refs = {
         "team": {
             "fields": ("name",),
-            "where": (Team.name != "BB",),
+            "where": TeamAjaxWhereClause(),
         }
     }
 
@@ -507,53 +514,73 @@ async def test_missed_field_in_ajax() -> None:
         admin.add_view(MissedFieldAdmin)
 
 
-async def test_error_on_where_validation_in_ajax() -> None:
-    class MissedFieldAdmin(ModelView, model=MissedField):
-        form_ajax_refs = {"team": {"fields": ("id",), "where": ("id = 1",)}}
+async def test_ajax_where_clause_valid_override(client: AsyncClient) -> None:
+    class AjaxWhereClauseValidOverride(Base):
+        __tablename__ = "AjaxWhereClauseValidOverride"
+        id = Column(Integer, primary_key=True)
+        team_id = Column(Integer, ForeignKey("teams.id"))
+        team = relationship("Team")
 
+    class AjaxWhereClauseValidOverrideAdmin(
+        ModelView, model=AjaxWhereClauseValidOverride
+    ):
+        class WhereClause(AjaxWhereClause):
+            async def __call__(self, request: Request, term: str) -> ColumnElement:
+                return Team.id == 1
+
+        form_ajax_refs = {"team": {"fields": ("id",), "where": WhereClause()}}
+
+    admin.add_view(AjaxWhereClauseValidOverrideAdmin)
+
+    identity = AjaxWhereClauseValidOverrideAdmin().identity
+    response = await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=abc")
+
+    assert response.status_code == 200
+    assert response.text == '{"results":[]}'
+
+
+async def test_ajax_where_clause_invalid_call_function_return(
+    client: AsyncClient,
+) -> None:
+    class AjaxWhereClauseInvalidCallFunctionReturn(Base):
+        __tablename__ = "AjaxWhereClauseInvalidCallFunctionReturn"
+        id = Column(Integer, primary_key=True)
+        team_id = Column(Integer, ForeignKey("teams.id"))
+        team = relationship("Team")
+
+    class AjaxWhereClauseInvalidCallFunctionReturnAdmin(
+        ModelView, model=AjaxWhereClauseInvalidCallFunctionReturn
+    ):
+        class WhereClause(AjaxWhereClause):
+            async def __call__(self, request: Request, term: str) -> ColumnElement:
+                return "id = 1"
+
+        form_ajax_refs = {"team": {"fields": ("id",), "where": WhereClause()}}
+
+    admin.add_view(AjaxWhereClauseInvalidCallFunctionReturnAdmin)
     error_msg = (
-        'The "where" field only accepts SQLAlchemy ColumnElement or an iterable of '
-        "SQLAlchemy ColumnElement expressions. "
-        "Got: ('id = 1',). "
-        'Example: "where": User.name == "example"'
+        "WhereClause.__call__ function should return value of type ColumnElement."
     )
     with pytest.raises(ValueError, match=re.escape(error_msg)):
-        admin.add_view(MissedFieldAdmin)
+        identity = AjaxWhereClauseInvalidCallFunctionReturnAdmin().identity
+        await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=abc")
 
 
-async def test_where_single_condition_in_ajax() -> None:
-    class MissedFieldAdmin(ModelView, model=MissedField):
-        form_ajax_refs = {"team": {"fields": ("id",), "where": Team.id == 1}}
+async def test_ajax_where_clause_invalid_class() -> None:
+    class AjaxWhereClauseInvalidClass(Base):
+        __tablename__ = "AjaxWhereClauseInvalidClass"
+        id = Column(Integer, primary_key=True)
+        team_id = Column(Integer, ForeignKey("teams.id"))
+        team = relationship("Team")
 
-    admin.add_view(MissedFieldAdmin)
+    class AjaxWhereClauseInvalidClassAdmin(
+        ModelView, model=AjaxWhereClauseInvalidClass
+    ):
+        form_ajax_refs = {"team": {"fields": ("id",), "where": "error"}}
 
-
-async def test_not_iterable_on_where_validation_in_ajax() -> None:
-    class MissedFieldAdmin(ModelView, model=MissedField):
-        form_ajax_refs = {"team": {"fields": ("id",), "where": 1234}}
-
-    error_msg = (
-        'The "where" field only accepts SQLAlchemy ColumnElement or an iterable of '
-        "SQLAlchemy ColumnElement expressions. "
-        "Got: 1234. "
-        'Example: "where": User.name == "example"'
-    )
+    error_msg = '"where" option should be is instance of subclass AjaxWhereClause'
     with pytest.raises(ValueError, match=re.escape(error_msg)):
-        admin.add_view(MissedFieldAdmin)
-
-
-async def test_iterable_on_where_validation_in_ajax() -> None:
-    class MissedFieldAdmin(ModelView, model=MissedField):
-        form_ajax_refs = {"team": {"fields": ("id",), "where": ["id = 1"]}}
-
-    error_msg = (
-        'The "where" field only accepts SQLAlchemy ColumnElement or an iterable of '
-        "SQLAlchemy ColumnElement expressions. "
-        "Got: ['id = 1']. "
-        'Example: "where": User.name == "example"'
-    )
-    with pytest.raises(ValueError, match=re.escape(error_msg)):
-        admin.add_view(MissedFieldAdmin)
+        admin.add_view(AjaxWhereClauseInvalidClassAdmin)
 
 
 async def test_fields_not_str_in_ajax() -> None:

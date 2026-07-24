@@ -44,6 +44,7 @@ nav:
       - ModelView: "api_reference/model_view.md"
       - BaseView: "api_reference/base_view.md"
       - Authentication: "api_reference/authentication.md"
+      - Ajax: "api_reference/ajax.md"
   - Contributing: "contributing.md"
 
 markdown_extensions:

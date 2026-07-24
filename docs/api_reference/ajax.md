@@ -1,0 +1,2 @@
+::: sqladmin.ajax
+    handler: python

@@ -46,6 +46,27 @@ class ParentAdmin(ModelView, model=Parent):
     }
 ```
 
+You can use additional `where` conditions; in this case, 
+a portion of the records will be excluded during the search based on this rule:
+
+```py
+from sqladmin.ajax import AjaxWhereClause
+
+class ChildrenAjaxWhereClause(AjaxWhereClause):
+    async def __call__(self, request: Request, term: str) -> ColumnElement:
+        return Children.active.is_(True)
+
+    
+class ParentAdmin(ModelView, model=Parent):
+    form_ajax_refs = {
+        "children": {
+            "fields": ("id",),
+            "where": ChildrenAjaxWhereClause(),
+        }
+    }
+```
+
+
 This will allow you to search `Child` objects using the `id` field while also ordering the results.
 
 ### Using `form_columns` or `form_excluded_columns`

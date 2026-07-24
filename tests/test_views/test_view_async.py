@@ -165,6 +165,12 @@ class EachRowAction(Base):
     can_delete = Column(Boolean, nullable=True, default=True)
 
 
+class Action(Base):
+    __tablename__ = "action"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+
 class WithDefaults(Base):
     __tablename__ = "with_defaults"
 
@@ -263,6 +269,9 @@ class EachRowActionAdmin(ModelView, model=EachRowAction):
         "can_edit",
         "can_delete",
     ]
+
+    async def check_can_create(self, request: Request) -> bool:
+        return True
 
     async def check_can_view_details(
         self, request: Request, model: EachRowAction
@@ -717,6 +726,8 @@ async def test_check_can_view_details(client: AsyncClient) -> None:
 
     response = await client.get("admin/each-row-action/list")
 
+    assert 'href="http://testserver/admin/each-row-action/create"' in response.text
+
     assert 'href="http://testserver/admin/each-row-action/edit/1"' in response.text
     assert (
         'data-url="http://testserver/admin/each-row-action/delete?pks=1"'
@@ -741,6 +752,24 @@ async def test_check_can_view_details(client: AsyncClient) -> None:
     assert response.status_code == 403
 
     response = await client.delete("admin/each-row-action/delete?pks=3")
+    assert response.status_code == 403
+
+
+async def test_check_can_create(client: AsyncClient) -> None:
+    class ActionAdmin(ModelView, model=Action):
+        async def check_can_create(self, request: Request) -> bool:
+            return False
+
+    admin.add_view(ActionAdmin)
+
+    response = await client.get("admin/action/list")
+
+    assert 'href="http://testserver/admin/action/create"' not in response.text
+
+    response = await client.post("/admin/action/create", data={})
+    assert response.status_code == 403
+
+    response = await client.get("/admin/action/create")
     assert response.status_code == 403
 
 

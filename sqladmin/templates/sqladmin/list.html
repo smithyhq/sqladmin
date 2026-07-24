@@ -41,7 +41,7 @@
                     data-bs-target="#modal-import">Import CSV</a>
                 </div>
                 {% endif %}
-                {% if model_view.can_create %}
+                {% if model_view.check_can_create(request) %}
                 <div class="ms-3 d-inline-block">
                   <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
                     + New {{ model_view.name }}

@@ -33,6 +33,7 @@ from sqlalchemy.orm.collections import InstrumentedList, InstrumentedSet
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.sql.elements import ClauseElement
 from sqlalchemy.sql.expression import Select, select
+from starlette import status
 from starlette.datastructures import URL
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
@@ -1031,7 +1032,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             return int(number)
         except ValueError as exc:
             raise HTTPException(
-                status_code=400, detail="Invalid page or pageSize parameter"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid page or pageSize parameter",
             ) from exc
 
     async def count(self, request: Request, stmt: Optional[Select] = None) -> int:
@@ -1165,7 +1167,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         obj = await self._get_object_by_pk(stmt)
 
         if column_name not in self._mapper.columns:
-            raise HTTPException(status_code=404, detail="Unknown column.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Unknown column."
+            )
 
         column_value = getattr(obj, column_name)
         from sqladmin.helpers import (
@@ -1177,9 +1181,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         path = resolve_storage_path(column_value)
         if path is None:
-            raise HTTPException(status_code=404)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         if is_http_url(path):
-            raise HTTPException(status_code=400, detail="Remote URLs are not served.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Remote URLs are not served.",
+            )
 
         allowed_roots = get_column_storage_roots(self._mapper.columns[column_name])
         try:
@@ -1187,10 +1194,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         except ValueError as exc:
             message = str(exc)
             if message == "File not found":
-                raise HTTPException(status_code=404) from exc
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
             if message == "File path not allowed":
-                raise HTTPException(status_code=403, detail=message) from exc
-            raise HTTPException(status_code=400, detail=message) from exc
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail=message
+                ) from exc
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=message
+            ) from exc
 
     def _stmt_by_identifier(self, identifier: str) -> Select:
         stmt = select(self.model)
@@ -1399,6 +1410,16 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         By default do nothing.
         """
 
+    async def check_can_create(self, request: Request) -> bool:
+        """
+        You can add a custom checker before creation.
+        The class variable `can_create` has higher priority than the result of
+        the `check_can_create` method. In other words, if `check_can_create`
+        returns `True` but `can_create` is set to `False`,
+        creation will still be forbidden.
+        """
+        return self.can_create
+
     async def check_can_view_details(self, request: Request, model: Any) -> bool:
         """
         You can add a custom model attribute checker before view details.
@@ -1592,7 +1613,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         if sort_by:
             if sort_by not in self._sort_fields:
-                raise HTTPException(status_code=400, detail="Invalid sortBy parameter")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid sortBy parameter",
+                )
             sort_fields = [(sort_by, sort == "desc")]
         else:
             sort_fields = self._get_default_sort()

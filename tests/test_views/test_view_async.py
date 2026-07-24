@@ -769,6 +769,9 @@ async def test_check_can_create(client: AsyncClient) -> None:
     response = await client.post("/admin/action/create", data={})
     assert response.status_code == 403
 
+    response = await client.get("/admin/action/create")
+    assert response.status_code == 403
+
 
 @pytest.mark.anyio
 async def test_update_endpoint_with_checkbox_widget(client: AsyncClient) -> None:

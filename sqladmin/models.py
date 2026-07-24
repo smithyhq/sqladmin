@@ -1412,7 +1412,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def check_can_create(self, request: Request) -> bool:
         """
-        You can add a custom checker before create.
+        You can add a custom checker before creation.
+        The class variable `can_create` has higher priority than the result of
+        the `check_can_create` method. In other words, if `check_can_create`
+        returns `True` but `can_create` is set to `False`,
+        creation will still be forbidden.
         """
         return self.can_create
 

@@ -1,0 +1,48 @@
+<div class="sa-palette-overlay" id="sa-palette" aria-hidden="true">
+  <div class="sa-palette" role="dialog" aria-modal="true" aria-label="{{ _('Search') }}">
+    <div class="sa-palette-search">
+      <i class="ti ti-search sa-palette-icon" aria-hidden="true"></i>
+      <span id="sa-palette-chip"></span>
+      <input
+        type="text"
+        id="sa-palette-input"
+        class="sa-palette-input"
+        placeholder="{{ _('Search models, records, commands') }}"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="{{ _('Search') }}"
+      />
+      <button type="button" class="sa-palette-close" id="sa-palette-close" aria-label="{{ _('Close') }}">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="sa-palette-results" id="sa-palette-results"></div>
+    <div class="sa-palette-footer">
+      <span>{{ _("Click a model to scope, click a record to open") }}</span>
+    </div>
+  </div>
+</div>
+<script>
+  window.SA_PALETTE_URL = "{{ url_for('admin:palette') }}";
+  window.SA_PALETTE_I18N = {
+    models: "{{ _('Models') }}",
+    modelsHint: "{{ _('registry, no database query') }}",
+    commands: "{{ _('Commands') }}",
+    records: "{{ _('Records') }}",
+    // {name} is substituted client-side so translators keep word order.
+    recordsIn: "{{ _('Records in {name}') }}",
+    oneQuery: "{{ _('one query') }}",
+    searchInside: "{{ _('Search inside') }}",
+    goTo: "{{ _('Go to {name}') }}",
+    create: "{{ _('Create {name}') }}",
+    page: "{{ _('page') }}",
+    new: "{{ _('new') }}",
+    open: "{{ _('open') }}",
+    more: "{{ _('{count} more, keep typing to narrow') }}",
+    noMatches: "{{ _('No matches') }}",
+    nothingFound: "{{ _('Nothing found') }}",
+    searchFailed: "{{ _('Search failed') }}",
+    searchPlaceholder: "{{ _('Search models, records, commands') }}",
+    searchInsidePlaceholder: "{{ _('Search inside {name}') }}"
+  };
+</script>

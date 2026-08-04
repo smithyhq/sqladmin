@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"POT-Creation-Date: 2026-08-03 18:27+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: tr\n"
@@ -58,11 +58,21 @@ msgstr "CSV dosyası seçin"
 msgid "Clear filter"
 msgstr "Filtreyi temizle"
 
+msgid "Click a model to scope, click a record to open"
+msgstr "Daraltmak için bir modele, açmak için bir kayda tıklayın"
+
 msgid "Close"
 msgstr "Kapat"
 
 msgid "Column"
 msgstr "Sütun"
+
+msgid "Commands"
+msgstr "Komutlar"
+
+#, python-brace-format
+msgid "Create {name}"
+msgstr "Yeni {name} oluştur"
 
 msgid "Delete"
 msgstr "Sil"
@@ -98,6 +108,10 @@ msgstr "Filtreler"
 msgid "Go Back"
 msgstr "Geri dön"
 
+#, python-brace-format
+msgid "Go to {name}"
+msgstr "{name} sayfasına git"
+
 msgid "Import"
 msgstr "İçe aktar"
 
@@ -126,6 +140,9 @@ msgstr "Çıkış"
 msgid "Missed rows"
 msgstr "Atlanan satırlar"
 
+msgid "Models"
+msgstr "Modeller"
+
 #, python-format
 msgid "New %(name)s"
 msgstr "Yeni %(name)s"
@@ -133,11 +150,24 @@ msgstr "Yeni %(name)s"
 msgid "No file selected"
 msgstr "Dosya seçilmedi"
 
+msgid "No matches"
+msgstr "Eşleşme yok"
+
+msgid "Nothing found"
+msgstr "Hiçbir şey bulunamadı"
+
 msgid "Password"
 msgstr "Parola"
 
 msgid "Please confirm"
 msgstr "Lütfen onaylayın"
+
+msgid "Records"
+msgstr "Kayıtlar"
+
+#, python-brace-format
+msgid "Records in {name}"
+msgstr "{name} içindeki kayıtlar"
 
 msgid "Refresh list"
 msgstr "Listeyi yenile"
@@ -156,6 +186,19 @@ msgstr "Yeni olarak kaydet"
 
 msgid "Search"
 msgstr "Ara"
+
+msgid "Search failed"
+msgstr "Arama başarısız oldu"
+
+msgid "Search inside"
+msgstr "İçinde ara"
+
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr "{name} içinde ara"
+
+msgid "Search models, records, commands"
+msgstr "Model, kayıt ve komutlarda ara"
 
 msgid "Select all"
 msgstr "Tümünü seç"
@@ -185,9 +228,28 @@ msgstr "Görüntüle"
 msgid "Yes"
 msgstr "Evet"
 
+msgid "new"
+msgstr "yeni"
+
 msgid "next"
 msgstr "sonraki"
 
+msgid "one query"
+msgstr "tek sorgu"
+
+msgid "open"
+msgstr "aç"
+
+msgid "page"
+msgstr "sayfa"
+
 msgid "prev"
 msgstr "önceki"
+
+msgid "registry, no database query"
+msgstr "kayıt defteri, veritabanı sorgusu yok"
+
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr "{count} tane daha, daraltmak için yazmaya devam edin"
 

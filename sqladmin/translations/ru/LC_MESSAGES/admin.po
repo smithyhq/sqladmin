@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"POT-Creation-Date: 2026-08-03 18:27+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -60,11 +60,21 @@ msgstr "Выберите CSV-файл"
 msgid "Clear filter"
 msgstr "Очистить фильтр"
 
+msgid "Click a model to scope, click a record to open"
+msgstr "Нажмите на модель, чтобы сузить, на запись — чтобы открыть"
+
 msgid "Close"
 msgstr "Закрыть"
 
 msgid "Column"
 msgstr "Столбец"
+
+msgid "Commands"
+msgstr "Команды"
+
+#, python-brace-format
+msgid "Create {name}"
+msgstr "Создать {name}"
 
 msgid "Delete"
 msgstr "Удалить"
@@ -100,6 +110,10 @@ msgstr "Фильтры"
 msgid "Go Back"
 msgstr "Назад"
 
+#, python-brace-format
+msgid "Go to {name}"
+msgstr "Перейти к {name}"
+
 msgid "Import"
 msgstr "Импорт"
 
@@ -128,6 +142,9 @@ msgstr "Выход"
 msgid "Missed rows"
 msgstr "Пропущенные строки"
 
+msgid "Models"
+msgstr "Модели"
+
 #, python-format
 msgid "New %(name)s"
 msgstr "Создать: %(name)s"
@@ -135,11 +152,24 @@ msgstr "Создать: %(name)s"
 msgid "No file selected"
 msgstr "Файл не выбран"
 
+msgid "No matches"
+msgstr "Совпадений нет"
+
+msgid "Nothing found"
+msgstr "Ничего не найдено"
+
 msgid "Password"
 msgstr "Пароль"
 
 msgid "Please confirm"
 msgstr "Подтвердите"
+
+msgid "Records"
+msgstr "Записи"
+
+#, python-brace-format
+msgid "Records in {name}"
+msgstr "Записи в {name}"
 
 msgid "Refresh list"
 msgstr "Обновить список"
@@ -158,6 +188,19 @@ msgstr "Сохранить как новое"
 
 msgid "Search"
 msgstr "Поиск"
+
+msgid "Search failed"
+msgstr "Не удалось выполнить поиск"
+
+msgid "Search inside"
+msgstr "Искать внутри"
+
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr "Искать в {name}"
+
+msgid "Search models, records, commands"
+msgstr "Поиск моделей, записей, команд"
 
 msgid "Select all"
 msgstr "Выбрать всё"
@@ -187,9 +230,28 @@ msgstr "Просмотр"
 msgid "Yes"
 msgstr "Да"
 
+msgid "new"
+msgstr "новый"
+
 msgid "next"
 msgstr "вперёд"
 
+msgid "one query"
+msgstr "один запрос"
+
+msgid "open"
+msgstr "открыть"
+
+msgid "page"
+msgstr "страница"
+
 msgid "prev"
 msgstr "назад"
+
+msgid "registry, no database query"
+msgstr "реестр, без запроса к базе данных"
+
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr "ещё {count}, продолжайте вводить для сужения"
 

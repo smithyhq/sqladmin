@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"POT-Creation-Date: 2026-08-03 18:27+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -59,11 +59,21 @@ msgstr "CSV-Datei auswählen"
 msgid "Clear filter"
 msgstr "Filter löschen"
 
+msgid "Click a model to scope, click a record to open"
+msgstr "Modell anklicken zum Eingrenzen, Datensatz zum Öffnen"
+
 msgid "Close"
 msgstr "Schließen"
 
 msgid "Column"
 msgstr "Spalte"
+
+msgid "Commands"
+msgstr "Befehle"
+
+#, python-brace-format
+msgid "Create {name}"
+msgstr "{name} erstellen"
 
 msgid "Delete"
 msgstr "Löschen"
@@ -99,6 +109,10 @@ msgstr "Filter"
 msgid "Go Back"
 msgstr "Zurück"
 
+#, python-brace-format
+msgid "Go to {name}"
+msgstr "Zu {name} wechseln"
+
 msgid "Import"
 msgstr "Importieren"
 
@@ -127,6 +141,9 @@ msgstr "Abmelden"
 msgid "Missed rows"
 msgstr "Übersprungene Zeilen"
 
+msgid "Models"
+msgstr "Modelle"
+
 #, python-format
 msgid "New %(name)s"
 msgstr "Neu: %(name)s"
@@ -134,11 +151,24 @@ msgstr "Neu: %(name)s"
 msgid "No file selected"
 msgstr "Keine Datei ausgewählt"
 
+msgid "No matches"
+msgstr "Keine Treffer"
+
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
 msgid "Password"
 msgstr "Passwort"
 
 msgid "Please confirm"
 msgstr "Bitte bestätigen"
+
+msgid "Records"
+msgstr "Datensätze"
+
+#, python-brace-format
+msgid "Records in {name}"
+msgstr "Datensätze in {name}"
 
 msgid "Refresh list"
 msgstr "Liste aktualisieren"
@@ -157,6 +187,19 @@ msgstr "Als neu speichern"
 
 msgid "Search"
 msgstr "Suche"
+
+msgid "Search failed"
+msgstr "Suche fehlgeschlagen"
+
+msgid "Search inside"
+msgstr "Darin suchen"
+
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr "In {name} suchen"
+
+msgid "Search models, records, commands"
+msgstr "Modelle, Datensätze, Befehle suchen"
 
 msgid "Select all"
 msgstr "Alle auswählen"
@@ -186,9 +229,28 @@ msgstr "Ansehen"
 msgid "Yes"
 msgstr "Ja"
 
+msgid "new"
+msgstr "neu"
+
 msgid "next"
 msgstr "weiter"
 
+msgid "one query"
+msgstr "eine Abfrage"
+
+msgid "open"
+msgstr "öffnen"
+
+msgid "page"
+msgstr "Seite"
+
 msgid "prev"
 msgstr "zurück"
+
+msgid "registry, no database query"
+msgstr "Registry, keine Datenbankabfrage"
+
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr "{count} weitere, weiter tippen zum Eingrenzen"
 

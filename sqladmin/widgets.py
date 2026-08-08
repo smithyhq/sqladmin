@@ -1,9 +1,10 @@
 # mypy: disable-error-code="override"
-
+import base64
 import json
 import logging
 from typing import TYPE_CHECKING, Any
 
+from fastapi_storages import StorageFile
 from markupsafe import Markup, escape
 from wtforms import Field, SelectFieldBase, widgets
 from wtforms.widgets import html_params
@@ -131,27 +132,53 @@ class FileInputWidget(widgets.FileInput):
     """
 
     def __call__(self, field: Field, **kwargs: Any) -> Markup:
-        if not field.flags.required:
-            checkbox_id = f"{field.id}_checkbox"
-            checkbox_label = Markup(
-                '<label class="form-check-label" for="{}">Clear</label>'
-            ).format(checkbox_id)
+        filename = ""
+        base64_bytes = ""
+        current_value = Markup("")
 
-            checkbox_input = Markup(
-                '<input class="form-check-input" type="checkbox" id="{}" name="{}">'  # noqa: E501
-            ).format(checkbox_id, checkbox_id)
-            checkbox = Markup('<div class="form-check">{}{}</div>').format(
-                checkbox_input, checkbox_label
+        if isinstance(field.data, StorageFile):
+            filename = field.data.name
+            current_value = Markup("Currently: {value}").format(
+                value=escape(field.data.path)
             )
+            base64_bytes = base64.b64encode(field.data.open().read()).decode("utf-8")
+
+        input_html = super().__call__(field, **kwargs)
+
+        if not field.flags.required:
+            clear_button = Markup(
+                "<button "
+                'type="button" '
+                'class="btn btn-secondary" '
+                'data-field-id="#{field_id}" '
+                'data-role="clear-file-input">'
+                '<i class="fa-solid fa-xmark"></i>'
+                "</button>"
+            ).format(field_id=escape(field.id))
         else:
-            checkbox = Markup()
+            clear_button = Markup()
 
-        if field.data:
-            current_value = Markup("<p>Currently: {}</p>").format(field.data)
-            field.flags.required = False
-            return current_value + checkbox + super().__call__(field, **kwargs)
-
-        return super().__call__(field, **kwargs)
+        return Markup(
+            "<div "
+            'class="file-input-container" '
+            'data-base64="{base64}" '
+            'data-field-id="{field_id}" '
+            'data-filename="{filename}" '
+            ">"
+            '<div class="row m-0 p-0 pb-1">{current_value}</div>'
+            '<div class="row m-0 p-0">'
+            '<div class="col m-0 p-0">{input_html}</div>'
+            '<div class="col m-0 p-0 col-auto">{clear_button}</div>'
+            "</div>"
+            "</div>"
+        ).format(
+            base64=escape(base64_bytes),
+            field_id=escape(field.id),
+            filename=escape(filename),
+            current_value=current_value,
+            input_html=input_html,
+            clear_button=clear_button,
+        )
 
 
 class BooleanInputWidget(widgets.CheckboxInput):

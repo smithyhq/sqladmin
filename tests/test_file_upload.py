@@ -10,7 +10,6 @@ from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
-from sqladmin.fields import FileField
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: Any
@@ -42,7 +41,7 @@ def client() -> Generator[TestClient, None, None]:
 
 
 class UserAdmin(ModelView, model=User):
-    form_overrides = {User.file: FileField, User.optional_file: FileField}
+    pass
 
 
 admin.add_view(UserAdmin)
@@ -62,10 +61,12 @@ def test_create_form_fields(client: TestClient) -> None:
         '<input class="form-control" id="file" name="file" required type="file">'
         in response.text
     )
+    assert 'data-field-id="#file"' not in response.text
     assert (
-        '<input class="form-control" id="optional_file" name="optional_file" type="file">'  # noqa: E501
-        in response.text
-    )
+        '<input class="form-control" id="optional_file" '
+        'name="optional_file" type="file">'
+    ) in response.text
+    assert 'data-field-id="#optional_file"' in response.text
 
 
 def test_create_form_post(client: TestClient) -> None:
@@ -108,9 +109,7 @@ def test_create_form_update(client: TestClient) -> None:
     assert user.optional_file.open().read() == b"zyx"
 
     files = {"file": ("file.txt", b"abc")}
-    client.post(
-        "/admin/user/edit/1", files=files, data={"optional_file_checkbox": "true"}
-    )
+    client.post("/admin/user/edit/1", files=files)
 
     user = _query_user()
     assert user.file.name == "file.txt"
@@ -128,11 +127,7 @@ def test_get_form_update(client: TestClient) -> None:
     response = client.get("/admin/user/edit/1")
 
     assert response.text.count("Currently:") == 2
-    assert '<input class="form-check-input" type="checkbox"' in response.text
-    assert (
-        '<label class="form-check-label" for="optional_file_checkbox">Clear</label>'
-        in response.text
-    )
+    assert 'data-field-id="#optional_file"' in response.text
 
     files = {"file": ("file.txt", b"abc")}
     client.post("/admin/user/edit/1", files=files)

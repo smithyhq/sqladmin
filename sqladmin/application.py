@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import io
 import logging
 import warnings
 from collections.abc import Awaitable, Callable, Sequence
@@ -838,7 +837,7 @@ class Admin(BaseAdminView):
                 request, model_view.edit_template, context
             )
 
-        form_data = await self._handle_form_data(request, model)
+        form_data = await self._handle_form_data(request)
         form = Form(form_data)
         context["form"] = form
 
@@ -1037,30 +1036,12 @@ class Admin(BaseAdminView):
         return request.url_for("admin:create", identity=identity)
 
     @staticmethod
-    async def _handle_form_data(request: Request, obj: Any = None) -> FormData:
-        """
-        Handle form data and modify in case of UploadFile.
-        This is needed since in edit page
-        there's no way to show current file of object.
-        """
-
+    async def _handle_form_data(request: Request) -> FormData:
         form = await request.form()
         form_data: list[tuple[str, str | UploadFile]] = []
         for key, value in form.multi_items():
-            if not isinstance(value, UploadFile):
-                form_data.append((key, value))
-                continue
+            form_data.append((key, value))
 
-            should_clear = form.get(key + "_checkbox")
-            empty_upload = len(await value.read(1)) != 1
-            await value.seek(0)
-            if should_clear:
-                form_data.append((key, UploadFile(io.BytesIO(b""))))
-            elif empty_upload and obj and getattr(obj, key):
-                f = getattr(obj, key)  # In case of update, imitate UploadFile
-                form_data.append((key, UploadFile(filename=f.name, file=f.open())))
-            else:
-                form_data.append((key, value))
         return FormData(form_data)
 
     @staticmethod

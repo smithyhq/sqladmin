@@ -2,7 +2,8 @@ import logging
 from collections.abc import Generator
 
 import pytest
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -16,10 +17,12 @@ from sqladmin.audit import (
     LoggingAuditBackend,
     NullAuditBackend,
 )
+from tests.common import async_engine
 from tests.common import sync_engine as engine
 
 Base = declarative_base()
 session_maker = sessionmaker(bind=engine)
+async_session_maker = async_sessionmaker(class_=AsyncSession, bind=async_engine)
 
 
 class AuditThing(Base):
@@ -146,3 +149,37 @@ def test_db_backend_persists_row() -> None:
     assert logs[0].identity == "audit-thing"
     assert logs[0].object_pk == "1"
     assert logs[0].actor == "tester"
+
+
+@pytest.mark.anyio
+async def test_db_backend_async_admin() -> None:
+    class MyDBBackend(DBAuditBackend):
+        async def get_actor(self, request: Request) -> str:
+            return "admin"
+
+        def build_row(self, entry: AuditEntry, actor: object, request: Request):
+            return AuditLog(
+                action=entry.action,
+                identity=entry.identity,
+                object_pk=entry.pk,
+                actor=actor,
+            )
+
+    admin = Admin(
+        app=Starlette(),
+        engine=async_engine,
+        audit_backend=MyDBBackend(async_session_maker),
+    )
+    admin.add_view(AuditThingAdmin)
+
+    with _client(admin) as c:
+        c.post("/admin/audit-thing/create", data={"name": "persisted"})
+
+    async with async_session_maker() as s:
+        logs = (await s.scalars(select(AuditLog))).all()
+
+        assert len(logs) == 1
+        assert logs[0].action == "create"
+        assert logs[0].identity == "audit-thing"
+        assert logs[0].object_pk == "1"
+        assert logs[0].actor == "admin"

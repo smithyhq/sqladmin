@@ -36,9 +36,6 @@ class Post(Base):
     tag_id = Column(Integer, ForeignKey("tags.id"))
     tag = relationship("Tag")
 
-    def __str__(self) -> str:
-        return f"Post {self.id}"
-
 
 class PostAdmin(ModelView, model=Post):
     form_ajax_refs = {

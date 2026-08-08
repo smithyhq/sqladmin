@@ -17,6 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
+from sqlalchemy.orm.session import Session
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.testclient import TestClient
@@ -122,7 +123,7 @@ class Worker(Base):
 
     @hybrid_property
     def person_name(self):
-        return self.person.name
+        return f"{self.person.name}Hybrid"
 
     @person_name.inplace.expression
     def _person_name_expression(cls):
@@ -229,12 +230,17 @@ class PersonAdmin(ModelView, model=Person):
     form_columns = [Person.name]
 
 
+class WorkerAdmin(ModelView, model=Worker):
+    column_details_list = [Worker.id, Worker.person_name]
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(PersonAdmin)
+admin.add_view(WorkerAdmin)
 
 
 def _parse_ndjson_events(content: str) -> list[dict]:
@@ -242,7 +248,7 @@ def _parse_ndjson_events(content: str) -> list[dict]:
     for line in content.splitlines():
         line = line.strip()
         if not line:
-            continue
+            continue  # pragma: no cover
         events.append(json.loads(line))
     return events
 
@@ -1144,6 +1150,21 @@ def test_hybrid_property(client: TestClient) -> None:
 
     response = client.get("/admin/person/details/1")
     assert response.status_code == 200
+    assert "Hybrid" in response.text
+
+
+def test_hybrid_inplace_property(client: TestClient) -> None:
+    with session_maker() as session:
+        person = Person(name="Daniel")
+        session.add(person)
+        session.flush()
+        worker = Worker(person_id=person.id)
+        session.add(worker)
+        session.commit()
+
+    response = client.get("/admin/worker/details/1")
+    assert response.status_code == 200
+    assert "Hybrid" in response.text
 
 
 def test_import_csv_file(client: TestClient) -> None:
@@ -1230,6 +1251,121 @@ def test_import_csv_permission_check_can_import(client: TestClient) -> None:
     assert "Import CSV" in allowed_list.text
     assert denied_import.status_code == 403
     assert allowed_import.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "call_number, expected_text",
+    [
+        (1, '"total": 1, "imported": 0'),
+        (2, '"total": 1, "imported": 0'),
+        (3, "Import canceled. No rows were imported"),
+    ],
+)
+def test_import_csv_request_disconnect(monkeypatch, call_number, expected_text) -> None:
+    """
+    If this test has failed, it means that somewhere the is_disconnected function is
+    being called. You need to check the response of the new is_disconnected call in its
+    proper order.
+    """
+    with session_maker() as s:
+        s.add_all(
+            [
+                User(id=1),
+                User(id=2),
+            ]
+        )
+        s.commit()
+
+    class AddressWithRelationshipImportAdmin(ModelView, model=Address):
+        can_import = True
+        column_import_list = [Address.id, Address.user]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(AddressWithRelationshipImportAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        call_counter = 0
+
+        async def is_disconnected(self) -> bool:
+            nonlocal call_counter
+            call_counter += 1
+            return call_counter == call_number
+
+        monkeypatch.setattr(Request, "is_disconnected", is_disconnected)
+
+        response = local_client.post(
+            "/admin/address/import",
+            files={
+                "csvfile": (
+                    "address.csv",
+                    b"id,user\r\n1,67\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+        assert expected_text in response.text
+
+
+def test_import_csv_on_import_row_error() -> None:
+    class UserSelectiveImportAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = [User.name, User.status]
+
+        async def on_import_row(self, data: dict, model, request: Request) -> None:
+            raise ValueError("error!")
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserSelectiveImportAdmin)
+
+    with TestClient(app=local_app, base_url="http://testserver") as local_client:
+        response = local_client.post(
+            "/admin/user/import",
+            data={"continue_on_error": "no"},
+            headers={"x-allow-import": "1"},
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,status\r\nUSER_1,ACTIVE\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    assert response.status_code == 200
+    assert "error!" in response.text
+
+
+def test_import_csv_empty_payload_error(client: TestClient) -> None:
+    response = client.post("/admin/user/import")
+    assert response.status_code == 400
+    assert "Invalid file upload. Expected a CSV file." in response.text
+
+
+def test_import_csv_database_error(client: TestClient, monkeypatch) -> None:
+    def commit(self) -> None:
+        raise Exception("Error!")
+
+    monkeypatch.setattr(Session, "commit", commit)
+
+    response = client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nUSER_1,ACTIVE\r\n",
+                "text/csv",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    assert (
+        "Import failed during database commit. No rows were imported (rolled back)"
+        in response.text
+    )
 
 
 def test_import_csv_bad_type_is_404(client: TestClient) -> None:

@@ -30,6 +30,9 @@ class User(Base):
 
     addresses = relationship("Address", back_populates="user")
 
+    def __str__(self) -> str:
+        return f"{self.name}"
+
 
 class Address(Base):
     __tablename__ = "addresses"
@@ -40,6 +43,9 @@ class Address(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
 
     user = relationship("User", back_populates="addresses")
+
+    def __str__(self) -> str:
+        return f"Address {self.id}"
 
 
 @pytest.fixture(autouse=True)
@@ -61,22 +67,30 @@ class TestPrettyExport:
 
     async def test_get_export_row_values_basic(self):
         class UserAdmin(ModelView, model=User):
-            column_list = ["id", "name", "email"]
+            column_list = ["id", "name", "email", "addresses"]
             session_maker = session_maker
             is_async = False
 
-        user = User(id=1, name="John Doe", email="john@example.com", is_active=True)
-        model_view = UserAdmin()
-        column_names = ["id", "name", "email"]
+        with session_maker() as session:
+            address = Address(id=1, user_id=1)
+            user = User(id=1, name="John Doe", email="john@example.com", is_active=True)
+            session.add(user)
+            session.add(address)
+            session.commit()
+            user = session.get(User, 1)
 
-        values = await PrettyExport._get_export_row_values(
-            model_view, user, column_names
-        )
+            model_view = UserAdmin()
+            column_names = ["id", "name", "email", "addresses"]
 
-        assert len(values) == 3
+            values = await PrettyExport._get_export_row_values(
+                model_view, user, column_names
+            )
+
+        assert len(values) == 4
         assert values[0] == 1
         assert values[1] == "John Doe"
         assert values[2] == "john@example.com"
+        assert values[3] == "Address 1"
 
     async def test_get_export_row_values_with_custom_export_cell(self):
         class UserAdmin(ModelView, model=User):
@@ -153,16 +167,17 @@ class TestPrettyExport:
         user = User(id=1, name="John Doe")
         address = Address(id=1, street="123 Main St", user=user)
         model_view = AddressAdmin()
-        column_names = ["id", "street", "user.name"]
+        column_names = ["id", "street", "user.name", "user"]
 
         values = await PrettyExport._get_export_row_values(
             model_view, address, column_names
         )
 
-        assert len(values) == 3
+        assert len(values) == 4
         assert values[0] == 1
         assert values[1] == "123 Main St"
         assert values[2] == "John Doe"
+        assert values[3] == "John Doe"
 
     async def test_pretty_export_csv_basic(self):
         class UserAdmin(ModelView, model=User):

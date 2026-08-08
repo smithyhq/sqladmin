@@ -8,7 +8,7 @@ from sqladmin.helpers import Writer, secure_filename, stream_to_csv
 if TYPE_CHECKING:
     from starlette.requests import Request
 
-    from .models import ModelView
+    from sqladmin.models import ModelView
 
 
 class PrettyExport:
@@ -26,14 +26,15 @@ class PrettyExport:
         """
         if name in model_view._relation_names:
             if isinstance(value, list):
-                cell_value = ",".join(formatted_value)
+                cell_value = ",".join([str(value) for value in formatted_value])
             else:
-                cell_value = formatted_value
+                cell_value = str(formatted_value)
         else:
             if isinstance(value, bool):
                 cell_value = "TRUE" if value else "FALSE"
             else:
                 cell_value = formatted_value
+
         return cell_value
 
     @classmethod

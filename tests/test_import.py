@@ -6,7 +6,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.datastructures import MultiDict
 
 from sqladmin import ModelView
-from sqladmin._import import validate_import_row
+from sqladmin._import import (
+    validate_foreign_key_values,
+    validate_import_row,
+)
 from sqladmin.application import Admin
 from tests.common import sync_engine as engine
 
@@ -111,3 +114,47 @@ async def test_validate_import_row_reports_coercion_errors() -> None:
     assert merged == {"active": True}
     assert "profile_id" in errors
     assert "Invalid value" in errors["profile_id"][0]
+
+
+@pytest.mark.anyio
+async def test_import_value_error_coerce_column_value(monkeypatch) -> None:
+    def mock_coerce_column_value(column: Column, value):
+        raise ValueError("error!")
+
+    monkeypatch.setattr(
+        "sqladmin._import.coerce_column_value", mock_coerce_column_value
+    )
+
+    model_view = _model_view(ImportWidgetAdmin)
+    result = await validate_foreign_key_values(
+        model_view,
+        {
+            ImportWidget.id.key: 1,
+            ImportWidget.active.key: True,
+            ImportWidget.profile_id.key: 1,
+        },
+        {},
+    )
+    assert result == {"profile_id": ["Invalid value 1 for column profile_id."]}
+
+
+@pytest.mark.anyio
+async def test_import_type_error_coerce_column_value(monkeypatch) -> None:
+    def mock_coerce_column_value(column: Column, value):
+        raise TypeError("error!")
+
+    monkeypatch.setattr(
+        "sqladmin._import.coerce_column_value", mock_coerce_column_value
+    )
+
+    model_view = _model_view(ImportWidgetAdmin)
+    result = await validate_foreign_key_values(
+        model_view,
+        {
+            ImportWidget.id.key: 1,
+            ImportWidget.active.key: True,
+            ImportWidget.profile_id.key: 1,
+        },
+        {},
+    )
+    assert result == {"profile_id": ["Invalid value 1 for column profile_id."]}

@@ -735,6 +735,49 @@ async def test_ajax_where_invalid_return_from_callable_without_name(
         await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
 
 
+async def test_ajax_is_accessible_false(client: AsyncClient) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(id=1, name="1")])
+        await s.commit()
+
+    def is_accessible(self, request: Request) -> bool:
+        return False
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    dynamic_classname = f"AjaxIsAccessibleFalse_{unique_suffix}"
+    dynamic_tablename = f"ajax_is_accessible_false_{unique_suffix}"
+
+    model = type(
+        dynamic_classname,
+        (Base,),
+        {
+            "__tablename__": dynamic_tablename,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    view = type(
+        f"{dynamic_classname}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",)}},
+            "is_accessible": is_accessible,
+        },
+        model=model,
+    )
+
+    admin.add_view(view)
+
+    identity = view().identity
+
+    response = await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
+
+    assert "Forbidden" in response.text
+    assert response.status_code == 403
+
+
 async def test_fields_not_str_in_ajax() -> None:
     class MissedFieldAdmin(ModelView, model=MissedField):
         form_ajax_refs = {

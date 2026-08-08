@@ -1,12 +1,14 @@
+import enum
 from collections.abc import Generator
 from datetime import date, datetime, timedelta
 from uuid import UUID
 
 import pytest
+from markupsafe import Markup
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
-from wtforms import Form
-from wtforms.validators import DataRequired
+from wtforms import Form, validators
+from wtforms.validators import DataRequired, Length
 
 from sqladmin.fields import (
     BooleanField,
@@ -236,3 +238,87 @@ def test_textarea_field() -> None:
     form = F()
     assert "autoresize-textarea" in form.text()
     assert "chars-count-label" in form.text()
+
+
+def test_textarea_field_without_chars_count() -> None:
+    class F(Form):
+        text = TextAreaField(show_chars_count=False)
+
+    form = F()
+    assert "autoresize-textarea" in form.text()
+    assert "chars-count-label" not in form.text()
+
+
+def test_textarea_field_without_autoresize() -> None:
+    class F(Form):
+        text = TextAreaField(enable_autoresize=False)
+
+    form = F()
+    assert "autoresize-textarea" not in form.text()
+    assert "chars-count-label" in form.text()
+
+
+def test_textarea_field_all_bool_false() -> None:
+    class F(Form):
+        text = TextAreaField(enable_autoresize=False, show_chars_count=False)
+
+    form = F()
+    assert "autoresize-textarea" not in form.text()
+    assert "chars-count-label" not in form.text()
+
+
+def test_textarea_field_with_validators() -> None:
+    class F(Form):
+        text = TextAreaField(validators=[DataRequired(), Length(min=1, max=100)])
+
+    form = F()
+
+    assert len(form.text.validators) == 2
+    assert type(form.text.validators[0]) is DataRequired
+    assert type(form.text.validators[1]) is Length
+
+
+def test_enum_field() -> None:
+    class MyEnum(enum.Enum):
+        first = "first"
+        second = "second"
+
+    class F(Form):
+        tuple_choices = SelectField(
+            choices=[(e.value, e.value) for e in MyEnum],
+            validators=[validators.AnyOf([(e.value, e.value) for e in MyEnum])],
+            coerce=lambda v: v.name if isinstance(v, enum.Enum) else str(v),
+        )
+        enum_choices = SelectField(
+            choices=[e for e in MyEnum],
+            validators=[validators.AnyOf([e for e in MyEnum])],
+            coerce=lambda v: v.name if isinstance(v, enum.Enum) else str(v),
+        )
+        else_choices = SelectField(
+            choices=[e.value for e in MyEnum],
+            validators=[validators.AnyOf([e.value for e in MyEnum])],
+            coerce=lambda v: v.name if isinstance(v, enum.Enum) else str(v),
+        )
+
+    form = F()
+
+    assert form.tuple_choices() == Markup(
+        '<select id="tuple_choices" name="tuple_choices">'
+        '<option value="first">first</option>'
+        '<option value="second">second</option>'
+        "</select>"
+    )
+
+    assert form.enum_choices() == Markup(
+        '<select id="enum_choices" name="enum_choices">'
+        '<option value="first">first</option>'
+        '<option value="second">second</option>'
+        "</select>"
+    )
+
+    assert form.else_choices() == Markup(
+        '<select id="else_choices" name="else_choices">'
+        '<option value="first">first</option>'
+        '<option value="second">second</option>'
+        "</select>"
+    )

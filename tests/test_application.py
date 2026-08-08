@@ -1,10 +1,12 @@
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
+from typing import Any
 
 import pytest
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import MutableHeaders
+from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -13,7 +15,9 @@ from starlette.staticfiles import StaticFiles
 from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from sqladmin import Admin, ModelView
+from sqladmin import Admin, I18nConfig, ModelView
+from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
+from sqladmin.authentication import AuthenticationBackend
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
@@ -360,3 +364,83 @@ def test_is_list_template_global():
     assert is_list(123) is False
     assert is_list(None) is False
     assert is_list({"key": "value"}) is False
+
+
+def test_application_http_exception_handler_raise_type_error():
+    app = Starlette()
+
+    class CustomAdmin(Admin):
+        def __init__(  # type: ignore[no-any-unimported]
+            self,
+            app: Starlette,
+            engine: ENGINE_TYPE | None = None,
+            session_maker: SESSION_MAKER | None = None,
+            base_url: str = "/admin",
+            title: str = "Admin",
+            logo_url: str | None = None,
+            logo_width: int = 64,
+            logo_height: int = 64,
+            favicon_url: str | None = None,
+            middlewares: Sequence[Middleware] | None = None,
+            debug: bool = False,
+            templates_dir: str = "templates",
+            authentication_backend: AuthenticationBackend | None = None,
+            static_files_kwargs: dict[str, Any] | None = None,
+            i18n_config: I18nConfig | None = None,
+        ):
+            super().__init__(
+                app,
+                engine,
+                session_maker,
+                base_url,
+                title,
+                logo_url,
+                logo_width,
+                logo_height,
+                favicon_url,
+                middlewares,
+                debug,
+                templates_dir,
+                authentication_backend,
+                static_files_kwargs,
+                i18n_config,
+            )
+
+            self.admin.exception_handlers = {
+                ValueError: self.admin.exception_handlers[HTTPException]
+            }
+
+    admin = CustomAdmin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User):
+        async def check_can_create(self, request: Request) -> bool:
+            raise ValueError("Error!")
+
+    admin.add_view(UserAdmin)
+
+    client = TestClient(app)
+
+    with pytest.raises(
+        TypeError, match="Expected HTTPException, got <class 'ValueError'>"
+    ):
+        client.get("/admin/user/create")
+
+
+def test_authentication_backend_is_none():
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User): ...
+
+    admin.add_view(UserAdmin)
+
+    client = TestClient(app)
+
+    response = client.get("/admin/login")
+    assert response.status_code == 503
+
+    response = client.post("/admin/login")
+    assert response.status_code == 503
+
+    response = client.get("/admin/logout")
+    assert response.status_code == 503

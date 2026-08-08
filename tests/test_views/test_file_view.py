@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
+from starlette.requests import Request
 
 from sqladmin import Admin, ModelView
 from sqladmin.fields import FileField, file_display_formatter
@@ -164,6 +165,30 @@ async def test_file_preview(client: AsyncClient) -> None:
     response = await client.get("/admin/user/1/file/preview/")
     assert response.status_code == 200
     assert response.text == "abc"
+
+
+async def test_file_preview_pk_empty(client: AsyncClient) -> None:
+    error_msg = (
+        r"pk not found in request.path_params "
+        r"\"{\'identity\': \'user\', \'pk\': \'\', \'column_name\': \'file\'}\""
+    )
+
+    with pytest.raises(ValueError, match=error_msg):
+        await client.get("/admin/user//file/preview/")
+
+
+async def test_file_preview_hidden_row(client: AsyncClient, monkeypatch) -> None:
+    async with session_maker() as session:
+        user = User(file=UploadFile(filename="upload.txt", file=io.BytesIO(b"abc")))
+        session.add(user)
+        await session.commit()
+
+    async def check_can_view_details(self, request: Request, model: Any) -> bool:
+        return False
+
+    monkeypatch.setattr(UserAdmin, "check_can_view_details", check_can_view_details)
+    response = await client.get("/admin/user/1/file/preview/")
+    assert response.status_code == 403
 
 
 async def test_file_download_forbidden_when_details_disabled(

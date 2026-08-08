@@ -379,7 +379,7 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_view_details"):
             pk = request.path_params.get("pk")
-            if pk is None or not isinstance(pk, str):
+            if not pk or not isinstance(pk, str):
                 raise ValueError(
                     f'pk not found in request.path_params "{request.path_params}"'
                 )
@@ -398,7 +398,7 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_delete"):
             pks = request.query_params.get("pks")
-            if pks is None or not isinstance(pks, str):
+            if not pks or not isinstance(pks, str):
                 raise ValueError(
                     f'pks not found in request.query_params "{request.query_params}"'
                 )
@@ -417,7 +417,7 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_edit"):
             pk = request.path_params.get("pk")
-            if pk is None or not isinstance(pk, str):
+            if not pk or not isinstance(pk, str):
                 raise ValueError(
                     f'pk not found in request.path_params "{request.path_params}"'
                 )
@@ -451,7 +451,7 @@ class BaseAdminView(BaseAdmin):
 
         if hasattr(model_view, "check_can_view_details"):
             pk = request.path_params.get("pk")
-            if pk is None or not isinstance(pk, str):
+            if not pk or not isinstance(pk, str):
                 raise ValueError(
                     f'pk not found in request.path_params "{request.path_params}"'
                 )

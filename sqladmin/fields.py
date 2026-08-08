@@ -102,13 +102,13 @@ class SelectField(fields.SelectField):
                 yield (choice[0], choice[1], self.coerce(choice[0]) == self.data, {})
             elif isinstance(choice, Enum):
                 yield (
-                    choice.value,
+                    str(choice.value),
                     choice.name,
                     self.coerce(choice.value) == self.data,
                     {},
                 )
             else:
-                yield (str(choice), str(choice), self.coerce(choice) == self.data, {})
+                yield str(choice), str(choice), self.coerce(choice) == self.data, {}
 
     def process_formdata(self, valuelist: list[str]) -> None:
         if valuelist:

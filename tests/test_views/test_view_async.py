@@ -239,6 +239,11 @@ class UserAdmin(ModelView, model=User):
     can_import = True
 
 
+class UserRelationshipImportAdmin(ModelView, model=User):
+    can_import = True
+    column_import_list = [User.name, User.profile]
+
+
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
     column_searchable_list = [Address.id]
@@ -299,6 +304,7 @@ class WithDefaultsAdmin(ModelView, model=WithDefaults):
 
 
 admin.add_view(UserAdmin)
+admin.add_view(UserRelationshipImportAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
@@ -1255,6 +1261,33 @@ async def test_import_csv_file(client: AsyncClient) -> None:
     assert users[1].name == "USER_2"
     assert users[1].id == 2
     assert users[1].status == Status.DEACTIVE
+
+
+async def test_import_csv_reports_invalid_relationship_value() -> None:
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(UserRelationshipImportAdmin)
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/user/import",
+            files={
+                "csvfile": (
+                    "user.csv",
+                    b"name,profile\r\nUSER_1,missing\r\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    assert response.status_code == 200
+    result = _parse_ndjson_events(response.text)[-1]
+    assert result["type"] == "result"
+    assert result["ok"] is False
+    assert result["aborted"] is True
+    assert result["missed_rows"][0]["errors"] == {"profile": ["Not a valid choice"]}
 
 
 async def test_import_csv_button(client: AsyncClient) -> None:

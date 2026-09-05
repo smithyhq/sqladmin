@@ -41,6 +41,7 @@ from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.audit import AuditBackend, NullAuditBackend
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.authorization import AuthorizationBackend, custom_action
 from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
@@ -92,11 +93,13 @@ class BaseAdmin:
         templates_dir: str = "templates",
         middlewares: Sequence[Middleware] | None = None,
         authentication_backend: AuthenticationBackend | None = None,
+        authorization_backend: AuthorizationBackend | None = None,
         i18n_config: I18nConfig | None = None,
         audit_backend: AuditBackend | None = None,
     ) -> None:
         self.app = app
         self.audit_backend = audit_backend or NullAuditBackend()
+        self.authorization_backend = authorization_backend or AuthorizationBackend()
         self.engine = engine
         self.base_url = base_url
         self.templates_dir = templates_dir
@@ -364,6 +367,10 @@ class BaseAdminView(BaseAdmin):
         if not model_view.is_accessible(request):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
+        can_list = await model_view.check_can_list(request)
+        if not can_list:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
     async def _create(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.can_create or not model_view.is_accessible(request):
@@ -440,6 +447,11 @@ class BaseAdminView(BaseAdmin):
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.can_export or not model_view.is_accessible(request):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        can_export = await model_view.check_can_export(request)
+        if not can_export:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         if request.path_params["export_type"] not in model_view.export_types:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -513,6 +525,7 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        authorization_backend: AuthorizationBackend | None = None,
         static_files_kwargs: dict[str, Any] | None = None,
         i18n_config: I18nConfig | None = None,
         audit_backend: AuditBackend | None = None,
@@ -528,6 +541,11 @@ class Admin(BaseAdminView):
             logo_width: Width of the logo image in pixels. Defaults to 64.
             logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
+            authorization_backend: Decides what the authenticated user may do.
+                See
+                [`AuthorizationBackend`][sqladmin.authorization.AuthorizationBackend].
+                When omitted, everything is allowed and only the ``can_*``
+                flags and any view overrides apply.
             static_files_kwargs: Extra keyword arguments for Starlette StaticFiles.
             i18n_config: Internationalization configuration. When provided, the
                 interface is translated per request and, if
@@ -547,6 +565,7 @@ class Admin(BaseAdminView):
             templates_dir=templates_dir,
             middlewares=middlewares,
             authentication_backend=authentication_backend,
+            authorization_backend=authorization_backend,
             i18n_config=i18n_config,
             audit_backend=audit_backend,
         )
@@ -1089,12 +1108,20 @@ class Admin(BaseAdminView):
 def _is_accessible_required(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to check the `is_accessible` authorization hook of the view
     a custom endpoint is declared on, mirroring the built-in Admin endpoints.
+
+    Endpoints declared with [`action`][sqladmin.application.action] are
+    additionally checked against the authorization backend under the
+    ``action:<slug>`` action name.
     """
 
     @functools.wraps(func)
     async def wrapper_decorator(*args: Any, **kwargs: Any) -> Any:
         view, request = args[0], args[1]
         if not view.is_accessible(request):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        slug = getattr(func, "_slug", None)
+        if slug is not None and not view.has_permission(request, custom_action(slug)):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         if inspect.iscoroutinefunction(func):

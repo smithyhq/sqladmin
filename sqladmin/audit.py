@@ -131,11 +131,16 @@ class DBAuditBackend(AuditBackend):
     async def get_actor(self, request: Request) -> Any:
         """Resolve the actor (e.g. your user's PK) for this request.
 
-        Override to read your authentication/session. Returns ``None`` by
-        default. This value is passed to :meth:`build_row`
+        Defaults to whatever
+        :meth:`sqladmin.authentication.AuthenticationBackend.get_user_id`
+        resolved for this request, so implementing that one method serves both
+        auditing and authorization. Override here when the audit trail needs a
+        different actor identifier. This value is passed to :meth:`build_row`
         to be stored in the audit model.
         """
-        return None
+        from sqladmin.authentication import get_current_user_id
+
+        return get_current_user_id(request)
 
     def build_row(self, entry: AuditEntry, actor: Any, request: Request) -> Any:
         """Return an instance of your audit model for ``entry``.

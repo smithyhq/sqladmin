@@ -52,10 +52,47 @@ class AuthenticationBackend:
         """
         raise NotImplementedError()
 
+    async def get_user_id(self, request: Request) -> Any:
+        """Return an identifier for the authenticated user, or `None`.
+
+        Called once per request after `authenticate` succeeds. The result is
+        stored on the request and read back by
+        [`get_current_user_id`][sqladmin.authentication.get_current_user_id],
+        so everything that needs to know *who* is acting -- the audit backend
+        and the authorization backend among them -- shares one answer instead
+        of each re-deriving it.
+
+        The default reads ``user_id`` from the session, which suits the
+        session-based login flow in the docs. Override it for anything else.
+        """
+
+        if "session" in request.scope:
+            return request.session.get("user_id")
+        return None
+
+
+USER_ID_STATE_ATTR = "sqladmin_user_id"
+_AUTHORIZATION_LOADED_ATTR = "sqladmin_authorization_loaded"
+
+
+def get_current_user_id(request: Request) -> Any:
+    """Return the user id resolved for this request, or `None`.
+
+    Populated from
+    [`AuthenticationBackend.get_user_id`][sqladmin.authentication.AuthenticationBackend.get_user_id]
+    when the request enters an Admin route.
+    """
+
+    return getattr(request.state, USER_ID_STATE_ATTR, None)
+
 
 def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to check authentication of Admin routes.
     If no authentication backend is setup, this will do nothing.
+
+    Once authentication passes, the authorization backend's
+    [`load`][sqladmin.authorization.AuthorizationBackend.load] hook runs, so
+    every permission check further down the request sees prepared state.
     """
 
     @functools.wraps(func)
@@ -71,6 +108,20 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
                 return RedirectResponse(
                     request.url_for("admin:login"), status_code=status.HTTP_302_FOUND
                 )
+
+            if not hasattr(request.state, USER_ID_STATE_ATTR):
+                setattr(
+                    request.state,
+                    USER_ID_STATE_ATTR,
+                    await auth_backend.get_user_id(request),
+                )
+
+        authz_backend = getattr(admin, "authorization_backend", None)
+        if authz_backend is not None and not getattr(
+            request.state, _AUTHORIZATION_LOADED_ATTR, False
+        ):
+            setattr(request.state, _AUTHORIZATION_LOADED_ATTR, True)
+            await authz_backend.load(request)
 
         if inspect.iscoroutinefunction(func):
             return await func(*args, **kwargs)

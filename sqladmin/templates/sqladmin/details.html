@@ -81,7 +81,7 @@
             </a>
           </div>
           {% endif %}
-          {% for custom_action,label in model_view._custom_actions_in_detail.items() %}
+          {% for custom_action,label in model_view._visible_custom_actions(request, True).items() %}
           <div class="col-auto">
             {% if custom_action in model_view._custom_actions_confirmation %}
             <a href="#" class="btn btn-secondary" data-bs-toggle="modal"
@@ -102,11 +102,11 @@
   </div>
 </div>
 {% block action_buttons_bottom %}
-{% if model_view.can_delete %}
+{% if model_view.check_can_delete_any(request) %}
 {% include 'sqladmin/modals/delete.html' %}
 {% endif %}
 
-{% for custom_action in model_view._custom_actions_in_detail %}
+{% for custom_action in model_view._visible_custom_actions(request, True) %}
 {% if custom_action in model_view._custom_actions_confirmation %}
 {% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
 url=model_view._url_for_action(request, custom_action) + '?pks=' + (get_object_identifier(model) | string) %}

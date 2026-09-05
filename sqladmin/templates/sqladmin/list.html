@@ -10,7 +10,7 @@
               <h3 class="card-title">{{ model_view.name_plural }}</h3>
               <div class="ms-auto">
                 {% block model_menu_bar %}
-                {% if model_view.can_export %}
+                {% if model_view.check_can_export(request) %}
                 {% if model_view.export_types | length > 1 %}
                 <div class="ms-3 d-inline-block dropdown">
                   <a href="#" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1"
@@ -60,19 +60,19 @@
               </div>
               <div class="d-flex justify-content-between">
                 <div class="dropdown col-4">
-                  <button {% if not model_view.can_delete and not model_view._custom_actions_in_list %} disabled {%
+                  <button {% if not model_view.check_can_delete_any(request) and not model_view._visible_custom_actions(request) %} disabled {%
                     endif %} class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {{ _("Actions") }}
                   </button>
-                  {% if model_view.can_delete or model_view._custom_actions_in_list %}
+                  {% if model_view.check_can_delete_any(request) or model_view._visible_custom_actions(request) %}
                   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% if model_view.can_delete %}
+                    {% if model_view.check_can_delete_any(request) %}
                     <a class="dropdown-item" id="action-delete" href="#" data-name="{{ model_view.name }}"
                       data-url="{{ url_for('admin:delete', identity=model_view.identity) }}" data-bs-toggle="modal"
                       data-bs-target="#modal-delete">{{ _("Delete selected items") }}</a>
                     {% endif %}
-                    {% for custom_action, label in model_view._custom_actions_in_list.items() %}
+                    {% for custom_action, label in model_view._visible_custom_actions(request).items() %}
                     {% if custom_action in model_view._custom_actions_confirmation %}
                     <a class="dropdown-item" id="action-customconfirm-{{ custom_action }}" href="#"
                       data-bs-toggle="modal" data-bs-target="#modal-confirmation-{{ custom_action }}">
@@ -271,14 +271,14 @@
       </div>
     </div>
   </div>
-  {% if model_view.can_delete %}
+  {% if model_view.check_can_delete_any(request) %}
   {% include 'sqladmin/modals/delete.html' %}
   {% endif %}
   {% if can_import %}
   {% include 'sqladmin/modals/import.html' %}
   {% endif %}
 
-  {% for custom_action in model_view._custom_actions_in_list %}
+  {% for custom_action in model_view._visible_custom_actions(request) %}
   {% if custom_action in model_view._custom_actions_confirmation %}
   {% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
   url=model_view._url_for_action(request, custom_action) %}

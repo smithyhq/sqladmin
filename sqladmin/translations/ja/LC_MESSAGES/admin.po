@@ -1,0 +1,268 @@
+# Japanese translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-09-09 14:37+0900\n"
+"PO-Revision-Date: 2026-09-09 14:37+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: sqladmin/templates/sqladmin/create.html:7
+#: sqladmin/templates/sqladmin/list.html:47
+#, python-format
+msgid "New %(name)s"
+msgstr "%(name)sを新規作成"
+
+#: sqladmin/templates/sqladmin/create.html:24
+#: sqladmin/templates/sqladmin/edit.html:26
+#: sqladmin/templates/sqladmin/modals/delete.html:16
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:16
+#: sqladmin/templates/sqladmin/modals/import.html:39
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:16
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: sqladmin/templates/sqladmin/create.html:30
+#: sqladmin/templates/sqladmin/edit.html:32
+msgid "Save"
+msgstr "保存"
+
+#: sqladmin/templates/sqladmin/create.html:32
+#: sqladmin/templates/sqladmin/edit.html:33
+msgid "Save and continue editing"
+msgstr "保存して編集を続ける"
+
+#: sqladmin/templates/sqladmin/create.html:34
+#: sqladmin/templates/sqladmin/edit.html:38
+msgid "Save and add another"
+msgstr "保存してさらに追加"
+
+#: sqladmin/templates/sqladmin/details.html:18
+msgid "Column"
+msgstr "カラム"
+
+#: sqladmin/templates/sqladmin/details.html:19
+msgid "Value"
+msgstr "値"
+
+#: sqladmin/templates/sqladmin/details.html:65
+msgid "Go Back"
+msgstr "戻る"
+
+#: sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/templates/sqladmin/list.html:162
+#: sqladmin/templates/sqladmin/modals/delete.html:21
+msgid "Delete"
+msgstr "削除"
+
+#: sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/templates/sqladmin/list.html:154
+msgid "Edit"
+msgstr "編集"
+
+#: sqladmin/templates/sqladmin/edit.html:7
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)sを編集"
+
+#: sqladmin/templates/sqladmin/edit.html:36
+msgid "Save as new"
+msgstr "新規保存"
+
+#: sqladmin/templates/sqladmin/layout.html:28
+msgid "Logout"
+msgstr "ログアウト"
+
+#: sqladmin/templates/sqladmin/layout.html:44
+msgid "Language"
+msgstr "言語"
+
+#: sqladmin/templates/sqladmin/list.html:18
+#: sqladmin/templates/sqladmin/list.html:32
+msgid "Export"
+msgstr "エクスポート"
+
+#: sqladmin/templates/sqladmin/list.html:41
+#: sqladmin/templates/sqladmin/modals/import.html:7
+msgid "Import CSV"
+msgstr "CSVをインポート"
+
+#: sqladmin/templates/sqladmin/list.html:66
+msgid "Actions"
+msgstr "操作"
+
+#: sqladmin/templates/sqladmin/list.html:73
+msgid "Delete selected items"
+msgstr "選択した項目を削除"
+
+#: sqladmin/templates/sqladmin/list.html:96
+#: sqladmin/templates/sqladmin/list.html:98
+msgid "Search"
+msgstr "検索"
+
+#: sqladmin/templates/sqladmin/list.html:112
+msgid "Select all"
+msgstr "すべて選択"
+
+#: sqladmin/templates/sqladmin/list.html:143
+msgid "Select item"
+msgstr "項目を選択"
+
+#: sqladmin/templates/sqladmin/list.html:148
+msgid "View"
+msgstr "詳細"
+
+#: sqladmin/templates/sqladmin/list.html:208
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "%(count)s件中 %(start)s〜%(end)s件を表示"
+
+#: sqladmin/templates/sqladmin/list.html:221
+msgid "prev"
+msgstr "前へ"
+
+#: sqladmin/templates/sqladmin/list.html:234
+msgid "next"
+msgstr "次へ"
+
+#: sqladmin/templates/sqladmin/list.html:240
+msgid "Show"
+msgstr "表示件数"
+
+#: sqladmin/templates/sqladmin/list.html:243
+#: sqladmin/templates/sqladmin/list.html:249
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s件 / ページ"
+
+#: sqladmin/templates/sqladmin/list.html:261
+msgid "Filters"
+msgstr "フィルタ"
+
+#: sqladmin/templates/sqladmin/login.html:6
+#, python-format
+msgid "Login to %(title)s"
+msgstr "%(title)sにログイン"
+
+#: sqladmin/templates/sqladmin/login.html:8
+msgid "Username"
+msgstr "ユーザー名"
+
+#: sqladmin/templates/sqladmin/login.html:10
+#: sqladmin/templates/sqladmin/login.html:14
+msgid "Enter username"
+msgstr "ユーザー名を入力"
+
+#: sqladmin/templates/sqladmin/login.html:19
+#: sqladmin/templates/sqladmin/login.html:23
+#: sqladmin/templates/sqladmin/login.html:27
+msgid "Password"
+msgstr "パスワード"
+
+#: sqladmin/templates/sqladmin/login.html:32
+msgid "Login"
+msgstr "ログイン"
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/modals/import.html:4
+#: sqladmin/templates/sqladmin/modals/import.html:58
+#: sqladmin/templates/sqladmin/modals/import.html:78
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/secret_modal.html:9
+msgid "Close"
+msgstr "閉じる"
+
+#: sqladmin/templates/sqladmin/secret_modal.html:26
+msgid "Done"
+msgstr "完了"
+
+#: sqladmin/templates/sqladmin/filters/lookup_filter.html:12
+msgid "Clear filter"
+msgstr "フィルタを解除"
+
+#: sqladmin/templates/sqladmin/filters/operation_filter.html:36
+msgid "Apply Filter"
+msgstr "フィルタを適用"
+
+#: sqladmin/templates/sqladmin/modals/delete.html:8
+msgid "Please confirm"
+msgstr "確認してください"
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:21
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:21
+msgid "Yes"
+msgstr "はい"
+
+#: sqladmin/templates/sqladmin/modals/import.html:11
+msgid "Choose CSV file"
+msgstr "CSVファイルを選択"
+
+#: sqladmin/templates/sqladmin/modals/import.html:14
+msgid "No file selected"
+msgstr "ファイルが選択されていません"
+
+#: sqladmin/templates/sqladmin/modals/import.html:18
+msgid "Skip invalid rows and continue import"
+msgstr "無効な行をスキップしてインポートを続行"
+
+#: sqladmin/templates/sqladmin/modals/import.html:21
+msgid "Import progress"
+msgstr "インポートの進捗"
+
+#: sqladmin/templates/sqladmin/modals/import.html:25
+#: sqladmin/templates/sqladmin/modals/import.html:30
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr "%(processed)s/%(total)s行を処理しました"
+
+#: sqladmin/templates/sqladmin/modals/import.html:27
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed"
+msgstr "%(imported)s件インポート、%(skipped)s件スキップ、%(processed)s/%(total)s行を処理しました"
+
+#: sqladmin/templates/sqladmin/modals/import.html:29
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed - saving valid rows... (%(seconds)ss)"
+msgstr ""
+"%(imported)s件インポート、%(skipped)s件スキップ、%(processed)s/%(total)s行を処理しました - "
+"有効な行を保存中... (%(seconds)s秒)"
+
+#: sqladmin/templates/sqladmin/modals/import.html:44
+msgid "Import"
+msgstr "インポート"
+
+#: sqladmin/templates/sqladmin/modals/import.html:60
+msgid "Import result"
+msgstr "インポート結果"
+
+#: sqladmin/templates/sqladmin/modals/import.html:63
+msgid "Missed rows"
+msgstr "スキップされた行"
+
+#: sqladmin/templates/sqladmin/modals/import.html:66
+msgid "Download CSV"
+msgstr "CSVをダウンロード"
+
+#: sqladmin/templates/sqladmin/modals/import.html:69
+msgid "Download TXT"
+msgstr "TXTをダウンロード"
+
+#: sqladmin/templates/sqladmin/modals/import.html:82
+msgid "Refresh list"
+msgstr "一覧を更新"
+

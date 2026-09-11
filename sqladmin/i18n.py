@@ -42,6 +42,7 @@ SUPPORTED_LOCALES = [
     "az",  # Azerbaijani
     "ru",  # Russian
     "tr",  # Turkish
+    "ja",  # Japanese
 ]
 """Locale codes for which a compiled catalog ships with the package."""
 
@@ -314,7 +315,7 @@ class I18nConfig:
             engine,
             i18n_config=I18nConfig(
                 default_locale="az",
-                language_switcher=["en", "az", "de", "ru", "tr"],
+                language_switcher=["en", "az", "de", "ru", "tr", "ja"],
             ),
         )
         ```

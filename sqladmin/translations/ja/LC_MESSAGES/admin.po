@@ -1,14 +1,14 @@
-# Japanese translations for PROJECT.
+# Japanese translations for SQLAdmin.
 # Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the SQLAdmin project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
+"Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-09 14:37+0900\n"
-"PO-Revision-Date: 2026-09-09 14:37+0900\n"
+"POT-Creation-Date: 2026-09-11 13:25+0900\n"
+"PO-Revision-Date: 2026-09-11 13:26+0900\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"

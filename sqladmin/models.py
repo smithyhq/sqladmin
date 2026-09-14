@@ -1086,17 +1086,19 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             request, select(func.count()).select_from(stmt.subquery())
         )
 
-        pagination = Pagination(
-            rows=[],
+        # Clamp before the offset is built: an out-of-range page would otherwise
+        # reach the driver as a huge or negative OFFSET.
+        page = min(max(page, 1), Pagination.max_page(count, page_size))
+
+        stmt = stmt.limit(page_size).offset((page - 1) * page_size)
+        rows = await self._run_query(stmt)
+
+        return Pagination(
+            rows=rows,
             page=page,
             page_size=page_size,
             count=count,
         )
-
-        stmt = stmt.limit(page_size).offset((pagination.page - 1) * page_size)
-        pagination.rows = await self._run_query(stmt)
-
-        return pagination
 
     async def get_model_objects(
         self, request: Request, limit: int | None = 0

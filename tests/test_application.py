@@ -293,6 +293,8 @@ def test_reject_invalid_page_and_page_size(query: str) -> None:
         ("-1", 1),
         ("0", 1),
         ("99999999999999999999", 3),
+        # count is an exact multiple of page_size: the case main got wrong.
+        ("4", 3),
     ],
 )
 def test_redirect_out_of_range_page_before_query(page: str, expected_page: int) -> None:
@@ -304,7 +306,7 @@ def test_redirect_out_of_range_page_before_query(page: str, expected_page: int) 
     admin.add_view(UserAdmin)
 
     with session_maker() as session:
-        session.add_all(User() for _ in range(UserAdmin.page_size * 2 + 1))
+        session.add_all(User() for _ in range(UserAdmin.page_size * 3))
         session.commit()
 
     client = TestClient(app)

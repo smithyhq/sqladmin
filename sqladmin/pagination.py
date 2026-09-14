@@ -46,13 +46,18 @@ class Pagination:
 
         raise RuntimeError("Next page not found.")
 
+    @staticmethod
+    def max_page(count: int, page_size: int) -> int:
+        """Highest page number that still holds at least one row."""
+
+        return max(1, (count + page_size - 1) // page_size)
+
     def __post_init__(self) -> None:
         if self.page_size < 1:
             raise ValueError("page_size must be greater than 0")
 
         # Clamp page
-        max_page = max(1, (self.count + self.page_size - 1) // self.page_size)
-        self.page = min(max(self.page, 1), max_page)
+        self.page = min(max(self.page, 1), self.max_page(self.count, self.page_size))
 
     def resize(self, page_size: int) -> Pagination:
         self.page = (self.page - 1) * self.page_size // page_size + 1

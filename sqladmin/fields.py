@@ -304,12 +304,13 @@ class QuerySelectMultipleField(QuerySelectField):
         self._formdata = list(set(valuelist))
 
     def pre_validate(self, form: Form) -> None:
+        data = self.data
         if self._invalid_formdata:
             raise ValidationError(self.gettext("Not a valid choice"))
 
-        if self.data:
+        if data:
             pk_list = [x[0] for x in self._select_data]
-            for v in self.data:
+            for v in data:
                 if v not in pk_list:  # pragma: no cover
                     raise ValidationError(self.gettext("Not a valid choice"))
 

@@ -177,6 +177,37 @@ def test_build_import_form_row_uses_coerced_values() -> None:
     assert form_row["profile_id"] == "5"
 
 
+def test_build_import_form_row_repeats_multi_select_values() -> None:
+    """A multi-select reads one form value per selection.
+
+    ``str()``-ing the list instead would hand the next validation pass the
+    literal ``"['1', '2']"``, which matches no choice.
+    """
+
+    from starlette.datastructures import MultiDict
+
+    form_row = build_import_form_row(MultiDict(), {"tags": ["1", "2"]}, ["tags"])
+
+    assert form_row.getlist("tags") == ["1", "2"]
+
+
+def test_build_import_form_row_omits_empty_multi_select() -> None:
+    """An empty selection must leave the column out of the form data entirely.
+
+    WTForms only calls ``process_formdata`` for a key that is present, so an
+    absent column leaves the field at its default. Emitting ``""`` instead
+    would be read as an unknown selection and rejected with "Not a valid
+    choice", which is how an empty relationship cell in a CSV used to fail.
+    """
+
+    from starlette.datastructures import MultiDict
+
+    form_row = build_import_form_row(MultiDict(), {"tags": []}, ["tags"])
+
+    assert "tags" not in form_row
+    assert form_row.getlist("tags") == []
+
+
 def test_merge_import_row_data_invalid_foreign_key_type() -> None:
     class InvalidFkWidget(Base):
         __tablename__ = "import_widget_invalid_fk"

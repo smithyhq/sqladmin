@@ -1257,6 +1257,108 @@ async def test_import_csv_file(client: AsyncClient) -> None:
     assert users[1].status == Status.DEACTIVE
 
 
+@pytest.mark.parametrize("relationship_name", ["profile", "addresses"])
+async def test_import_csv_reports_invalid_relationship_value(
+    relationship_name: str,
+) -> None:
+    class RelationshipImportAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = ["name", relationship_name]
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(RelationshipImportAdmin)
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/user/import",
+            files={
+                "csvfile": (
+                    "user.csv",
+                    f"name,{relationship_name}\r\nUSER_1,missing\r\n".encode(),
+                    "text/csv",
+                )
+            },
+        )
+
+    assert response.status_code == 200
+    result = _parse_ndjson_events(response.text)[-1]
+    assert result["type"] == "result"
+    assert result["ok"] is False
+    assert result["aborted"] is True
+    assert result["missed_rows"][0]["errors"] == {
+        relationship_name: ["Not a valid choice"]
+    }
+
+    async with session_maker() as session:
+        assert (
+            await session.execute(select(User).where(User.name == "USER_1"))
+        ).scalar_one_or_none() is None
+
+
+@pytest.mark.parametrize("relationship_name", ["profile", "addresses"])
+async def test_import_csv_accepts_valid_relationship_value(
+    relationship_name: str,
+) -> None:
+    """A resolvable relationship value must import and be associated.
+
+    The companion to the test above: rejecting bad values is only half the
+    contract. Accepting good ones exercises the round trip through
+    ``build_import_form_row`` -- a to-many selection is re-emitted as repeated
+    form values, and ``str()``-ing the list instead would fail the second
+    validation pass with "Not a valid choice" even though the value is valid.
+    """
+
+    class RelationshipImportAdmin(ModelView, model=User):
+        can_import = True
+        column_import_list = ["name", relationship_name]
+
+    async with session_maker() as session:
+        session.add(Profile(id=1) if relationship_name == "profile" else Address(id=1))
+        await session.commit()
+
+    local_app = Starlette()
+    local_admin = Admin(app=local_app, engine=engine)
+    local_admin.add_view(RelationshipImportAdmin)
+    transport = ASGITransport(app=local_app)
+    async with AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as local_client:
+        response = await local_client.post(
+            "/admin/user/import",
+            files={
+                "csvfile": (
+                    "user.csv",
+                    f"name,{relationship_name}\r\nUSER_1,1\r\n".encode(),
+                    "text/csv",
+                )
+            },
+        )
+
+    assert response.status_code == 200
+    result = _parse_ndjson_events(response.text)[-1]
+    assert result["type"] == "result"
+    assert result["ok"] is True, result["missed_rows"]
+
+    async with session_maker() as session:
+        user = (
+            await session.execute(
+                select(User)
+                .where(User.name == "USER_1")
+                .options(selectinload(getattr(User, relationship_name)))
+            )
+        ).scalar_one()
+        related = getattr(user, relationship_name)
+        related_ids = (
+            [related.id] if relationship_name == "profile" else [a.id for a in related]
+        )
+        # Validation accepting the value and insert_model persisting the
+        # association are separate steps; assert the second one.
+        assert related_ids == [1]
+
+
 async def test_import_csv_button(client: AsyncClient) -> None:
     response = await client.get("/admin/user/list")
     assert response.status_code == 200

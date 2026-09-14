@@ -236,3 +236,16 @@ def test_textarea_field() -> None:
     form = F()
     assert "autoresize-textarea" in form.text()
     assert "chars-count-label" in form.text()
+
+
+@pytest.mark.parametrize(
+    "values, valid",
+    [(["missing"], False), (["1", "missing"], False), (["1"], True), ([], True)],
+)
+def test_multiple_select_validates_unknown_choices_on_first_pass(values, valid):
+    class F(Form):
+        select = QuerySelectMultipleField(data=[("1", "One")])
+
+    form = F(DummyData(select=values))
+    assert form.validate() is valid
+    assert form.errors == ({} if valid else {"select": ["Not a valid choice"]})

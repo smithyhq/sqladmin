@@ -15,7 +15,7 @@ class PrettyExport:
     @staticmethod
     async def _base_export_cell(
         model_view: "ModelView", name: str, value: Any, formatted_value: Any
-    ) -> str:
+    ) -> Any:
         """
         Default formatting logic for a cell in pretty export.
 
@@ -25,10 +25,23 @@ class PrettyExport:
         Only used when `use_pretty_export = True`.
         """
         if name in model_view._relation_names:
-            if isinstance(value, list):
-                cell_value = ",".join(formatted_value)
-            else:
+            cell_value: Any
+            if isinstance(formatted_value, str):
                 cell_value = formatted_value
+            elif isinstance(formatted_value, (set, frozenset)):
+                # Unordered collections are sorted so exports are reproducible.
+                cell_value = ",".join(sorted(str(item) for item in formatted_value))
+            elif isinstance(formatted_value, dict):
+                cell_value = ",".join(str(item) for item in formatted_value.values())
+            elif isinstance(formatted_value, (list, tuple)):
+                cell_value = ",".join(str(item) for item in formatted_value)
+            else:
+                # A to-one relationship: str() it so this branch matches the others. A
+                # custom column_formatters entry may return None; keep that as None
+                # rather than exporting the string "None". A *missing* relation does
+                # not arrive here -- BASE_FORMATTERS turns it into Markup("") and the
+                # str branch takes it.
+                cell_value = None if formatted_value is None else str(formatted_value)
         else:
             if isinstance(value, bool):
                 cell_value = "TRUE" if value else "FALSE"

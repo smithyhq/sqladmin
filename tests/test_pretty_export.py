@@ -7,7 +7,12 @@ from typing import Any
 
 import pytest
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import (
+    attribute_keyed_dict,
+    declarative_base,
+    relationship,
+    sessionmaker,
+)
 from starlette.responses import StreamingResponse
 
 from sqladmin import ModelView
@@ -29,6 +34,10 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     addresses = relationship("Address", back_populates="user")
+    tags = relationship("Tag", back_populates="user", collection_class=set)
+    items = relationship(
+        "Item", back_populates="user", collection_class=attribute_keyed_dict("sku")
+    )
 
 
 class Address(Base):
@@ -40,6 +49,57 @@ class Address(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
 
     user = relationship("User", back_populates="addresses")
+
+    def __str__(self) -> str:
+        return self.street
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True)
+    label = Column(String)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    user = relationship("User", back_populates="tags")
+
+    def __str__(self) -> str:
+        return self.label
+
+
+class Item(Base):
+    __tablename__ = "items"
+
+    id = Column(Integer, primary_key=True)
+    sku = Column(String)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    user = relationship("User", back_populates="items")
+
+    def __str__(self) -> str:
+        return self.sku
+
+
+class Publisher(Base):
+    __tablename__ = "publishers"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+    books = relationship("Book", back_populates="publisher")
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    publisher_id = Column(Integer, ForeignKey("publishers.id"))
+
+    publisher = relationship("Publisher", back_populates="books")
 
 
 @pytest.fixture(autouse=True)
@@ -125,6 +185,111 @@ class TestPrettyExport:
         assert values[1] == "John Doe"
         assert values[2] == "TRUE"
 
+    async def test_get_export_row_values_with_relationship(self):
+        class UserAdmin(ModelView, model=User):
+            column_list = ["id", "name", "addresses"]
+            session_maker = session_maker
+            is_async = False
+
+        with session_maker() as session:
+            user = User(id=1, name="John Doe", email="john@example.com")
+            session.add(user)
+            session.add(Address(id=1, street="Main St", user_id=1))
+            session.add(Address(id=2, street="Second St", user_id=1))
+            session.commit()
+            user = session.get(User, 1)
+
+            model_view = UserAdmin()
+            column_names = ["id", "name", "addresses"]
+
+            values = await PrettyExport._get_export_row_values(
+                model_view, user, column_names
+            )
+
+            assert len(values) == 3
+            assert values[0] == 1
+            assert values[1] == "John Doe"
+            assert sorted(values[2].split(",")) == ["Main St", "Second St"]
+
+    async def test_get_export_row_values_with_set_relationship(self):
+        class UserAdmin(ModelView, model=User):
+            column_list = ["id", "tags"]
+            session_maker = session_maker
+            is_async = False
+
+        with session_maker() as session:
+            user = User(id=1, name="John Doe", email="john@example.com")
+            session.add(user)
+            session.add(Tag(id=1, label="vip", user_id=1))
+            session.commit()
+            user = session.get(User, 1)
+
+            values = await PrettyExport._get_export_row_values(
+                UserAdmin(), user, ["id", "tags"]
+            )
+
+            assert values[1] == "vip"
+
+    async def test_get_export_row_values_with_set_relationship_is_sorted(self):
+        class UserAdmin(ModelView, model=User):
+            column_list = ["id", "tags"]
+            session_maker = session_maker
+            is_async = False
+
+        with session_maker() as session:
+            user = User(id=1, name="John Doe", email="john@example.com")
+            session.add(user)
+            for i, label in enumerate(["vip", "beta", "alpha"], start=1):
+                session.add(Tag(id=i, label=label, user_id=1))
+            session.commit()
+            user = session.get(User, 1)
+
+            values = await PrettyExport._get_export_row_values(
+                UserAdmin(), user, ["id", "tags"]
+            )
+
+            assert values[1] == "alpha,beta,vip"
+
+    async def test_get_export_row_values_with_dict_relationship(self):
+        class UserAdmin(ModelView, model=User):
+            column_list = ["id", "items"]
+            session_maker = session_maker
+            is_async = False
+
+        with session_maker() as session:
+            user = User(id=1, name="John Doe", email="john@example.com")
+            session.add(user)
+            session.add(Item(id=1, sku="sku-1", user_id=1))
+            session.commit()
+            user = session.get(User, 1)
+
+            values = await PrettyExport._get_export_row_values(
+                UserAdmin(), user, ["id", "items"]
+            )
+
+            assert values[1] == "sku-1"
+
+    async def test_get_export_row_values_with_relationship_formatter(self):
+        class UserAdmin(ModelView, model=User):
+            column_list = ["id", "addresses"]
+            column_formatters = {"addresses": lambda m, a: f"{len(m.addresses)} addr"}
+            session_maker = session_maker
+            is_async = False
+
+        with session_maker() as session:
+            user = User(id=1, name="John Doe", email="john@example.com")
+            session.add(user)
+            session.add(Address(id=1, street="Main St", user_id=1))
+            session.add(Address(id=2, street="Second St", user_id=1))
+            session.commit()
+            user = session.get(User, 1)
+
+            values = await PrettyExport._get_export_row_values(
+                UserAdmin(), user, ["id", "addresses"]
+            )
+
+            assert values[1] == "2 addr"
+
     async def test_get_export_row_values_with_none_values(self):
         class UserAdmin(ModelView, model=User):
             column_list = ["id", "name", "email"]
@@ -163,6 +328,31 @@ class TestPrettyExport:
         assert values[0] == 1
         assert values[1] == "123 Main St"
         assert values[2] == "John Doe"
+
+    async def test_get_export_row_values_with_to_one_relationship(self):
+        class BookAdmin(ModelView, model=Book):
+            column_list = ["id", "title", "publisher"]
+            session_maker = session_maker
+            is_async = False
+
+        with session_maker() as session:
+            session.add(Publisher(id=1, name="P"))
+            session.add(Book(id=1, title="T", publisher_id=1))
+            session.add(Book(id=2, title="U"))
+            session.commit()
+
+            with_publisher = session.get(Book, 1)
+            values = await PrettyExport._get_export_row_values(
+                BookAdmin(), with_publisher, ["id", "title", "publisher"]
+            )
+            assert values[2] == "P"
+
+            without_publisher = session.get(Book, 2)
+            values = await PrettyExport._get_export_row_values(
+                BookAdmin(), without_publisher, ["id", "title", "publisher"]
+            )
+            # A missing relation still exports as an empty cell.
+            assert values[2] == ""
 
     async def test_pretty_export_csv_basic(self):
         class UserAdmin(ModelView, model=User):
@@ -408,3 +598,16 @@ class TestPrettyExport:
 
         content = await self._get_csv_content(response)
         assert content == "[]"
+
+
+@pytest.mark.parametrize(
+    "items, expected", [({}, ""), ({"key": "value", "other": "second"}, "value,second")]
+)
+async def test_keyed_relationship_exports_values(items, expected):
+    class UserAdmin(ModelView, model=User):
+        column_list = ["items"]
+
+    assert (
+        await PrettyExport._base_export_cell(UserAdmin(), "items", items, items)
+        == expected
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import inspect
 import io
 import logging
@@ -1112,6 +1113,24 @@ class Admin(BaseAdminView):
         return data
 
 
+def _is_accessible_required(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to check the `is_accessible` authorization hook of the view
+    a custom endpoint is declared on, mirroring the built-in Admin endpoints.
+    """
+
+    @functools.wraps(func)
+    async def wrapper_decorator(*args: Any, **kwargs: Any) -> Any:
+        view, request = args[0], args[1]
+        if not view.is_accessible(request):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        if inspect.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        return func(*args, **kwargs)
+
+    return wrapper_decorator
+
+
 def expose(
     path: str,
     *,
@@ -1128,7 +1147,7 @@ def expose(
         func._methods = methods or ["GET"]
         func._identity = identity or func.__name__
         func._include_in_schema = include_in_schema
-        return login_required(func)
+        return login_required(_is_accessible_required(func))
 
     return wrap
 
@@ -1170,6 +1189,6 @@ def action(
         func._include_in_schema = include_in_schema
         func._add_in_detail = add_in_detail
         func._add_in_list = add_in_list
-        return login_required(func)
+        return login_required(_is_accessible_required(func))
 
     return wrap

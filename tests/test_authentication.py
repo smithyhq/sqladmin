@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, relationship
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.testclient import TestClient
 
 from sqladmin import Admin, BaseView, action, expose
@@ -180,10 +180,30 @@ class RestrictedModelAdmin(ModelView, model=RestrictedModel):
     def is_accessible(self, request: Request) -> bool:
         return False
 
+    @action(name="restricted-action", add_in_list=False, add_in_detail=False)
+    async def restricted_action(self, request: Request) -> Response:
+        return Response("action ran")
+
+    @expose("/restricted-view", methods=["GET", "POST"])
+    async def restricted_view(self, request: Request) -> Response:
+        return Response("view ran")
+
+
+class RestrictedBaseView(BaseView):
+    name = "Restricted Base View"
+
+    def is_accessible(self, request: Request) -> bool:
+        return False
+
+    @expose("/restricted-base-view", identity="restricted-base-view")
+    async def restricted_base_view(self, request: Request) -> Response:
+        return Response("base view ran")
+
 
 admin.add_view(ArtistAdmin)
 admin.add_view(SongAuthAdmin)
 admin.add_view(RestrictedModelAdmin)
+admin.add_base_view(RestrictedBaseView)
 
 
 @pytest.fixture(autouse=False)
@@ -282,3 +302,34 @@ def test_extra_session_kwargs_passed_to_middleware() -> None:
     assert middleware.kwargs["session_cookie"] == "my_cookie"
     assert middleware.kwargs["max_age"] == 3600
     assert middleware.kwargs["https_only"] is True
+
+
+def test_action_endpoint_requires_is_accessible(client: TestClient) -> None:
+    client.post("/admin/login", data={"username": "a", "password": "b"})
+
+    response = client.get("/admin/restricted-model/action/restricted-action")
+    assert response.status_code == 403
+
+
+def test_expose_endpoint_requires_is_accessible(client: TestClient) -> None:
+    client.post("/admin/login", data={"username": "a", "password": "b"})
+
+    response = client.get("/admin/restricted-model/restricted-view")
+    assert response.status_code == 403
+
+    response = client.post("/admin/restricted-model/restricted-view")
+    assert response.status_code == 403
+
+
+def test_expose_on_base_view_requires_is_accessible(client: TestClient) -> None:
+    client.post("/admin/login", data={"username": "a", "password": "b"})
+
+    response = client.get("/admin/restricted-base-view")
+    assert response.status_code == 403
+
+
+def test_action_endpoint_unauthenticated_redirects_to_login(
+    client: TestClient,
+) -> None:
+    response = client.get("/admin/restricted-model/action/restricted-action")
+    assert response.url == "http://testserver/admin/login"

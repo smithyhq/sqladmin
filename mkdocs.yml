@@ -26,6 +26,7 @@ nav:
   - Introduction: "index.md"
   - Configurations: "configurations.md"
   - Authentication: "authentication.md"
+  - Authorization: "authorization.md"
   - Working with Templates: "working_with_templates.md"
   - Working with Custom Views: "writing_custom_views.md"
   - Working with Files and Images: "working_with_files.md"
@@ -46,6 +47,7 @@ nav:
       - ModelView: "api_reference/model_view.md"
       - BaseView: "api_reference/base_view.md"
       - Authentication: "api_reference/authentication.md"
+      - Authorization: "api_reference/authorization.md"
   - Contributing: "contributing.md"
 
 markdown_extensions:

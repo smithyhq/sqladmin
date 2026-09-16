@@ -171,7 +171,10 @@ try:
             LABEL = _("Save")
             ```
         """
-        return LazyProxy(gettext, message)  # type: ignore[return-value]
+        # No caching: the same proxy must follow each request's locale.
+        return LazyProxy(  # type: ignore[return-value]
+            gettext, message, enable_cache=False
+        )
 
     def format_datetime(
         value: datetime.datetime,

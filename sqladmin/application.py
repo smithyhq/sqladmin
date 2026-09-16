@@ -41,6 +41,12 @@ from sqladmin._types import ENGINE_TYPE, SESSION_MAKER
 from sqladmin.ajax import QueryAjaxModelLoader
 from sqladmin.audit import AuditBackend, NullAuditBackend
 from sqladmin.authentication import AuthenticationBackend, login_required
+from sqladmin.authorization import (
+    Action,
+    AllowAllAuthorizationBackend,
+    AuthorizationBackend,
+    custom_action,
+)
 from sqladmin.editors import collect_form_media
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
@@ -92,11 +98,15 @@ class BaseAdmin:
         templates_dir: str = "templates",
         middlewares: Sequence[Middleware] | None = None,
         authentication_backend: AuthenticationBackend | None = None,
+        authorization_backend: AuthorizationBackend | None = None,
         i18n_config: I18nConfig | None = None,
         audit_backend: AuditBackend | None = None,
     ) -> None:
         self.app = app
         self.audit_backend = audit_backend or NullAuditBackend()
+        self.authorization_backend = (
+            authorization_backend or AllowAllAuthorizationBackend()
+        )
         self.engine = engine
         self.base_url = base_url
         self.templates_dir = templates_dir
@@ -132,6 +142,7 @@ class BaseAdmin:
         self.authentication_backend = authentication_backend
         if authentication_backend:
             middlewares.extend(authentication_backend.middlewares)
+        self.authorization_backend.setup(self)
 
         if self.i18n_config is not None:
             middlewares.append(
@@ -223,7 +234,7 @@ class BaseAdmin:
 
         for _, func in sorted(
             funcs,
-            key=lambda x: inspect.getsourcelines(x[1])[1],
+            key=lambda x: inspect.unwrap(x[1]).__code__.co_firstlineno,
             reverse=True,
         ):
             handle_fn(func, view, view_instance)
@@ -359,10 +370,19 @@ class BaseAdminView(BaseAdmin):
     Manage right to access to an action from a model
     """
 
-    async def _list(self, request: Request) -> None:
+    async def _list(self, request: Request) -> bool:
+        """Guard the list page and return whether its rows may be shown.
+
+        Without the ``list`` permission the page still opens, with no rows and
+        only the buttons the user is allowed. Hiding the view altogether is
+        up to ``is_accessible``.
+        """
+
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.is_accessible(request):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        return await model_view.check_can_list(request)
 
     async def _create(self, request: Request) -> None:
         model_view = self._find_model_view(request.path_params["identity"])
@@ -432,7 +452,9 @@ class BaseAdminView(BaseAdmin):
         if not model_view.is_accessible(request):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        can_import = await model_view.check_can_import(request)
+        can_import = model_view.can_import and await model_view.check_can_import(
+            request
+        )
         if not can_import:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
@@ -440,6 +462,11 @@ class BaseAdminView(BaseAdmin):
         model_view = self._find_model_view(request.path_params["identity"])
         if not model_view.can_export or not model_view.is_accessible(request):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        can_export = await model_view.check_can_export(request)
+        if not can_export:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         if request.path_params["export_type"] not in model_view.export_types:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -513,6 +540,7 @@ class Admin(BaseAdminView):
         debug: bool = False,
         templates_dir: str = "templates",
         authentication_backend: AuthenticationBackend | None = None,
+        authorization_backend: AuthorizationBackend | None = None,
         static_files_kwargs: dict[str, Any] | None = None,
         i18n_config: I18nConfig | None = None,
         audit_backend: AuditBackend | None = None,
@@ -528,6 +556,11 @@ class Admin(BaseAdminView):
             logo_width: Width of the logo image in pixels. Defaults to 64.
             logo_height: Height of the logo image in pixels. Defaults to 64.
             favicon_url: URL of favicon to be displayed.
+            authorization_backend: Decides what the authenticated user may do.
+                See
+                [`AuthorizationBackend`][sqladmin.authorization.AuthorizationBackend].
+                When omitted, everything is allowed and only the ``can_*``
+                flags and any view overrides apply.
             static_files_kwargs: Extra keyword arguments for Starlette StaticFiles.
             i18n_config: Internationalization configuration. When provided, the
                 interface is translated per request and, if
@@ -547,6 +580,7 @@ class Admin(BaseAdminView):
             templates_dir=templates_dir,
             middlewares=middlewares,
             authentication_backend=authentication_backend,
+            authorization_backend=authorization_backend,
             i18n_config=i18n_config,
             audit_backend=audit_backend,
         )
@@ -636,28 +670,32 @@ class Admin(BaseAdminView):
     async def list(self, request: Request) -> Response:
         """List route to display paginated Model instances."""
 
-        await self._list(request)
+        can_list = await self._list(request)
 
         model_view = self._find_model_view(request.path_params["identity"])
-        pagination = await model_view.list(request)
-        pagination.add_pagination_urls(request.url)
-
-        request_page = model_view.validate_page_number(
-            request.query_params.get("page"), 1
-        )
-
-        if request_page > pagination.page:
-            return RedirectResponse(
-                request.url.include_query_params(page=pagination.page),
-                status_code=status.HTTP_302_FOUND,
-            )
-
         context = {
             **await model_view.list_context(request),
             "model_view": model_view,
-            "pagination": pagination,
-            "can_import": await model_view.check_can_import(request),
+            "can_list": can_list,
+            "can_import": model_view.can_import
+            and await model_view.check_can_import(request),
         }
+
+        if can_list:
+            pagination = await model_view.list(request)
+            pagination.add_pagination_urls(request.url)
+
+            request_page = model_view.validate_page_number(
+                request.query_params.get("page"), 1
+            )
+
+            if request_page > pagination.page:
+                return RedirectResponse(
+                    request.url.include_query_params(page=pagination.page),
+                    status_code=status.HTTP_302_FOUND,
+                )
+
+            context["pagination"] = pagination
 
         if request.query_params.get("error"):
             context["error"] = request.query_params["error"]
@@ -840,6 +878,12 @@ class Admin(BaseAdminView):
             )
 
         form_data = await self._handle_form_data(request, model)
+        save_as_new = model_view.save_as and form_data.get("save") == "Save as new"
+        if save_as_new and not (
+            model_view.can_create and await model_view.check_can_create(request)
+        ):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         form = Form(form_data)
         context["form"] = form
 
@@ -853,7 +897,7 @@ class Admin(BaseAdminView):
 
         form_data_dict = self._denormalize_wtform_data(form.data, model)
         try:
-            if model_view.save_as and form_data.get("save") == "Save as new":
+            if save_as_new:
                 obj = await model_view.insert_model(request, form_data_dict)
             else:
                 obj = await model_view.update_model(
@@ -998,6 +1042,14 @@ class Admin(BaseAdminView):
         if not model_view.is_accessible(request):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
+        # The lookup serves the create and edit forms; listing alone must not
+        # open a way to search the related model.
+        can_use_form = (
+            model_view.can_create and await model_view.check_can_create(request)
+        ) or (model_view.can_edit and model_view.has_permission(request, Action.EDIT))
+        if not can_use_form:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         name = request.query_params.get("name")
         term = request.query_params.get("term")
 
@@ -1089,12 +1141,20 @@ class Admin(BaseAdminView):
 def _is_accessible_required(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to check the `is_accessible` authorization hook of the view
     a custom endpoint is declared on, mirroring the built-in Admin endpoints.
+
+    Endpoints declared with [`action`][sqladmin.application.action] are
+    additionally checked against the authorization backend under the
+    ``action:<slug>`` action name.
     """
 
     @functools.wraps(func)
     async def wrapper_decorator(*args: Any, **kwargs: Any) -> Any:
         view, request = args[0], args[1]
         if not view.is_accessible(request):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        slug = getattr(func, "_slug", None)
+        if slug is not None and not view.has_permission(request, custom_action(slug)):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         if inspect.iscoroutinefunction(func):

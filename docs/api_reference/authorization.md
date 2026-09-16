@@ -1,17 +1,28 @@
+::: sqladmin.authorization.Action
+    handler: python
+
+::: sqladmin.authorization.ACTIONS
+    handler: python
+
+::: sqladmin.authorization.custom_action
+    handler: python
+
 ::: sqladmin.authorization.AuthorizationBackend
     handler: python
     options:
       members:
+        - setup
         - load
         - has_permission
-        - has_any_permission
+
+::: sqladmin.authorization.AllowAllAuthorizationBackend
+    handler: python
 
 ::: sqladmin.authorization.GrantsAuthorizationBackend
     handler: python
     options:
       members:
         - get_grants
-        - is_superuser
 
 ::: sqladmin.authorization.matches_grant
     handler: python
@@ -21,7 +32,6 @@
     options:
       members:
         - __init__
-        - get_user_id
 
 ::: sqladmin.contrib.rbac.GroupMixin
     handler: python
@@ -33,4 +43,16 @@
     handler: python
 
 ::: sqladmin.contrib.rbac.GroupAdmin
+    handler: python
+    options:
+      members:
+        - can_grant
+
+::: sqladmin.exceptions.PermissionEscalationError
+    handler: python
+
+::: sqladmin.exceptions.InvalidRelationshipError
+    handler: python
+
+::: sqladmin.exceptions.ImproperlyConfigured
     handler: python

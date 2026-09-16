@@ -71,8 +71,7 @@ class AuthenticationBackend:
         return None
 
 
-USER_ID_STATE_ATTR = "sqladmin_user_id"
-_AUTHORIZATION_LOADED_ATTR = "sqladmin_authorization_loaded"
+_USER_ID_STATE_ATTR = "sqladmin_user_id"
 
 
 def get_current_user_id(request: Request) -> Any:
@@ -83,7 +82,7 @@ def get_current_user_id(request: Request) -> Any:
     when the request enters an Admin route.
     """
 
-    return getattr(request.state, USER_ID_STATE_ATTR, None)
+    return getattr(request.state, _USER_ID_STATE_ATTR, None)
 
 
 def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -109,19 +108,15 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
                     request.url_for("admin:login"), status_code=status.HTTP_302_FOUND
                 )
 
-            if not hasattr(request.state, USER_ID_STATE_ATTR):
-                setattr(
-                    request.state,
-                    USER_ID_STATE_ATTR,
-                    await auth_backend.get_user_id(request),
-                )
+            setattr(
+                request.state,
+                _USER_ID_STATE_ATTR,
+                await auth_backend.get_user_id(request),
+            )
 
-        authz_backend = getattr(admin, "authorization_backend", None)
-        if authz_backend is not None and not getattr(
-            request.state, _AUTHORIZATION_LOADED_ATTR, False
-        ):
-            setattr(request.state, _AUTHORIZATION_LOADED_ATTR, True)
-            await authz_backend.load(request)
+        authorization_backend = getattr(admin, "authorization_backend", None)
+        if authorization_backend is not None:
+            await authorization_backend.load(request)
 
         if inspect.iscoroutinefunction(func):
             return await func(*args, **kwargs)

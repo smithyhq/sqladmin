@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.testclient import TestClient
 
-from sqladmin import Admin, BaseView, action, expose
+from sqladmin import Admin, AuditBackend, AuditEntry, BaseView, action, expose
 from sqladmin.authentication import AuthenticationBackend
 from sqladmin.contrib.rbac import (
     DBAuthorizationBackend,
@@ -21,12 +21,16 @@ from sqladmin.contrib.rbac import (
     build_permission_rows,
     user_group_table,
 )
+from sqladmin.exceptions import InvalidRelationshipError
 from sqladmin.models import ModelView
 from tests.common import async_engine
 from tests.common import sync_engine as engine
 
 Base = declarative_base()
 session_maker = sessionmaker(bind=engine, class_=Session)
+async_session_maker = async_sessionmaker(
+    bind=async_engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 class Group(GroupMixin, Base):
@@ -48,6 +52,27 @@ class RbacUser(Base):
     is_superuser = Column(Boolean, default=False)
 
     groups = relationship("Group", secondary=UserGroup)
+
+
+PlainUserGroup = user_group_table(
+    Base, user_table="rbac_plain_users", table_name="rbac_plain_user_groups"
+)
+
+
+class PlainUser(Base):
+    """A user model without a superuser column."""
+
+    __tablename__ = "rbac_plain_users"
+
+    id = Column(Integer, primary_key=True)
+    groups = relationship("Group", secondary=PlainUserGroup)
+
+
+class CompositeUser(Base):
+    __tablename__ = "rbac_composite_users"
+
+    tenant = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
 
 
 class Article(Base):
@@ -91,7 +116,7 @@ class ReportsPage(BaseView):
 
 
 class MyGroupAdmin(GroupAdmin, model=Group):
-    access_model = GroupAccess
+    pass
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -106,6 +131,8 @@ def clean_tables() -> Generator[None, None, None]:
     yield
     with session_maker() as session:
         session.execute(UserGroup.delete())
+        session.execute(PlainUserGroup.delete())
+        session.query(PlainUser).delete()
         session.query(GroupAccess).delete()
         session.query(Group).delete()
         session.query(RbacUser).delete()
@@ -113,21 +140,34 @@ def clean_tables() -> Generator[None, None, None]:
         session.commit()
 
 
-@pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def build_app(
+    *views: type,
+    is_async: bool = False,
+    authenticated: bool = True,
+    audit: AuditBackend | None = None,
+) -> Starlette:
+    """An admin wired to ``DBAuthorizationBackend``; all test views by default."""
+
     app = Starlette()
     admin = Admin(
         app=app,
-        engine=engine,
-        authentication_backend=HeaderUserBackend(secret_key="secret"),
-        authorization_backend=DBAuthorizationBackend(
-            session_maker, user_model=RbacUser
+        engine=async_engine if is_async else engine,
+        authentication_backend=(
+            HeaderUserBackend(secret_key="secret") if authenticated else None
         ),
+        authorization_backend=DBAuthorizationBackend(
+            async_session_maker if is_async else session_maker, user_model=RbacUser
+        ),
+        audit_backend=audit,
     )
-    admin.add_view(ArticleAdmin)
-    admin.add_view(ReportsPage)
-    admin.add_view(MyGroupAdmin)
-    with TestClient(app=app, base_url="http://testserver") as c:
+    for view in views or (ArticleAdmin, ReportsPage, MyGroupAdmin):
+        admin.add_view(view)
+    return app
+
+
+@pytest.fixture
+def client() -> Generator[TestClient, None, None]:
+    with TestClient(app=build_app(), base_url="http://testserver") as c:
         yield c
 
 
@@ -230,14 +270,58 @@ def test_custom_action_grant(client: TestClient) -> None:
     )
 
 
-def test_backend_requires_user_model() -> None:
-    with pytest.raises(ValueError, match="requires a user_model"):
-        DBAuthorizationBackend(session_maker)
-
-
 def test_backend_validates_relationship_names() -> None:
-    with pytest.raises(ValueError, match="no relationship named 'teams'"):
+    with pytest.raises(InvalidRelationshipError, match="no relationship named 'teams'"):
         DBAuthorizationBackend(session_maker, user_model=RbacUser, groups_attr="teams")
+
+
+def test_backend_rejects_composite_primary_keys() -> None:
+    from sqladmin.exceptions import ImproperlyConfigured
+
+    with pytest.raises(ImproperlyConfigured, match="single-column primary key"):
+        DBAuthorizationBackend(session_maker, user_model=CompositeUser)
+
+
+def _statements_during(func: Any) -> list[str]:
+    from sqlalchemy import event
+
+    statements: list[str] = []
+
+    def record(conn, cursor, statement, *args):  # type: ignore[no-untyped-def]
+        statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", record)
+    try:
+        func()
+    finally:
+        event.remove(engine, "before_cursor_execute", record)
+    return statements
+
+
+def test_grants_are_loaded_with_one_query(client: TestClient) -> None:
+    make_user("article:list", "group:*")
+
+    # The index page itself touches no tables, so every query is the lookup.
+    statements = _statements_during(
+        lambda: client.get("/admin/", headers=as_user(1)).raise_for_status()
+    )
+    assert len(statements) == 1
+
+
+def test_user_model_without_superuser_column() -> None:
+    with session_maker() as session:
+        user = PlainUser(id=7)
+        user.groups.append(
+            Group(
+                name="plain", accesses=[GroupAccess(identity="article", action="list")]
+            )
+        )
+        session.add(user)
+        session.commit()
+
+    backend = DBAuthorizationBackend(session_maker, user_model=PlainUser)
+    assert backend._load_grants_sync(7) == {("article", "list")}
+    assert backend._load_grants_sync(8) == set()
 
 
 def test_audit_actor_defaults_to_authentication_user_id(client: TestClient) -> None:
@@ -257,22 +341,100 @@ def test_audit_actor_defaults_to_authentication_user_id(client: TestClient) -> N
 
     make_user("article:create")
 
-    app = Starlette()
-    admin = Admin(
-        app=app,
-        engine=engine,
-        authentication_backend=HeaderUserBackend(secret_key="secret"),
-        authorization_backend=DBAuthorizationBackend(
-            session_maker, user_model=RbacUser
-        ),
-        audit_backend=Backend(session_maker),
-    )
-    admin.add_view(ArticleAdmin)
-
+    app = build_app(ArticleAdmin, audit=Backend(session_maker))
     with TestClient(app=app, base_url="http://testserver") as c:
         c.post("/admin/article/create", data={"title": "x"}, headers=as_user(1))
 
     assert captured["actor"] == 1
+
+
+def test_db_backend_requires_an_authentication_backend() -> None:
+    from sqladmin.exceptions import ImproperlyConfigured
+
+    with pytest.raises(ImproperlyConfigured, match="authentication_backend="):
+        build_app(ArticleAdmin, authenticated=False)
+
+
+def test_grants_shared_by_several_groups_are_read_once() -> None:
+    make_user("article:list")
+    with session_maker() as session:
+        user = session.get(RbacUser, 1)
+        assert user is not None
+        other = Group(name="other")
+        other.accesses.append(GroupAccess(identity="article", action="list"))
+        user.groups.append(other)
+        session.commit()
+
+    backend = DBAuthorizationBackend(session_maker, user_model=RbacUser)
+    with session_maker() as session:
+        rows = session.execute(backend._query_for(1)).all()
+    assert rows == [(False, "article", "list")]
+
+
+def test_db_backend_treats_anonymous_user_as_no_grants(client: TestClient) -> None:
+    """A configured backend that finds no user is not a setup error."""
+
+    assert client.get("/admin/article/list").status_code == 403
+
+
+class RecordingAudit(AuditBackend):
+    def __init__(self) -> None:
+        self.entries: list[AuditEntry] = []
+
+    async def log(self, entry: AuditEntry, request: Request) -> None:
+        self.entries.append(entry)
+
+
+def test_group_permission_changes_are_audited() -> None:
+    make_user(is_superuser=True)
+    group_id = _group_with(("*", "*"), ("article", "list"))
+    audit = RecordingAudit()
+
+    with TestClient(app=build_app(audit=audit)) as c:
+        c.post(
+            "/admin/group/create",
+            data={"name": "new", "permissions": ["article:list"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+        c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "editors", "permissions": ["article:create"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+        c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "renamed"},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+
+    created, updated, renamed = audit.entries
+    assert created.action == "create"
+    assert created.changes == {"name": "new", "permissions": ["article:list"]}
+    assert updated.action == "update"
+    # The resulting grants, including ones the matrix does not show.
+    assert updated.changes == {
+        "name": "editors",
+        "permissions": ["*:*", "article:create"],
+    }
+    assert renamed.changes == {"name": "renamed", "permissions": ["*:*"]}
+
+
+def test_rejected_group_change_is_not_audited() -> None:
+    make_user("group:*", user_id=2)
+    audit = RecordingAudit()
+
+    with TestClient(app=build_app(audit=audit)) as c:
+        response = c.post(
+            "/admin/group/create",
+            data={"name": "sneaky", "permissions": ["article:delete"]},
+            headers=as_user(2),
+            follow_redirects=False,
+        )
+    assert response.status_code == 400
+    assert audit.entries == []
 
 
 # Permission matrix --------------------------------------------------------
@@ -290,8 +452,8 @@ def test_permission_rows_are_built_from_registered_views(client: TestClient) -> 
     assert "article:import" in values  # can_import = True on this view
     assert "article:action:publish" in values
 
-    # Custom pages get a single grant that opens them.
-    assert [c.value for c in by_identity["reports"].choices] == ["reports:*"]
+    # Custom pages get a single grant that opens them: ``list``.
+    assert [c.value for c in by_identity["reports"].choices] == ["reports:list"]
 
 
 def test_permission_rows_skip_disabled_actions(client: TestClient) -> None:
@@ -400,12 +562,216 @@ def test_group_admin_clears_permissions(client: TestClient) -> None:
         assert group.accesses == []
 
 
-def test_group_admin_requires_access_model() -> None:
+def test_group_admin_validates_accesses_attr() -> None:
     class Broken(GroupAdmin, model=Group):
-        pass
+        accesses_attr = "grants"
 
-    with pytest.raises(ValueError, match="access_model must be set"):
-        Broken()._require_access_model()
+    # Fails when the view is added, not on the first edit.
+    with pytest.raises(InvalidRelationshipError, match="relationship named 'grants'"):
+        build_app(Broken)
+
+
+def test_group_admin_derives_access_model() -> None:
+    assert MyGroupAdmin()._access_model is GroupAccess
+
+
+def _group_with(*grants: tuple[str, str], name: str = "editors") -> int:
+    with session_maker() as session:
+        group = Group(
+            name=name,
+            accesses=[GroupAccess(identity=i, action=a) for i, a in grants],
+        )
+        session.add(group)
+        session.commit()
+        return group.id
+
+
+def _grants_of(group_id: int) -> set[tuple[str, str]]:
+    with session_maker() as session:
+        group = session.query(Group).filter(Group.id == group_id).one()
+        return {(a.identity, a.action) for a in group.accesses}
+
+
+def test_group_admin_keeps_grants_the_matrix_does_not_offer(
+    client: TestClient,
+) -> None:
+    """Wildcards and grants for disabled actions survive an edit."""
+
+    make_user(is_superuser=True)
+    # ``article:sudo`` stands in for a grant whose action was since disabled.
+    group_id = _group_with(
+        ("*", "*"), ("article", "*"), ("article", "sudo"), ("article", "list")
+    )
+
+    response = client.post(
+        f"/admin/group/edit/{group_id}",
+        data={"name": "renamed", "permissions": ["article:create"]},
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+
+    assert _grants_of(group_id) == {
+        ("*", "*"),
+        ("article", "*"),
+        ("article", "sudo"),
+        ("article", "create"),
+    }
+
+
+def test_group_editor_cannot_grant_what_they_lack(client: TestClient) -> None:
+    make_user("group:*", "article:list")
+    group_id = _group_with(("article", "list"))
+
+    response = client.post(
+        f"/admin/group/edit/{group_id}",
+        data={"name": "editors", "permissions": ["article:list", "article:delete"]},
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "You are not allowed to grant: Articles: Delete" in response.text
+    assert _grants_of(group_id) == {("article", "list")}
+
+
+def test_group_editor_may_revoke_what_they_lack(client: TestClient) -> None:
+    """Removing grants cannot escalate, so it is not restricted."""
+
+    make_user("group:*", "article:list")
+    group_id = _group_with(("article", "list"), ("article", "delete"))
+
+    response = client.post(
+        f"/admin/group/edit/{group_id}",
+        data={"name": "editors", "permissions": ["article:list"]},
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert _grants_of(group_id) == {("article", "list")}
+
+
+def test_group_editor_may_delete_group_with_grants_they_lack(
+    client: TestClient,
+) -> None:
+    make_user("group:*")
+    group_id = _group_with(("*", "*"), name="admins")
+
+    response = client.delete(f"/admin/group/delete?pks={group_id}", headers=as_user(1))
+    assert response.status_code == 200
+    assert "error" not in response.text
+    with session_maker() as session:
+        assert session.query(Group).filter(Group.id == group_id).count() == 0
+
+
+def test_can_grant_override_allows_delegation() -> None:
+    class DelegatingGroupAdmin(MyGroupAdmin):
+        def can_grant(self, request: Request, identity: str, action: str) -> bool:
+            if identity == "article":
+                return self.has_permission(request, "edit")
+            return super().can_grant(request, identity, action)
+
+    make_user("group:*")
+    group_id = _group_with()
+
+    with TestClient(build_app(ArticleAdmin, ReportsPage, DelegatingGroupAdmin)) as c:
+        response = c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "editors", "permissions": ["article:delete"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert _grants_of(group_id) == {("article", "delete")}
+
+        # Anything else still follows the default rule.
+        response = c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "editors", "permissions": ["reports:list"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        assert "Reports: Access" in response.text
+
+
+def test_can_grant_is_asked_only_about_new_grants() -> None:
+    asked: list[tuple[str, str]] = []
+
+    class RecordingGroupAdmin(MyGroupAdmin):
+        def can_grant(self, request: Request, identity: str, action: str) -> bool:
+            asked.append((identity, action))
+            return True
+
+    make_user("group:*")
+    group_id = _group_with(("article", "list"), ("article", "edit"))
+
+    with TestClient(build_app(ArticleAdmin, ReportsPage, RecordingGroupAdmin)) as c:
+        c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "editors", "permissions": ["article:list", "article:create"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+
+    assert asked == [("article", "create")]
+    assert _grants_of(group_id) == {("article", "list"), ("article", "create")}
+
+
+def test_group_editor_may_change_what_they_hold(client: TestClient) -> None:
+    """Untouched grants the editor lacks are resubmitted as-is and allowed."""
+
+    make_user("group:*", "article:list", "article:create")
+    group_id = _group_with(("article", "list"), ("article", "delete"))
+
+    response = client.post(
+        f"/admin/group/edit/{group_id}",
+        data={
+            "name": "editors",
+            "permissions": ["article:create", "article:delete"],
+        },
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert _grants_of(group_id) == {("article", "create"), ("article", "delete")}
+
+
+def test_rejected_group_create_saves_nothing(client: TestClient) -> None:
+    """The group and its grants share one transaction."""
+
+    make_user("group:*")
+
+    response = client.post(
+        "/admin/group/create",
+        data={"name": "sneaky", "permissions": ["article:delete"]},
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+
+    with session_maker() as session:
+        assert session.query(Group).filter(Group.name == "sneaky").count() == 0
+
+
+def test_group_edit_form_does_not_set_permissions_attribute(
+    client: TestClient,
+) -> None:
+    make_user(is_superuser=True)
+
+    captured = {}
+
+    class Recording(MyGroupAdmin):
+        async def after_model_change(self, data, model, is_created, request):
+            captured["has_attr"] = hasattr(model, "permissions")
+
+    with TestClient(app=build_app(Recording)) as c:
+        c.post(
+            "/admin/group/create",
+            data={"name": "g", "permissions": ["group:list"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+    assert captured == {"has_attr": False}
 
 
 # Async engine -------------------------------------------------------------
@@ -413,22 +779,7 @@ def test_group_admin_requires_access_model() -> None:
 
 @pytest.fixture
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
-    async_session_maker = async_sessionmaker(
-        bind=async_engine, class_=AsyncSession, expire_on_commit=False
-    )
-
-    app = Starlette()
-    admin = Admin(
-        app=app,
-        engine=async_engine,
-        authentication_backend=HeaderUserBackend(secret_key="secret"),
-        authorization_backend=DBAuthorizationBackend(
-            async_session_maker, user_model=RbacUser
-        ),
-    )
-    admin.add_view(ArticleAdmin)
-    admin.add_view(MyGroupAdmin)
-
+    app = build_app(ArticleAdmin, MyGroupAdmin, is_async=True)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as c:
         yield c
@@ -474,6 +825,135 @@ async def test_async_engine_stores_permissions(async_client: AsyncClient) -> Non
         assert {(a.identity, a.action) for a in group.accesses} == {("article", "list")}
 
 
+@pytest.mark.anyio
+async def test_async_engine_audits_group_permissions() -> None:
+    make_user(is_superuser=True)
+    group_id = _group_with(("article", "list"))
+    audit = RecordingAudit()
+    app = build_app(ArticleAdmin, MyGroupAdmin, is_async=True, audit=audit)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as c:
+        await c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "editors", "permissions": ["article:edit"]},
+            headers=as_user(1),
+            follow_redirects=False,
+        )
+    await async_engine.dispose()
+
+    assert [e.changes for e in audit.entries] == [
+        {"name": "editors", "permissions": ["article:edit"]}
+    ]
+
+
+@pytest.mark.anyio
+async def test_async_engine_edit_keeps_unoffered_grants(
+    async_client: AsyncClient,
+) -> None:
+    make_user(is_superuser=True)
+    group_id = _group_with(("*", "*"), ("article", "list"))
+
+    response = await async_client.post(
+        f"/admin/group/edit/{group_id}",
+        data={"name": "editors", "permissions": ["article:edit"]},
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert _grants_of(group_id) == {("*", "*"), ("article", "edit")}
+
+
+@pytest.mark.anyio
+async def test_async_engine_rejects_escalation(async_client: AsyncClient) -> None:
+    make_user("group:*", "article:list")
+    group_id = _group_with(("article", "list"))
+
+    response = await async_client.post(
+        f"/admin/group/edit/{group_id}",
+        data={"name": "editors", "permissions": ["article:list", "article:delete"]},
+        headers=as_user(1),
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "You are not allowed to grant: Articles: Delete" in response.text
+    assert _grants_of(group_id) == {("article", "list")}
+
+
+def test_group_list_does_not_load_grants(client: TestClient) -> None:
+    make_user(is_superuser=True)
+    _group_with(("article", "list"))
+
+    statements = _statements_during(
+        lambda: client.get("/admin/group/list", headers=as_user(1)).raise_for_status()
+    )
+    # Only the authorization lookup reads the grants table.
+    assert sum("admin_group_accesses" in q for q in statements) == 1, statements
+
+
+def test_group_delete_does_not_preload_grants(client: TestClient) -> None:
+    make_user(is_superuser=True)
+    group_id = _group_with(("article", "list"))
+
+    statements = _statements_during(
+        lambda: client.delete(
+            f"/admin/group/delete?pks={group_id}", headers=as_user(1)
+        ).raise_for_status()
+    )
+    # The authorization lookup, the details page's grants (the delete check
+    # loads the object as for details), and the cascade.
+    reads = [
+        q for q in statements if q.startswith("SELECT") and "admin_group_accesses" in q
+    ]
+    assert len(reads) == 3, statements
+
+
+@pytest.mark.anyio
+async def test_async_engine_group_details_edit_and_delete(
+    async_client: AsyncClient,
+) -> None:
+    make_user(is_superuser=True)
+    group_id = _group_with(("article", "list"), ("article", "edit"))
+
+    response = await async_client.get(
+        f"/admin/group/details/{group_id}", headers=as_user(1)
+    )
+    assert response.status_code == 200
+
+    response = await async_client.get(
+        f"/admin/group/edit/{group_id}", headers=as_user(1)
+    )
+    assert 'value="article:edit" id="permissions-article:edit" checked>' in (
+        response.text
+    )
+
+    response = await async_client.delete(
+        f"/admin/group/delete?pks={group_id}", headers=as_user(1)
+    )
+    assert "error" not in response.text
+    with session_maker() as session:
+        assert session.query(Group).filter(Group.id == group_id).count() == 0
+        assert (
+            session.query(GroupAccess).filter(GroupAccess.group_id == group_id).count()
+            == 0
+        )
+
+
+def test_permission_rows_are_cached_until_a_view_is_added() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+    admin.add_view(ArticleAdmin)
+
+    first = build_permission_rows(admin)
+    assert build_permission_rows(admin) is first
+
+    admin.add_view(ReportsPage)
+    assert [row.identity for row in build_permission_rows(admin)] == [
+        "article",
+        "reports",
+    ]
+
+
 def test_permission_matrix_renders_real_markup(client: TestClient) -> None:
     """The widget emits markup, not an escaped string of it.
 
@@ -489,8 +969,90 @@ def test_permission_matrix_renders_real_markup(client: TestClient) -> None:
     assert '<table class="table table-sm table-vcenter permission-matrix">' in (
         response.text
     )
+    assert "<th>Page</th><th>Permissions</th>" in response.text
+    assert '<span class="form-check-label">List</span>' in response.text
     assert "&lt;input" not in response.text
     assert "&lt;table" not in response.text
+
+
+def test_permission_matrix_labels_are_translated() -> None:
+    pytest.importorskip("babel")
+    from sqladmin.i18n import I18nConfig
+
+    make_user(is_superuser=True)
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        authentication_backend=HeaderUserBackend(secret_key="secret"),
+        authorization_backend=DBAuthorizationBackend(
+            session_maker, user_model=RbacUser
+        ),
+        i18n_config=I18nConfig(default_locale="de"),
+    )
+    admin.add_view(ArticleAdmin)
+    admin.add_view(MyGroupAdmin)
+
+    with TestClient(app=app) as c:
+        response = c.get("/admin/group/create", headers=as_user(1))
+
+    assert "<th>Seite</th><th>Berechtigungen</th>" in response.text
+    assert '<span class="form-check-label">Liste</span>' in response.text
+
+
+def test_escalation_error_is_translated() -> None:
+    pytest.importorskip("babel")
+    from sqladmin.i18n import I18nConfig
+
+    make_user("group:*")
+    group_id = _group_with()
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        authentication_backend=HeaderUserBackend(secret_key="secret"),
+        authorization_backend=DBAuthorizationBackend(
+            session_maker, user_model=RbacUser
+        ),
+        i18n_config=I18nConfig(default_locale="de"),
+    )
+    admin.add_view(ArticleAdmin)
+    admin.add_view(MyGroupAdmin)
+
+    with TestClient(app=app) as c:
+        response = c.post(
+            f"/admin/group/edit/{group_id}",
+            data={"name": "editors", "permissions": ["article:delete"]},
+            headers=as_user(1),
+        )
+
+    assert response.status_code == 400
+    assert (
+        "Sie dürfen folgende Berechtigungen nicht vergeben: Articles: Löschen"
+        in response.text
+    )
+
+
+@pytest.mark.parametrize("is_async", [False, True])
+@pytest.mark.anyio
+async def test_edit_form_loads_grants_without_form_edit_query(is_async: bool) -> None:
+    class PlainQueryGroupAdmin(MyGroupAdmin):
+        def form_edit_query(self, request: Request) -> Any:
+            return self._stmt_by_identifier(request.path_params["pk"])
+
+    make_user(is_superuser=True)
+    group_id = _group_with(("article", "edit"))
+    app = build_app(ArticleAdmin, PlainQueryGroupAdmin, is_async=is_async)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as c:
+        response = await c.get(f"/admin/group/edit/{group_id}", headers=as_user(1))
+    await async_engine.dispose()
+
+    assert response.status_code == 200
+    assert 'value="article:edit" id="permissions-article:edit" checked>' in (
+        response.text
+    )
 
 
 def test_permission_matrix_escapes_view_names() -> None:
@@ -504,7 +1066,7 @@ def test_permission_matrix_escapes_view_names() -> None:
         _ViewRow(
             identity="x",
             label="<script>alert(1)</script>",
-            standard=[_ActionChoice("x:list", "list")],
+            choices=[_ActionChoice("x:list", "list")],
         )
     ]
 

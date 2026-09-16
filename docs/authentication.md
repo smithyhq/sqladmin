@@ -49,6 +49,21 @@ authentication_backend = AdminAuth(secret_key="...")
 admin = Admin(app=..., authentication_backend=authentication_backend, ...)
 ```
 
+### Identifying the user
+
+`get_user_id` tells SQLAdmin who the logged-in user is. It defaults to
+`request.session.get("user_id")`. [Authorization](./authorization.md) and
+[audit logging](./cookbook/audit_logging.md) both use it, so if your `login`
+stores something else, such as the `token` above, override it:
+
+```python
+class AdminAuth(AuthenticationBackend):
+    ...
+
+    async def get_user_id(self, request: Request):
+        return lookup_user_id(request.session.get("token"))
+```
+
 ### Login/logout return values
 
 `AuthenticationBackend.login` and `AuthenticationBackend.logout` may return:

@@ -1,5 +1,8 @@
 {% extends "sqladmin/layout.html" %}
 {% block content %}
+{% set show_rows = can_list is not defined or can_list %}
+{% set can_delete_any = show_rows and model_view._can_delete_any(request) %}
+{% set list_actions = model_view._visible_custom_actions(request) if show_rows else {} %}
 <div class="container-fluid">
   <div class="row">
     <div class="col-12">
@@ -10,7 +13,7 @@
               <h3 class="card-title">{{ model_view.name_plural }}</h3>
               <div class="ms-auto">
                 {% block model_menu_bar %}
-                {% if model_view.check_can_export(request) %}
+                {% if model_view.can_export and model_view.check_can_export(request) %}
                 {% if model_view.export_types | length > 1 %}
                 <div class="ms-3 d-inline-block dropdown">
                   <a href="#" class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1"
@@ -41,7 +44,7 @@
                     data-bs-target="#modal-import">{{ _("Import CSV") }}</a>
                 </div>
                 {% endif %}
-                {% if model_view.check_can_create(request) %}
+                {% if model_view.can_create and model_view.check_can_create(request) %}
                 <div class="ms-3 d-inline-block">
                   <a href="{{ url_for('admin:create', identity=model_view.identity) }}" class="btn btn-primary">
                     + {{ _("New %(name)s", name=model_view.name) }}
@@ -58,21 +61,28 @@
                 <div class="alert alert-danger" role="alert">{{ error }}</div>
                 {% endif %}
               </div>
+              {% if not show_rows %}
+              {% block model_list_not_authorized %}
+              <div class="alert alert-info m-0" role="alert">
+                {{ _("You are not authorized to view these records.") }}
+              </div>
+              {% endblock %}
+              {% else %}
               <div class="d-flex justify-content-between">
                 <div class="dropdown col-4">
-                  <button {% if not model_view.check_can_delete_any(request) and not model_view._visible_custom_actions(request) %} disabled {%
+                  <button {% if not can_delete_any and not list_actions %} disabled {%
                     endif %} class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {{ _("Actions") }}
                   </button>
-                  {% if model_view.check_can_delete_any(request) or model_view._visible_custom_actions(request) %}
+                  {% if can_delete_any or list_actions %}
                   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% if model_view.check_can_delete_any(request) %}
+                    {% if can_delete_any %}
                     <a class="dropdown-item" id="action-delete" href="#" data-name="{{ model_view.name }}"
                       data-url="{{ url_for('admin:delete', identity=model_view.identity) }}" data-bs-toggle="modal"
                       data-bs-target="#modal-delete">{{ _("Delete selected items") }}</a>
                     {% endif %}
-                    {% for custom_action, label in model_view._visible_custom_actions(request).items() %}
+                    {% for custom_action, label in list_actions.items() %}
                     {% if custom_action in model_view._custom_actions_confirmation %}
                     <a class="dropdown-item" id="action-customconfirm-{{ custom_action }}" href="#"
                       data-bs-toggle="modal" data-bs-target="#modal-confirmation-{{ custom_action }}">
@@ -102,7 +112,9 @@
                 </div>
                 {% endif %}
               </div>
+              {% endif %}
             </div>
+            {% if show_rows %}
             {% block model_list_table %}
             <div class="table-responsive">
               <table class="table card-table table-vcenter text-nowrap">
@@ -252,9 +264,10 @@
                 </div>
               </div>
             </div>
+            {% endif %}
           </div>
         </div>
-        {% if model_view.get_filters() %}
+        {% if show_rows and model_view.get_filters() %}
         <div class="col-md-3 filter-sidebar-col">
           <div id="filter-sidebar" class="card">
             <div class="card-header">
@@ -271,14 +284,14 @@
       </div>
     </div>
   </div>
-  {% if model_view.check_can_delete_any(request) %}
+  {% if can_delete_any %}
   {% include 'sqladmin/modals/delete.html' %}
   {% endif %}
   {% if can_import %}
   {% include 'sqladmin/modals/import.html' %}
   {% endif %}
 
-  {% for custom_action in model_view._visible_custom_actions(request) %}
+  {% for custom_action in list_actions %}
   {% if custom_action in model_view._custom_actions_confirmation %}
   {% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
   url=model_view._url_for_action(request, custom_action) %}

@@ -48,7 +48,12 @@ from sqladmin._types import (
 )
 from sqladmin.ajax import create_ajax_loader
 from sqladmin.audit import AuditEntry
-from sqladmin.authorization import ACTIONS, AuthorizationBackend, custom_action
+from sqladmin.authorization import (
+    Action,
+    AllowAllAuthorizationBackend,
+    AuthorizationBackend,
+    custom_action,
+)
 from sqladmin.exceptions import InvalidModelError
 from sqladmin.formatters import BASE_FORMATTERS
 from sqladmin.forms import (
@@ -83,6 +88,21 @@ __all__ = [
     "ModelView",
     "ModelView",
 ]
+
+
+_ALLOW_ALL = AllowAllAuthorizationBackend()
+
+# The ``can_*`` flag that turns each built-in action off (``list`` has none).
+_ACTION_FLAGS: dict[Action, str | None] = {
+    Action.LIST: None,
+    Action.DETAILS: "can_view_details",
+    Action.CREATE: "can_create",
+    Action.EDIT: "can_edit",
+    Action.DELETE: "can_delete",
+    Action.EXPORT: "can_export",
+    Action.IMPORT: "can_import",
+}
+_ACCESSIBLE_CACHE_ATTR = "sqladmin_accessible_views"
 
 
 class ModelViewMeta(type):
@@ -138,9 +158,10 @@ class ModelViewMeta(type):
 class BaseModelView:
     identity: ClassVar[str] = ""
 
-    def _authorization_backend(self) -> AuthorizationBackend | None:
+    def _authorization_backend(self) -> AuthorizationBackend:
+        # A view not yet added to an Admin has no backend: allow everything.
         admin = getattr(self, "_admin_ref", None)
-        return getattr(admin, "authorization_backend", None)
+        return getattr(admin, "authorization_backend", _ALLOW_ALL)
 
     def has_permission(
         self, request: Request, action: str, obj: Any | None = None
@@ -158,10 +179,9 @@ class BaseModelView:
             ```
         """
 
-        backend = self._authorization_backend()
-        if backend is None:
-            return True
-        return backend.has_permission(request, self.identity, action, obj)
+        return self._authorization_backend().has_permission(
+            request, self.identity, action, obj
+        )
 
     def is_visible(self, request: Request) -> bool:
         """Override this method if you want dynamically
@@ -174,24 +194,34 @@ class BaseModelView:
     def _authorization_actions(self) -> Sequence[str]:
         """Every action that could grant access to this view."""
 
-        return ACTIONS
+        # A custom page has nothing to list, so ``list`` means viewing it.
+        return (Action.LIST,)
 
     def is_accessible(self, request: Request) -> bool:
         """Override this method to add permission checks.
 
-        Gates the menu entry and every route of this view. By default it asks
-        the configured
+        Gates the menu entry and every route of this view. By default a
+        `ModelView` is accessible when the configured
         [`AuthorizationBackend`][sqladmin.authorization.AuthorizationBackend]
-        whether the user may do *anything* with this view, and allows access
-        for everyone when no backend is configured.
+        allows at least one action on it -- a built-in action its ``can_*``
+        flags leave on, or one of the view's own `@action` endpoints. A custom
+        page (`BaseView`) is accessible when ``list`` is allowed on it.
+        Everyone gets in when no backend is configured. Override it to hide
+        the view on your own terms.
         """
 
-        backend = self._authorization_backend()
-        if backend is None:
-            return True
-        return backend.has_any_permission(
-            request, self.identity, self._authorization_actions()
-        )
+        # The menu asks several times per page; the answer can't change
+        # within a request.
+        cache = getattr(request.state, _ACCESSIBLE_CACHE_ATTR, None)
+        if cache is None:
+            cache = {}
+            setattr(request.state, _ACCESSIBLE_CACHE_ATTR, cache)
+        if id(self) not in cache:
+            cache[id(self)] = any(
+                self.has_permission(request, action)
+                for action in self._authorization_actions()
+            )
+        return cache[id(self)]
 
 
 class BaseView(BaseModelView):
@@ -1509,8 +1539,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
 
     def _authorization_actions(self) -> Sequence[str]:
+        # A grant for an action the view has switched off opens nothing.
         return (
-            *ACTIONS,
+            *(
+                action
+                for action, flag in _ACTION_FLAGS.items()
+                if flag is None or getattr(self, flag)
+            ),
             *(
                 custom_action(slug)
                 for slug in {
@@ -1520,17 +1555,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             ),
         )
 
-    def check_can_delete_any(self, request: Request) -> bool:
-        """Whether row-less delete affordances should be shown.
-
-        The bulk-delete menu entry and the delete modal are not tied to one
-        row, so they cannot use
-        [`check_can_delete`][sqladmin.models.ModelView.check_can_delete], which
-        takes a model. Per-row checks still gate the individual buttons and the
-        delete endpoint re-checks every selected object.
-        """
-
-        return self.can_delete and self.has_permission(request, "delete")
+    def _can_delete_any(self, request: Request) -> bool:
+        # The bulk-delete menu and modal are not tied to one row, so they
+        # cannot use ``check_can_delete``; the delete route still checks every
+        # selected row with it.
+        return self.can_delete and self.has_permission(request, Action.DELETE)
 
     def _visible_custom_actions(
         self, request: Request, in_detail: bool = False
@@ -1557,7 +1586,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """
         You can add a custom checker before listing.
         """
-        return self.has_permission(request, "list")
+        return self.has_permission(request, Action.LIST)
 
     async def check_can_create(self, request: Request) -> bool:
         """
@@ -1567,37 +1596,39 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         returns `True` but `can_create` is set to `False`,
         creation will still be forbidden.
         """
-        return self.can_create and self.has_permission(request, "create")
+        return self.can_create and self.has_permission(request, Action.CREATE)
 
     async def check_can_view_details(self, request: Request, model: Any) -> bool:
         """
         You can add a custom model attribute checker before view details.
         """
-        return self.can_view_details and self.has_permission(request, "details", model)
+        return self.can_view_details and self.has_permission(
+            request, Action.DETAILS, model
+        )
 
     async def check_can_edit(self, request: Request, model: Any) -> bool:
         """
         You can add a custom model attribute checker before edit.
         """
-        return self.can_edit and self.has_permission(request, "edit", model)
+        return self.can_edit and self.has_permission(request, Action.EDIT, model)
 
     async def check_can_delete(self, request: Request, model: Any) -> bool:
         """
         You can add a custom model attribute checker before delete.
         """
-        return self.can_delete and self.has_permission(request, "delete", model)
+        return self.can_delete and self.has_permission(request, Action.DELETE, model)
 
     async def check_can_export(self, request: Request) -> bool:
         """
         You can add a custom checker before export.
         """
-        return self.can_export and self.has_permission(request, "export")
+        return self.can_export and self.has_permission(request, Action.EXPORT)
 
     async def check_can_import(self, request: Request) -> bool:
         """
         You can add a custom model attribute checker before import.
         """
-        return self.can_import and self.has_permission(request, "import")
+        return self.can_import and self.has_permission(request, Action.IMPORT)
 
     async def on_import_row(self, data: dict, model: Any, request: Request) -> None:
         """Perform some actions on a validated import row before it is persisted.

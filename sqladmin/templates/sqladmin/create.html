@@ -28,7 +28,7 @@
             <div class="btn-group flex-wrap">
               {% block submit_buttons_bottom  %}
                 <input type="submit" name="save" value="{{ _('Save') }}" class="btn">
-                {% if model_view.can_edit %}
+                {% if model_view.can_edit and model_view.has_permission(request, "edit") %}
                 <input type="submit" name="save" value="{{ _('Save and continue editing') }}" class="btn">
                 {% endif %}
                 <input type="submit" name="save" value="{{ _('Save and add another') }}" class="btn">

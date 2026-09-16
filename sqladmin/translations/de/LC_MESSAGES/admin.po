@@ -3,12 +3,11 @@
 # This file is distributed under the same license as the SQLAdmin project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"POT-Creation-Date: 2026-09-16 14:31+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -19,6 +18,253 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: sqladmin/contrib/rbac.py:369
+msgid "List"
+msgstr "Liste"
+
+#: sqladmin/contrib/rbac.py:370
+msgid "Details"
+msgstr "Details"
+
+#: sqladmin/contrib/rbac.py:371
+msgid "Create"
+msgstr "Erstellen"
+
+#: sqladmin/contrib/rbac.py:372 sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/templates/sqladmin/list.html:166
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: sqladmin/contrib/rbac.py:373 sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/templates/sqladmin/list.html:174
+#: sqladmin/templates/sqladmin/modals/delete.html:21
+msgid "Delete"
+msgstr "Löschen"
+
+#: sqladmin/contrib/rbac.py:374 sqladmin/templates/sqladmin/list.html:21
+#: sqladmin/templates/sqladmin/list.html:35
+msgid "Export"
+msgstr "Exportieren"
+
+#: sqladmin/contrib/rbac.py:375
+#: sqladmin/templates/sqladmin/modals/import.html:44
+msgid "Import"
+msgstr "Importieren"
+
+#: sqladmin/contrib/rbac.py:423
+msgid "Access"
+msgstr "Zugriff"
+
+#: sqladmin/contrib/rbac.py:467
+msgid "Page"
+msgstr "Seite"
+
+#: sqladmin/contrib/rbac.py:467 sqladmin/contrib/rbac.py:573
+msgid "Permissions"
+msgstr "Berechtigungen"
+
+#: sqladmin/contrib/rbac.py:627
+#, python-format
+msgid "You are not allowed to grant: %(permissions)s"
+msgstr "Sie dürfen folgende Berechtigungen nicht vergeben: %(permissions)s"
+
+#: sqladmin/templates/sqladmin/create.html:7
+#: sqladmin/templates/sqladmin/list.html:50
+#, python-format
+msgid "New %(name)s"
+msgstr "Neu: %(name)s"
+
+#: sqladmin/templates/sqladmin/create.html:24
+#: sqladmin/templates/sqladmin/edit.html:26
+#: sqladmin/templates/sqladmin/modals/delete.html:16
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:16
+#: sqladmin/templates/sqladmin/modals/import.html:39
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:16
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: sqladmin/templates/sqladmin/create.html:30
+#: sqladmin/templates/sqladmin/edit.html:32
+msgid "Save"
+msgstr "Speichern"
+
+#: sqladmin/templates/sqladmin/create.html:32
+#: sqladmin/templates/sqladmin/edit.html:33
+msgid "Save and continue editing"
+msgstr "Speichern und weiter bearbeiten"
+
+#: sqladmin/templates/sqladmin/create.html:34
+#: sqladmin/templates/sqladmin/edit.html:38
+msgid "Save and add another"
+msgstr "Speichern und weiteres hinzufügen"
+
+#: sqladmin/templates/sqladmin/details.html:18
+msgid "Column"
+msgstr "Spalte"
+
+#: sqladmin/templates/sqladmin/details.html:19
+msgid "Value"
+msgstr "Wert"
+
+#: sqladmin/templates/sqladmin/details.html:65
+msgid "Go Back"
+msgstr "Zurück"
+
+#: sqladmin/templates/sqladmin/edit.html:7
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)s bearbeiten"
+
+#: sqladmin/templates/sqladmin/edit.html:36
+msgid "Save as new"
+msgstr "Als neu speichern"
+
+#: sqladmin/templates/sqladmin/layout.html:28
+msgid "Logout"
+msgstr "Abmelden"
+
+#: sqladmin/templates/sqladmin/layout.html:44
+msgid "Language"
+msgstr "Sprache"
+
+#: sqladmin/templates/sqladmin/list.html:44
+#: sqladmin/templates/sqladmin/modals/import.html:7
+msgid "Import CSV"
+msgstr "CSV importieren"
+
+#: sqladmin/templates/sqladmin/list.html:67
+msgid "You are not authorized to view these records."
+msgstr "Sie sind nicht berechtigt, diese Einträge anzuzeigen."
+
+#: sqladmin/templates/sqladmin/list.html:76
+msgid "Actions"
+msgstr "Aktionen"
+
+#: sqladmin/templates/sqladmin/list.html:83
+msgid "Delete selected items"
+msgstr "Ausgewählte Einträge löschen"
+
+#: sqladmin/templates/sqladmin/list.html:106
+#: sqladmin/templates/sqladmin/list.html:108
+msgid "Search"
+msgstr "Suche"
+
+#: sqladmin/templates/sqladmin/list.html:124
+msgid "Select all"
+msgstr "Alle auswählen"
+
+#: sqladmin/templates/sqladmin/list.html:155
+msgid "Select item"
+msgstr "Eintrag auswählen"
+
+#: sqladmin/templates/sqladmin/list.html:160
+msgid "View"
+msgstr "Ansehen"
+
+#: sqladmin/templates/sqladmin/list.html:220
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "Zeige %(start)s bis %(end)s von %(count)s Einträgen"
+
+#: sqladmin/templates/sqladmin/list.html:233
+msgid "prev"
+msgstr "zurück"
+
+#: sqladmin/templates/sqladmin/list.html:246
+msgid "next"
+msgstr "weiter"
+
+#: sqladmin/templates/sqladmin/list.html:252
+msgid "Show"
+msgstr "Zeige"
+
+#: sqladmin/templates/sqladmin/list.html:255
+#: sqladmin/templates/sqladmin/list.html:261
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s / Seite"
+
+#: sqladmin/templates/sqladmin/list.html:274
+msgid "Filters"
+msgstr "Filter"
+
+#: sqladmin/templates/sqladmin/login.html:6
+#, python-format
+msgid "Login to %(title)s"
+msgstr "Anmelden bei %(title)s"
+
+#: sqladmin/templates/sqladmin/login.html:8
+msgid "Username"
+msgstr "Benutzername"
+
+#: sqladmin/templates/sqladmin/login.html:10
+#: sqladmin/templates/sqladmin/login.html:14
+msgid "Enter username"
+msgstr "Benutzername eingeben"
+
+#: sqladmin/templates/sqladmin/login.html:19
+#: sqladmin/templates/sqladmin/login.html:23
+#: sqladmin/templates/sqladmin/login.html:27
+msgid "Password"
+msgstr "Passwort"
+
+#: sqladmin/templates/sqladmin/login.html:32
+msgid "Login"
+msgstr "Anmelden"
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/modals/import.html:4
+#: sqladmin/templates/sqladmin/modals/import.html:58
+#: sqladmin/templates/sqladmin/modals/import.html:78
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/secret_modal.html:9
+msgid "Close"
+msgstr "Schließen"
+
+#: sqladmin/templates/sqladmin/secret_modal.html:26
+msgid "Done"
+msgstr "Fertig"
+
+#: sqladmin/templates/sqladmin/filters/lookup_filter.html:12
+msgid "Clear filter"
+msgstr "Filter löschen"
+
+#: sqladmin/templates/sqladmin/filters/operation_filter.html:36
+msgid "Apply Filter"
+msgstr "Filter anwenden"
+
+#: sqladmin/templates/sqladmin/modals/delete.html:8
+msgid "Please confirm"
+msgstr "Bitte bestätigen"
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:21
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:21
+msgid "Yes"
+msgstr "Ja"
+
+#: sqladmin/templates/sqladmin/modals/import.html:11
+msgid "Choose CSV file"
+msgstr "CSV-Datei auswählen"
+
+#: sqladmin/templates/sqladmin/modals/import.html:14
+msgid "No file selected"
+msgstr "Keine Datei ausgewählt"
+
+#: sqladmin/templates/sqladmin/modals/import.html:18
+msgid "Skip invalid rows and continue import"
+msgstr "Ungültige Zeilen überspringen und Import fortsetzen"
+
+#: sqladmin/templates/sqladmin/modals/import.html:21
+msgid "Import progress"
+msgstr "Importfortschritt"
+
+#: sqladmin/templates/sqladmin/modals/import.html:25
+#: sqladmin/templates/sqladmin/modals/import.html:30
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr "%(processed)s/%(total)s Zeilen verarbeitet"
+
+#: sqladmin/templates/sqladmin/modals/import.html:27
 #, python-format
 msgid ""
 "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
@@ -27,6 +273,7 @@ msgstr ""
 "%(imported)s importiert, %(skipped)s übersprungen, "
 "%(processed)s/%(total)s Zeilen verarbeitet"
 
+#: sqladmin/templates/sqladmin/modals/import.html:29
 #, python-format
 msgid ""
 "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
@@ -36,159 +283,23 @@ msgstr ""
 "%(processed)s/%(total)s Zeilen verarbeitet - gültige Zeilen werden "
 "gespeichert... (%(seconds)s s)"
 
-#, python-format
-msgid "%(processed)s/%(total)s rows processed"
-msgstr "%(processed)s/%(total)s Zeilen verarbeitet"
-
-#, python-format
-msgid "%(size)s / Page"
-msgstr "%(size)s / Seite"
-
-msgid "Actions"
-msgstr "Aktionen"
-
-msgid "Apply Filter"
-msgstr "Filter anwenden"
-
-msgid "Cancel"
-msgstr "Abbrechen"
-
-msgid "Choose CSV file"
-msgstr "CSV-Datei auswählen"
-
-msgid "Clear filter"
-msgstr "Filter löschen"
-
-msgid "Close"
-msgstr "Schließen"
-
-msgid "Column"
-msgstr "Spalte"
-
-msgid "Delete"
-msgstr "Löschen"
-
-msgid "Delete selected items"
-msgstr "Ausgewählte Einträge löschen"
-
-msgid "Done"
-msgstr "Fertig"
-
-msgid "Download CSV"
-msgstr "CSV herunterladen"
-
-msgid "Download TXT"
-msgstr "TXT herunterladen"
-
-msgid "Edit"
-msgstr "Bearbeiten"
-
-#, python-format
-msgid "Edit %(name)s"
-msgstr "%(name)s bearbeiten"
-
-msgid "Enter username"
-msgstr "Benutzername eingeben"
-
-msgid "Export"
-msgstr "Exportieren"
-
-msgid "Filters"
-msgstr "Filter"
-
-msgid "Go Back"
-msgstr "Zurück"
-
-msgid "Import"
-msgstr "Importieren"
-
-msgid "Import CSV"
-msgstr "CSV importieren"
-
-msgid "Import progress"
-msgstr "Importfortschritt"
-
+#: sqladmin/templates/sqladmin/modals/import.html:60
 msgid "Import result"
 msgstr "Importergebnis"
 
-msgid "Language"
-msgstr "Sprache"
-
-msgid "Login"
-msgstr "Anmelden"
-
-#, python-format
-msgid "Login to %(title)s"
-msgstr "Anmelden bei %(title)s"
-
-msgid "Logout"
-msgstr "Abmelden"
-
+#: sqladmin/templates/sqladmin/modals/import.html:63
 msgid "Missed rows"
 msgstr "Übersprungene Zeilen"
 
-#, python-format
-msgid "New %(name)s"
-msgstr "Neu: %(name)s"
+#: sqladmin/templates/sqladmin/modals/import.html:66
+msgid "Download CSV"
+msgstr "CSV herunterladen"
 
-msgid "No file selected"
-msgstr "Keine Datei ausgewählt"
+#: sqladmin/templates/sqladmin/modals/import.html:69
+msgid "Download TXT"
+msgstr "TXT herunterladen"
 
-msgid "Password"
-msgstr "Passwort"
-
-msgid "Please confirm"
-msgstr "Bitte bestätigen"
-
+#: sqladmin/templates/sqladmin/modals/import.html:82
 msgid "Refresh list"
 msgstr "Liste aktualisieren"
-
-msgid "Save"
-msgstr "Speichern"
-
-msgid "Save and add another"
-msgstr "Speichern und weiteres hinzufügen"
-
-msgid "Save and continue editing"
-msgstr "Speichern und weiter bearbeiten"
-
-msgid "Save as new"
-msgstr "Als neu speichern"
-
-msgid "Search"
-msgstr "Suche"
-
-msgid "Select all"
-msgstr "Alle auswählen"
-
-msgid "Select item"
-msgstr "Eintrag auswählen"
-
-msgid "Show"
-msgstr "Zeige"
-
-#, python-format
-msgid "Showing %(start)s to %(end)s of %(count)s items"
-msgstr "Zeige %(start)s bis %(end)s von %(count)s Einträgen"
-
-msgid "Skip invalid rows and continue import"
-msgstr "Ungültige Zeilen überspringen und Import fortsetzen"
-
-msgid "Username"
-msgstr "Benutzername"
-
-msgid "Value"
-msgstr "Wert"
-
-msgid "View"
-msgstr "Ansehen"
-
-msgid "Yes"
-msgstr "Ja"
-
-msgid "next"
-msgstr "weiter"
-
-msgid "prev"
-msgstr "zurück"
 

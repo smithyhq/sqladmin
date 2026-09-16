@@ -113,6 +113,16 @@ def test_lazy_gettext_per_locale() -> None:
     assert str(lazy_gettext("Save")) == "Speichern"
 
 
+def test_lazy_gettext_follows_each_locale() -> None:
+    # A module-level label is rendered for many requests in different locales.
+    label = lazy_gettext("Save")
+
+    set_locale("de")
+    assert str(label) == "Speichern"
+    set_locale("az")
+    assert str(label) == "Yadda saxla"
+
+
 ######################################################
 ################### PLURAL FORMS #####################
 ######################################################

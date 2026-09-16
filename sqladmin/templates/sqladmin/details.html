@@ -102,7 +102,7 @@
   </div>
 </div>
 {% block action_buttons_bottom %}
-{% if model_view.check_can_delete_any(request) %}
+{% if model_view._can_delete_any(request) %}
 {% include 'sqladmin/modals/delete.html' %}
 {% endif %}
 

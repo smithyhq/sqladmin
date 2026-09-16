@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
+from sqladmin.authentication import get_current_user_id
 from sqladmin.helpers import is_async_session_maker
 
 if TYPE_CHECKING:
@@ -138,8 +139,6 @@ class DBAuditBackend(AuditBackend):
         different actor identifier. This value is passed to :meth:`build_row`
         to be stored in the audit model.
         """
-        from sqladmin.authentication import get_current_user_id
-
         return get_current_user_id(request)
 
     def build_row(self, entry: AuditEntry, actor: Any, request: Request) -> Any:

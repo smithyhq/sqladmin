@@ -408,7 +408,7 @@ class ModelConverter(ModelConverterBase):
         column = prop.columns[0]
         # Timezone-aware columns need an explicit timezone on the way in and
         # out, otherwise the driver decides how to interpret the naive value
-        # the form produces (asyncpg uses the server's local timezone).
+        # the form produces (asyncpg uses the Python process's local timezone).
         # See https://github.com/smithyhq/sqladmin/issues/796
         if getattr(column.type, "timezone", False):
             return TimezoneAwareDateTimeField(**kwargs)

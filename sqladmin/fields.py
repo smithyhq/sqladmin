@@ -115,6 +115,9 @@ class TimezoneAwareDateTimeField(DateTimeField):
         return value.replace(tzinfo=self.display_timezone)
 
     def process_data(self, value: Any) -> None:
+        if not isinstance(value, datetime):
+            # e.g. `arrow.Arrow` values from `sqlalchemy_utils.ArrowType`
+            value = getattr(value, "datetime", value)
         if isinstance(value, datetime) and value.tzinfo is not None:
             value = value.astimezone(self.display_timezone).replace(tzinfo=None)
         super().process_data(value)

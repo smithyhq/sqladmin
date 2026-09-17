@@ -26,6 +26,8 @@ from sqladmin.fields import (
 from tests.common import DummyData
 from tests.common import sync_engine as engine
 
+IST = timezone(timedelta(hours=5, minutes=30))
+
 Base = declarative_base()  # type: ignore
 
 
@@ -67,9 +69,6 @@ def test_datetime_field() -> None:
 
     form = F(DummyData(datetime=["2021-12-22 12:30:00"]))
     assert form.datetime.data == datetime(2021, 12, 22, 12, 30, 0, 0)
-
-
-IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def test_timezone_aware_datetime_field_defaults_to_utc() -> None:

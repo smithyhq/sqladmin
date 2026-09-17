@@ -1,6 +1,7 @@
 from collections.abc import Generator
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import Column, Integer, String
@@ -19,6 +20,7 @@ from sqladmin.fields import (
     Select2TagsField,
     SelectField,
     TextAreaField,
+    TimezoneAwareDateTimeField,
     UuidField,
 )
 from tests.common import DummyData
@@ -65,6 +67,107 @@ def test_datetime_field() -> None:
 
     form = F(DummyData(datetime=["2021-12-22 12:30:00"]))
     assert form.datetime.data == datetime(2021, 12, 22, 12, 30, 0, 0)
+
+
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def test_timezone_aware_datetime_field_defaults_to_utc() -> None:
+    class F(Form):
+        dt = TimezoneAwareDateTimeField()
+
+    stored = datetime(2026, 7, 26, 15, 0, tzinfo=IST)
+    form = F(data={"dt": stored})
+
+    assert form.dt.display_timezone is timezone.utc
+    assert form.dt.description == "UTC"
+    assert 'data-role="datetimepicker"' in form.dt()
+    assert form.dt._value() == "2026-07-26 09:30:00"
+
+    submitted = F(DummyData(dt=[form.dt._value()])).dt.data
+    assert submitted == stored
+    assert submitted.tzinfo is timezone.utc
+
+
+def test_timezone_aware_datetime_field_new_value_is_utc() -> None:
+    class F(Form):
+        dt = TimezoneAwareDateTimeField()
+
+    form = F(DummyData(dt=["2026-09-17 12:00:00"]))
+    assert form.dt.data == datetime(2026, 9, 17, 12, 0, tzinfo=timezone.utc)
+
+
+def test_timezone_aware_datetime_field_display_timezone() -> None:
+    berlin = ZoneInfo("Europe/Berlin")
+
+    class F(Form):
+        dt = TimezoneAwareDateTimeField(display_timezone=berlin)
+
+    stored = datetime(2026, 7, 26, 15, 0, tzinfo=IST)
+    form = F(data={"dt": stored})
+    assert form.dt.description == "Europe/Berlin"
+    assert form.dt._value() == "2026-07-26 11:30:00"
+    assert F(DummyData(dt=[form.dt._value()])).dt.data == stored
+
+    # DST is resolved per value
+    summer = F(DummyData(dt=["2026-07-01 12:00:00"])).dt.data
+    winter = F(DummyData(dt=["2026-01-01 12:00:00"])).dt.data
+    assert summer.utcoffset() == timedelta(hours=2)
+    assert winter.utcoffset() == timedelta(hours=1)
+
+
+def test_timezone_aware_datetime_field_pytz_style_timezone() -> None:
+    class LocalizingTZ(tzinfo):
+        """Mimics pytz: attaching via replace() gives a wrong offset."""
+
+        def utcoffset(self, dt: datetime | None) -> timedelta:  # pragma: no cover
+            return timedelta(minutes=53)  # LMT-like offset
+
+        def dst(self, dt: datetime | None) -> timedelta:  # pragma: no cover
+            return timedelta(0)
+
+        def localize(self, dt: datetime) -> datetime:
+            return dt.replace(tzinfo=IST)
+
+    class F(Form):
+        dt = TimezoneAwareDateTimeField(display_timezone=LocalizingTZ())
+
+    data = F(DummyData(dt=["2026-07-26 15:00:00"])).dt.data
+    assert data.utcoffset() == timedelta(hours=5, minutes=30)
+
+
+def test_timezone_aware_datetime_field_keeps_custom_description() -> None:
+    class F(Form):
+        dt = TimezoneAwareDateTimeField(description="Starts at (UTC)")
+
+    assert F().dt.description == "Starts at (UTC)"
+
+
+def test_timezone_aware_datetime_field_empty_description_hides_timezone() -> None:
+    class F(Form):
+        dt = TimezoneAwareDateTimeField(description="")
+
+    assert F().dt.description == ""
+
+
+def test_timezone_aware_datetime_field_naive_and_empty_values() -> None:
+    class F(Form):
+        dt = TimezoneAwareDateTimeField()
+
+    # Naive values (e.g. from SQLite) are displayed as-is.
+    naive = datetime(2026, 7, 26, 15, 0)
+    form = F(data={"dt": naive})
+    assert form.dt._value() == "2026-07-26 15:00:00"
+
+    # Field missing from the submitted form keeps the object value, tz-aware.
+    form = F(DummyData(), data={"dt": datetime(2026, 7, 26, 15, 0, tzinfo=IST)})
+    assert form.dt.data == datetime(2026, 7, 26, 9, 30, tzinfo=timezone.utc)
+
+    assert F(data={"dt": None}).dt.data is None
+
+    form = F(DummyData(dt=["not a date"]))
+    assert form.dt.data is None
+    assert form.dt.process_errors
 
 
 def test_json_field() -> None:

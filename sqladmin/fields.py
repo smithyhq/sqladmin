@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import operator
 from collections.abc import Callable, Generator
+from datetime import datetime, tzinfo
 from datetime import timezone as dt_timezone
 from enum import Enum
 from typing import Any
@@ -30,7 +31,6 @@ __all__ = [
     "CDNURLField",
     "DateField",
     "DateTimeField",
-    "DateTimeLocalField",
     "FileField",
     "IntervalField",
     "JSONField",
@@ -43,6 +43,7 @@ __all__ = [
     "FileField",
     "UuidField",
     "TextAreaField",
+    "TimezoneAwareDateTimeField",
 ]
 
 
@@ -62,54 +63,66 @@ class DateTimeField(fields.DateTimeField):
     widget = sqladmin_widgets.DateTimePickerWidget()  # type: ignore[assignment]
 
 
-class DateTimeLocalField(DateTimeField):
+class TimezoneAwareDateTimeField(DateTimeField):
     """
-    Variant of :class:`DateTimeField` for ``DateTime(timezone=True)`` columns.
+    A `DateTimeField` for `DateTime(timezone=True)` columns.
 
-    PostgreSQL (and other timezone-aware backends) return tz-aware
-    ``datetime`` objects.  WTForms renders them by calling
-    ``datetime.strftime`` which silently drops the UTC offset, so the
-    value that ends up in the HTML input is the *wall-clock* time in the
-    database's stored timezone.  When the user submits the form without
-    touching the field the value is parsed as a *naive* datetime and
-    written back to the DB, which then interprets it as UTC – causing an
-    apparent time-shift equal to the original UTC offset.
+    The picker input has no notion of timezones, so values are shown and
+    entered as wall-clock times in a single, fixed `display_timezone`
+    (UTC by default):
 
-    This field fixes the round-trip by:
+    * When rendering, a timezone-aware value is converted to
+      `display_timezone` and shown without an offset.
+    * When submitted, the naive value is interpreted as being in
+      `display_timezone`, so the ORM always receives a timezone-aware
+      `datetime` and the stored instant never depends on the database
+      driver or on the server's local timezone.
 
-    1. **process_data** – if the incoming value is tz-aware, convert it
-       to UTC and then make it naive before storing in ``self.data``.  The
-       HTML input therefore always shows a UTC wall-clock time, which is
-       unambiguous and stable.
-    2. **process_formdata** – after the user submits, re-attach
-       ``datetime.timezone.utc`` so the ORM receives a tz-aware value and
-       no shift occurs.
+    Unless a `description` is given, the timezone name is shown as the
+    field description so users know which timezone they are editing in.
+    Pass `description=""` to hide it.
 
-    Pass ``timezone=True`` when constructing the field (done automatically
-    by :meth:`sqladmin.forms.ModelConverter.conv_datetime` for columns
-    declared with ``DateTime(timezone=True)``).
+    `ModelConverter` uses this field automatically for columns declared with
+    `DateTime(timezone=True)`. Use `form_args` to change the timezone:
+
+    ```python
+    from zoneinfo import ZoneInfo
+
+    class EventAdmin(ModelView, model=Event):
+        form_args = {"starts_at": {"display_timezone": ZoneInfo("Europe/Berlin")}}
+    ```
     """
 
-    def __init__(self, *args: Any, timezone: bool = False, **kwargs: Any) -> None:
+    data: datetime | None
+
+    def __init__(
+        self,
+        *args: Any,
+        display_timezone: tzinfo | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.display_timezone: tzinfo = display_timezone or dt_timezone.utc
+        if kwargs.get("description") is None:
+            kwargs["description"] = str(self.display_timezone)
         super().__init__(*args, **kwargs)
-        self._timezone = timezone
+
+    def _localize(self, value: datetime) -> datetime:
+        # pytz timezones must be attached with `localize()`;
+        # `replace(tzinfo=...)` would pick the zone's LMT offset.
+        localize = getattr(self.display_timezone, "localize", None)
+        if callable(localize):
+            return localize(value)  # type: ignore[no-any-return]
+        return value.replace(tzinfo=self.display_timezone)
 
     def process_data(self, value: Any) -> None:
-        """Convert tz-aware datetime to naive UTC before display."""
-        if value is not None and hasattr(value, "tzinfo") and value.tzinfo is not None:
-            # Normalise to UTC, then strip tzinfo so WTForms renders it
-            # without any offset suffix.  The HTML datetime-local input
-            # does not carry timezone information, so UTC is the safest
-            # unambiguous representation.
-            value = value.astimezone(dt_timezone.utc).replace(tzinfo=None)
+        if isinstance(value, datetime) and value.tzinfo is not None:
+            value = value.astimezone(self.display_timezone).replace(tzinfo=None)
         super().process_data(value)
 
     def process_formdata(self, valuelist: list[str]) -> None:
-        """Parse submitted value and re-attach UTC when timezone=True."""
         super().process_formdata(valuelist)
-        if self._timezone and self.data is not None:
-            if self.data.tzinfo is None:
-                self.data = self.data.replace(tzinfo=dt_timezone.utc)
+        if self.data is not None and self.data.tzinfo is None:
+            self.data = self._localize(self.data)
 
 
 class IntervalField(fields.StringField):

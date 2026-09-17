@@ -47,7 +47,6 @@ from sqladmin.fields import (
     BooleanField,
     DateField,
     DateTimeField,
-    DateTimeLocalField,
     FileField,
     IntervalField,
     JSONField,
@@ -56,6 +55,7 @@ from sqladmin.fields import (
     Select2TagsField,
     SelectField,
     TextAreaField,
+    TimezoneAwareDateTimeField,
     UuidField,
 )
 from sqladmin.helpers import (
@@ -406,13 +406,12 @@ class ModelConverter(ModelConverterBase):
         kwargs: dict[str, Any],
     ) -> UnboundField:
         column = prop.columns[0]
-        # Use DateTimeLocalField for timezone-aware columns so that the
-        # UTC offset is not silently dropped when pre-populating the edit
-        # form, which would cause the stored time to shift on save.
-        # See https://github.com/aminalaee/sqladmin/issues/796
+        # Timezone-aware columns need an explicit timezone on the way in and
+        # out, otherwise the driver decides how to interpret the naive value
+        # the form produces (asyncpg uses the server's local timezone).
+        # See https://github.com/smithyhq/sqladmin/issues/796
         if getattr(column.type, "timezone", False):
-            kwargs["timezone"] = True
-            return DateTimeLocalField(**kwargs)
+            return TimezoneAwareDateTimeField(**kwargs)
         return DateTimeField(**kwargs)
 
     @converts("Enum")

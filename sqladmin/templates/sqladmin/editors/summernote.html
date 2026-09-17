@@ -9,6 +9,8 @@
         return;
       }
       $el.data("summernoteInitialized", true);
+      // Hidden required textareas block submit in Chrome ("not focusable").
+      $el.removeAttr("required");
       $el.summernote({
         height: height,
         disableDragAndDrop: true,

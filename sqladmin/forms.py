@@ -8,13 +8,11 @@ from __future__ import annotations
 
 import enum
 import inspect
-import sys
+from collections.abc import Callable, Sequence
 from typing import (
     Any,
-    Callable,
-    Sequence,
+    Protocol,
     TypeVar,
-    Union,
     no_type_check,
 )
 
@@ -67,11 +65,6 @@ from sqladmin.helpers import (
     is_async_session_maker,
     is_relationship,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
 
 
 class Validator(Protocol):
@@ -136,7 +129,7 @@ class ModelConverterBase:
         if not isinstance(prop, (RelationshipProperty, ColumnProperty)):
             return None
 
-        kwargs: Union[dict, None]
+        kwargs: dict | None
         kwargs = field_args.copy()
         widget_args = field_widget_args.copy()
         widget_args.setdefault("class", "form-control")
@@ -167,7 +160,7 @@ class ModelConverterBase:
         prop: ColumnProperty,
         form_include_pk: bool,
         kwargs: dict,
-    ) -> Union[dict, None]:
+    ) -> dict | None:
         if len(prop.columns) != 1:
             raise NotImplementedError("Multiple-column properties are not supported")
 
@@ -313,7 +306,7 @@ class ModelConverterBase:
 
         if override is not None:
             if not issubclass(override, Field):
-                raise TypeError("Expected Field, got %s" % type(override))
+                raise TypeError(f"Expected Field, got {type(override)}")
 
             if loader:
                 kwargs.setdefault("loader", loader)

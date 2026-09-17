@@ -1,14 +1,14 @@
 {% macro menu_category(menu, request) %}
 {% if menu.is_visible(request) and menu.is_accessible(request) %}
-<li class="nav-item dropdown">
+<li class="nav-item dropdown" data-sqladmin-menu-category="{{ menu.name }}">
   <a class="nav-link dropdown-toggle {% if menu.is_active(request) %}active{% endif %}" data-bs-toggle="dropdown"
-    href="#">
+    data-bs-auto-close="false" href="#" role="button" aria-expanded="false">
     <span class="nav-link-icon d-md-none d-lg-inline-block">
       {% if menu.icon %}<i class="{{ menu.icon }}"></i>{% endif %}
     </span>
     <span class="nav-link-title">{{ menu.display_name }}</span>
   </a>
-  <div class="dropdown-menu show">
+  <div class="dropdown-menu">
     <div class="dropdown-menu-columns">
       <div class="dropdown-menu-column">
         {% for sub_menu in menu.children %}

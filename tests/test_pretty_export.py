@@ -3,7 +3,7 @@ import datetime
 import io
 import json
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
@@ -86,7 +86,7 @@ class TestPrettyExport:
 
             async def custom_export_cell(
                 self, row: Any, name: str, value: Any
-            ) -> Optional[str]:
+            ) -> str | None:
                 if name == "name":
                     return f"Mr. {value}"
                 if name == "email":
@@ -247,7 +247,7 @@ class TestPrettyExport:
 
             async def custom_export_cell(
                 self, row: Any, name: str, value: Any
-            ) -> Optional[str]:
+            ) -> str | None:
                 if name == "is_active":
                     return "✓" if value else "✗"
                 return None

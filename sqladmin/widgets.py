@@ -205,7 +205,6 @@ class TextAreaWidget(widgets.TextArea):
         value = kwargs.pop("value", "")
 
         return Markup(
-            "<textarea %s>%s</textarea>"
-            % (html_params(name=field.name, **kwargs), escape(value))
-            + chars_count
+            f"<textarea {html_params(name=field.name, **kwargs)}>"
+            f"{escape(value)}</textarea>" + chars_count
         )  # nosec: markupsafe_markup_xss

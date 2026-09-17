@@ -1,0 +1,187 @@
+# Translations template for SQLAdmin.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the SQLAdmin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: SQLAdmin VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed"
+msgstr ""
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed - saving valid rows... (%(seconds)ss)"
+msgstr ""
+
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr ""
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Apply Filter"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Choose CSV file"
+msgstr ""
+
+msgid "Clear filter"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Column"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Delete selected items"
+msgstr ""
+
+msgid "Done"
+msgstr ""
+
+msgid "Download CSV"
+msgstr ""
+
+msgid "Download TXT"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+#, python-format
+msgid "Edit %(name)s"
+msgstr ""
+
+msgid "Enter username"
+msgstr ""
+
+msgid "Export"
+msgstr ""
+
+msgid "Filters"
+msgstr ""
+
+msgid "Go Back"
+msgstr ""
+
+msgid "Import"
+msgstr ""
+
+msgid "Import CSV"
+msgstr ""
+
+msgid "Import progress"
+msgstr ""
+
+msgid "Import result"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+#, python-format
+msgid "Login to %(title)s"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Missed rows"
+msgstr ""
+
+#, python-format
+msgid "New %(name)s"
+msgstr ""
+
+msgid "No file selected"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Please confirm"
+msgstr ""
+
+msgid "Refresh list"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save and add another"
+msgstr ""
+
+msgid "Save and continue editing"
+msgstr ""
+
+msgid "Save as new"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Select all"
+msgstr ""
+
+msgid "Select item"
+msgstr ""
+
+msgid "Show"
+msgstr ""
+
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr ""
+
+msgid "Skip invalid rows and continue import"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "next"
+msgstr ""
+
+msgid "prev"
+msgstr ""
+

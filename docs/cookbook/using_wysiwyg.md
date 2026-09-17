@@ -59,6 +59,8 @@ class PostAdmin(ModelView, model=Post):
             "api_key": "your-api-key",
             "plugins": "lists link table code",
             "toolbar": "bold italic | link | code",
+            # CSS injected into the editor's editable area
+            "content_style": "body { font-family: Inter; }",
         }
     }
 ```
@@ -174,3 +176,24 @@ Use it like any built-in editor:
 class PostAdmin(ModelView, model=Post):
     form_overrides = {"content": MyEditorField}
 ```
+
+
+## Editing JSON columns
+
+For `JSON`/`JSONB` columns, `JSONEditorField` renders the
+[JSONEditor](https://github.com/josdejong/jsoneditor) widget (tree and code
+views) instead of a plain textarea. It uses the same `form_overrides` /
+`form_args` mechanism and loads its assets automatically:
+
+```python
+from sqladmin.editors import JSONEditorField
+
+class ConfigAdmin(ModelView, model=Config):
+    form_overrides = {"data": JSONEditorField}
+    form_args = {"data": {"mode": "code", "version": "10.1.0"}}
+```
+
+`mode` selects the initial editor mode (`"tree"`, `"code"`, `"form"`, `"text"`
+or `"view"`). The stored value is a real JSON value (a dict or list), not a
+string, since `JSONEditorField` builds on the JSON handling of
+`sqladmin.fields.JSONField`.

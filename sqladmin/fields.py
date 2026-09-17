@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import operator
+from collections.abc import Callable, Generator
 from datetime import timezone as dt_timezone
 from enum import Enum
-from typing import Any, Callable, Generator
+from typing import Any
 from uuid import UUID
 
 import wtforms

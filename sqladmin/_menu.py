@@ -13,10 +13,10 @@ class ItemMenu:
     def __init__(self, name: str, icon: str | None = None) -> None:
         self.name = name
         self.icon = icon
-        self.parent: "ItemMenu" | None = None
-        self.children: list["ItemMenu"] = []
+        self.parent: ItemMenu | None = None
+        self.children: list[ItemMenu] = []
 
-    def add_child(self, item: "ItemMenu") -> None:
+    def add_child(self, item: ItemMenu) -> None:
         item.parent = self
         self.children.append(item)
 
@@ -55,7 +55,7 @@ class CategoryMenu(ItemMenu):
 class ViewMenu(ItemMenu):
     def __init__(
         self,
-        view: "BaseView" | "ModelView",
+        view: BaseView | ModelView,
         name: str,
         icon: str | None = None,
     ) -> None:
@@ -69,7 +69,14 @@ class ViewMenu(ItemMenu):
         return self.view.is_accessible(request)
 
     def is_active(self, request: Request) -> bool:
-        return self.view.identity == request.path_params.get("identity")
+        if self.view.is_model:
+            return self.view.identity == request.path_params.get("identity")
+        # Custom (BaseView) views are served from a fixed path that has no
+        # ``identity`` path parameter, so ``request.path_params`` never carries
+        # one and the identity comparison would always fail (see #956). Match on
+        # the resolved URL path instead.
+        view_path = URL(str(self.url(request))).path.rstrip("/")
+        return request.url.path.rstrip("/") == view_path
 
     def url(self, request: Request) -> str | URL:
         if self.view.is_model:

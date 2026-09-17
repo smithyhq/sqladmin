@@ -1,0 +1,193 @@
+# Turkish translations for SQLAdmin.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the SQLAdmin project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: SQLAdmin VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-07-19 12:27+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: tr\n"
+"Language-Team: tr <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed"
+msgstr ""
+"%(imported)s içe aktarıldı, %(skipped)s atlandı, %(processed)s/%(total)s "
+"satır işlendi"
+
+#, python-format
+msgid ""
+"%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
+"processed - saving valid rows... (%(seconds)ss)"
+msgstr ""
+"%(imported)s içe aktarıldı, %(skipped)s atlandı, %(processed)s/%(total)s "
+"satır işlendi - geçerli satırlar kaydediliyor... (%(seconds)s sn)"
+
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr "%(processed)s/%(total)s satır işlendi"
+
+#, python-format
+msgid "%(size)s / Page"
+msgstr "%(size)s / Sayfa"
+
+msgid "Actions"
+msgstr "İşlemler"
+
+msgid "Apply Filter"
+msgstr "Filtreyi uygula"
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Choose CSV file"
+msgstr "CSV dosyası seçin"
+
+msgid "Clear filter"
+msgstr "Filtreyi temizle"
+
+msgid "Close"
+msgstr "Kapat"
+
+msgid "Column"
+msgstr "Sütun"
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "Delete selected items"
+msgstr "Seçili öğeleri sil"
+
+msgid "Done"
+msgstr "Tamam"
+
+msgid "Download CSV"
+msgstr "CSV indir"
+
+msgid "Download TXT"
+msgstr "TXT indir"
+
+msgid "Edit"
+msgstr "Düzenle"
+
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)s düzenle"
+
+msgid "Enter username"
+msgstr "Kullanıcı adını girin"
+
+msgid "Export"
+msgstr "Dışa aktar"
+
+msgid "Filters"
+msgstr "Filtreler"
+
+msgid "Go Back"
+msgstr "Geri dön"
+
+msgid "Import"
+msgstr "İçe aktar"
+
+msgid "Import CSV"
+msgstr "CSV içe aktar"
+
+msgid "Import progress"
+msgstr "İçe aktarma ilerlemesi"
+
+msgid "Import result"
+msgstr "İçe aktarma sonucu"
+
+msgid "Language"
+msgstr "Dil"
+
+msgid "Login"
+msgstr "Giriş"
+
+#, python-format
+msgid "Login to %(title)s"
+msgstr "%(title)s girişi"
+
+msgid "Logout"
+msgstr "Çıkış"
+
+msgid "Missed rows"
+msgstr "Atlanan satırlar"
+
+#, python-format
+msgid "New %(name)s"
+msgstr "Yeni %(name)s"
+
+msgid "No file selected"
+msgstr "Dosya seçilmedi"
+
+msgid "Password"
+msgstr "Parola"
+
+msgid "Please confirm"
+msgstr "Lütfen onaylayın"
+
+msgid "Refresh list"
+msgstr "Listeyi yenile"
+
+msgid "Save"
+msgstr "Kaydet"
+
+msgid "Save and add another"
+msgstr "Kaydet ve başka ekle"
+
+msgid "Save and continue editing"
+msgstr "Kaydet ve düzenlemeye devam et"
+
+msgid "Save as new"
+msgstr "Yeni olarak kaydet"
+
+msgid "Search"
+msgstr "Ara"
+
+msgid "Select all"
+msgstr "Tümünü seç"
+
+msgid "Select item"
+msgstr "Öğeyi seç"
+
+msgid "Show"
+msgstr "Göster"
+
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr "%(count)s öğeden %(start)s-%(end)s gösteriliyor"
+
+msgid "Skip invalid rows and continue import"
+msgstr "Geçersiz satırları atla ve içe aktarmaya devam et"
+
+msgid "Username"
+msgstr "Kullanıcı adı"
+
+msgid "Value"
+msgstr "Değer"
+
+msgid "View"
+msgstr "Görüntüle"
+
+msgid "Yes"
+msgstr "Evet"
+
+msgid "next"
+msgstr "sonraki"
+
+msgid "prev"
+msgstr "önceki"
+

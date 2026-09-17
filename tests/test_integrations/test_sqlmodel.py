@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, List, Optional
+from collections.abc import AsyncGenerator
 from uuid import UUID, uuid4
 
 import pytest
@@ -19,22 +19,22 @@ session_maker = sessionmaker(bind=engine)
 
 
 class Team(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     headquarters: str
 
-    heroes: List["Hero"] = Relationship(back_populates="team")
+    heroes: list["Hero"] = Relationship(back_populates="team")
 
 
 class Hero(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     uuid: UUID = Field(default_factory=uuid4)
     name: str = Field(index=True, max_length=5)
     secret_name: str
-    age: Optional[int] = None
+    age: int | None = None
 
-    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
-    team: Optional[Team] = Relationship(back_populates="heroes")
+    team_id: int | None = Field(default=None, foreign_key="team.id")
+    team: Team | None = Relationship(back_populates="heroes")
 
 
 @pytest.fixture(autouse=True)

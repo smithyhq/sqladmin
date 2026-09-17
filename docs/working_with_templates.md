@@ -26,6 +26,37 @@ SQLAdmin and in the `content` block it adds custom HTML tags:
         details_template = "sqladmin/custom_details.html"
     ```
 
+### Passing extra context to templates
+
+Each model view page can pass extra values to its template through a per-page
+context hook. Override any of `list_context`, `create_context`, `edit_context`
+or `details_context` on your `ModelView` to return a mapping that is merged into
+the template context for that page. Every hook is `async`, receives the
+`request`, and returns `{}` by default:
+
+!!! example
+
+    ```python title="admin.py"
+    class UserAdmin(ModelView, model=User):
+        details_template = "sqladmin/custom_details.html"
+
+        async def details_context(self, request: Request) -> dict:
+            return {"extra_note": "Read-only for auditors"}
+    ```
+
+    ```html title="custom_details.html"
+    {% extends "sqladmin/details.html" %}
+    {% block content %}
+        {{ super() }}
+        <p>{{ extra_note }}</p>
+    {% endblock %}
+    ```
+
+The returned values are added to the context already passed to the page, so they
+are available as top-level variables in the template. The core context keys that
+SQLAdmin sets (such as `model_view`, `form`, `pagination` and `model`) always
+take precedence, so a hook can add new values but cannot override them.
+
 ### Customizing column filter templates
 
 Each built-in column filter declares a `template` attribute which defaults to one of

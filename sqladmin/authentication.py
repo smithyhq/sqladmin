@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
+from starlette import status
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
@@ -66,7 +68,9 @@ def login_required(func: Callable[..., Any]) -> Callable[..., Any]:
             if isinstance(response, Response):
                 return response
             if not bool(response):
-                return RedirectResponse(request.url_for("admin:login"), status_code=302)
+                return RedirectResponse(
+                    request.url_for("admin:login"), status_code=status.HTTP_302_FOUND
+                )
 
         if inspect.iscoroutinefunction(func):
             return await func(*args, **kwargs)

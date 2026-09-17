@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from sqlalchemy.orm import declarative_base
@@ -58,6 +58,28 @@ def test_menu_view_url(client: TestClient) -> None:
     response = client.get("/admin")
     assert response.status_code == 200
 
+    assert (
+        '<a class="nav-link " href="http://testserver/admin/custom">' in response.text
+    )
+
+
+def test_menu_active_on_custom_view(client: TestClient) -> None:
+    # Regression test for #956: custom (BaseView) menu items were never marked
+    # active, because is_active compared the view identity against an `identity`
+    # path param that custom-view routes do not have.
+    admin.add_view(CustomAdmin)
+
+    # On the custom view's own page the sidebar link is marked active.
+    response = client.get("/admin/custom")
+    assert response.status_code == 200
+    assert (
+        '<a class="nav-link active" href="http://testserver/admin/custom">'
+        in response.text
+    )
+
+    # On an unrelated page (the admin index) it is not active.
+    response = client.get("/admin")
+    assert response.status_code == 200
     assert (
         '<a class="nav-link " href="http://testserver/admin/custom">' in response.text
     )

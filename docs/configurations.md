@@ -93,6 +93,10 @@ The metadata for the model. The options are:
 - `category`: Category name to display group of `ModelView` classes together in dropdown.
 - `category_icon`: Category icon to display.
 
+Category groups start collapsed. Expanding or collapsing one group leaves the
+others untouched, and the state is remembered per admin instance in the
+browser's `localStorage`, so it survives navigating between pages.
+
 !!! example
 
     ```python

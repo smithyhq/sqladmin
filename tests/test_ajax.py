@@ -1,13 +1,19 @@
-from typing import AsyncGenerator
+import functools
+import re
+import uuid
+from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import Column, ForeignKey, Integer, String, select
+from sqlalchemy import Column, ForeignKey, Integer, String, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base, relationship, selectinload
+from sqlalchemy.orm import declarative_base, foreign, relationship, selectinload
+from sqlalchemy.sql.elements import ColumnElement
 from starlette.applications import Starlette
+from starlette.requests import Request
 
 from sqladmin import Admin, ModelView
+from sqladmin._types import AJAX_WHERE_CLAUSES_TYPE
 from sqladmin.ajax import QueryAjaxModelLoader, create_ajax_loader
 from tests.common import async_engine as engine
 
@@ -73,9 +79,6 @@ class Room(Base):
     user = relationship("User", back_populates="rooms")
     city = relationship("City", back_populates="rooms")
 
-    def __str__(self) -> str:
-        return f"Room {self.id}"
-
 
 class Team(Base):
     __tablename__ = "teams"
@@ -96,9 +99,6 @@ class Member(Base):
 
     team = relationship("Team")
 
-    def __str__(self) -> str:
-        return f"Member {self.id}"
-
 
 class CompositeTag(Base):
     __tablename__ = "composite_tags"
@@ -109,6 +109,40 @@ class CompositeTag(Base):
 
     def __str__(self) -> str:
         return f"{self.label}:{self.key}:{self.locale}"
+
+
+class MissedField(Base):
+    __tablename__ = "missed_field"
+
+    id = Column(Integer, primary_key=True)
+    team_id = Column(Integer, ForeignKey("teams.id"))
+
+    team = relationship("Team")
+
+
+class ParentMissmatchIdsField(Base):
+    __tablename__ = "parent_missmatch_ids_field"
+
+    id = Column(Integer, ForeignKey("teams.id"), primary_key=True)
+
+    missmatch_ids_field = relationship(
+        "MissmatchIdsField",
+        primaryjoin=lambda: or_(
+            ParentMissmatchIdsField.id == foreign(MissmatchIdsField.team_1_id),
+            ParentMissmatchIdsField.id == foreign(MissmatchIdsField.team_2_id),
+        ),
+        viewonly=True,
+    )
+
+
+class MissmatchIdsField(Base):
+    __tablename__ = "missmatch_ids_field"
+
+    team_1_id = Column(Integer, ForeignKey("teams.id"), primary_key=True)
+    team_2_id = Column(Integer, ForeignKey("teams.id"), primary_key=True)
+
+    team_1 = relationship("Team", foreign_keys=[team_1_id])
+    team_2 = relationship("Team", foreign_keys=[team_2_id])
 
 
 class UserAdmin(ModelView, model=User):
@@ -399,6 +433,27 @@ async def test_edit_validation_error_preserves_selected_ajax_value(
     )
 
 
+async def test_ajax_where_condition(
+    client: AsyncClient,
+) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(name="AB"), Team(name="BB")])
+        await s.commit()
+
+    async with session_maker() as s:
+        member = Member(name="John", team_id=1)
+        s.add(member)
+        await s.commit()
+
+    response = await client.get("/admin/member/ajax/lookup?name=team&term=B")
+
+    assert response.status_code == 200
+    assert (
+        '{"results":[{"id":"1","text":"Team 1"},{"id":"2","text":"Team 2"}]}'
+        == response.text
+    )
+
+
 async def test_format_by_pk_single_pk() -> None:
     async with session_maker() as s:
         user = User(name="Arya")
@@ -443,3 +498,446 @@ async def test_format_by_pk_returns_empty_for_missing_record() -> None:
     )
 
     assert await loader.format_by_pk("999") == {}
+
+
+async def test_missed_field_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {
+                "fields": ("error",),
+            }
+        }
+
+    with pytest.raises(ValueError, match="error does not exist"):
+        admin.add_view(MissedFieldAdmin)
+
+
+async def where_clause_async_function(request: Request, term: str) -> ColumnElement:
+    return Team.id == 1
+
+
+def where_clause_sync_function(request: Request, term: str) -> ColumnElement:
+    return Team.id == 1
+
+
+class AjaxWhere(Base):
+    __tablename__ = "ajax_where"
+    id = Column(Integer, primary_key=True)
+    team_id = Column(Integer, ForeignKey("teams.id"))
+    team = relationship("Team")
+
+
+@pytest.mark.parametrize(
+    "where_clause",
+    [
+        Team.id == 1,
+        [Team.id == 1],
+        (Team.id == 1,),
+        {Team.id == 1},
+        (Team.id == 1,),
+        where_clause_async_function,
+        where_clause_sync_function,
+        lambda request, term: [Team.id == 1],
+    ],
+)
+async def test_ajax_where_valid(client: AsyncClient, where_clause) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(id=1, name="1"), Team(id=2, name="2")])
+        await s.commit()
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    dynamic_classname = f"AjaxWhereValid_{unique_suffix}"
+    dynamic_tablename = f"ajax_where_valid_{unique_suffix}"
+
+    model = type(
+        dynamic_classname,
+        (Base,),
+        {
+            "__tablename__": dynamic_tablename,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    view = type(
+        f"{dynamic_classname}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",), "where": where_clause}},
+        },
+        model=model,
+    )
+
+    admin.add_view(view)
+
+    identity = view().identity
+
+    response = await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
+    assert response.status_code == 200
+    assert response.text == '{"results":[{"id":"1","text":"Team 1"}]}'
+
+    response = await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=2")
+    assert response.status_code == 200
+    assert response.text == '{"results":[]}'
+
+
+@pytest.mark.parametrize(
+    "where_clause",
+    [
+        "id = 1",
+        "True",
+        b"id = 2",
+        True,
+        123,
+    ],
+)
+async def test_ajax_where_failed_validation(client: AsyncClient, where_clause) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(id=1, name="1")])
+        await s.commit()
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    dynamic_classname = f"AjaxWhereFailedValidation_{unique_suffix}"
+    dynamic_tablename = f"ajax_where_failed_validation_{unique_suffix}"
+
+    model = type(
+        dynamic_classname,
+        (Base,),
+        {
+            "__tablename__": dynamic_tablename,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    view = type(
+        f"{dynamic_classname}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",), "where": where_clause}},
+        },
+        model=model,
+    )
+
+    error = f'"where" option should be one of {AJAX_WHERE_CLAUSES_TYPE}'
+    with pytest.raises(ValueError, match=re.escape(error)):
+        admin.add_view(view)
+
+
+@pytest.mark.parametrize(
+    "where_clause, error",
+    [
+        (
+            lambda request, term: True,
+            'Function <lambda> in "where" option should return ColumnElement. '
+            "Got: bool",
+        ),
+        (
+            lambda request, term: None,
+            'Function <lambda> in "where" option should return ColumnElement. '
+            "Got: None",
+        ),
+        (
+            lambda request, term: "id = 1",
+            'Function <lambda> in "where" option should return ColumnElement. Got: str',
+        ),
+        (
+            lambda request, term: b"id = 1",
+            'Function <lambda> in "where" option should return ColumnElement. '
+            "Got: bytes",
+        ),
+    ],
+)
+async def test_ajax_where_invalid_function_return(
+    client: AsyncClient, where_clause, error: str
+) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(id=1, name="1")])
+        await s.commit()
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    dynamic_classname = f"AjaxWhereInvalidFunctionReturn_{unique_suffix}"
+    dynamic_tablename = f"ajax_where_invalid_function_return_{unique_suffix}"
+
+    model = type(
+        dynamic_classname,
+        (Base,),
+        {
+            "__tablename__": dynamic_tablename,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    view = type(
+        f"{dynamic_classname}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",), "where": where_clause}},
+        },
+        model=model,
+    )
+
+    admin.add_view(view)
+
+    identity = view().identity
+
+    with pytest.raises(ValueError, match=re.escape(error)):
+        await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
+
+
+class _WhereCallable:
+    """A callable object has no __name__ - the error path must not assume one."""
+
+    def __call__(self, request: Request, term: str) -> str:
+        return "id = 1"
+
+
+@pytest.mark.parametrize(
+    "where_clause",
+    [
+        _WhereCallable(),
+        functools.partial(lambda request, term, pk: "id = 1", pk=1),
+    ],
+)
+async def test_ajax_where_invalid_return_from_callable_without_name(
+    client: AsyncClient, where_clause
+) -> None:
+    unique_suffix = uuid.uuid4().hex[:8]
+    dynamic_classname = f"AjaxWhereNoName_{unique_suffix}"
+
+    model = type(
+        dynamic_classname,
+        (Base,),
+        {
+            "__tablename__": f"ajax_where_no_name_{unique_suffix}",
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    view = type(
+        f"{dynamic_classname}Admin",
+        (ModelView,),
+        {"form_ajax_refs": {"team": {"fields": ("id",), "where": where_clause}}},
+        model=model,
+    )
+
+    admin.add_view(view)
+    identity = view().identity
+
+    # Not AttributeError: 'partial' object has no attribute '__name__'
+    with pytest.raises(ValueError, match="should return ColumnElement"):
+        await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
+
+
+async def test_fields_not_str_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {
+                "fields": (MissedField.id,),
+            }
+        }
+
+    assert MissedFieldAdmin()._form_ajax_refs["team"]._cached_fields == [MissedField.id]
+
+
+async def test_format_by_pk_with_empty_pk_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {
+                "fields": (MissedField.id,),
+            }
+        }
+
+    assert await MissedFieldAdmin()._form_ajax_refs["team"].format_by_pk(None) == {}
+
+
+async def test_format_by_pk_missmatch_pk_count_in_ajax() -> None:
+    async with session_maker() as s:
+        s.add_all(
+            [
+                Team(id=1, name="A"),
+                Team(id=2, name="B"),
+                MissmatchIdsField(team_1_id=1, team_2_id=2),
+            ]
+        )
+        await s.commit()
+
+    class ParentMissmatchIdsFieldAdmin(ModelView, model=ParentMissmatchIdsField):
+        form_ajax_refs = {
+            "missmatch_ids_field": {
+                "fields": (MissmatchIdsField.team_1_id, MissmatchIdsField.team_2_id),
+            }
+        }
+
+    admin.add_view(ParentMissmatchIdsFieldAdmin)
+    assert (
+        await ParentMissmatchIdsFieldAdmin()
+        ._form_ajax_refs["missmatch_ids_field"]
+        .format_by_pk("1")
+    ) == {}
+
+
+async def test_format_by_pk_many_pks_in_ajax() -> None:
+    async with session_maker() as s:
+        s.add_all(
+            [
+                Team(id=1, name="A"),
+                Team(id=2, name="B"),
+                MissmatchIdsField(team_1_id=1, team_2_id=2),
+            ]
+        )
+        await s.commit()
+
+    class ParentMissmatchIdsFieldAdmin(ModelView, model=ParentMissmatchIdsField):
+        form_ajax_refs = {
+            "missmatch_ids_field": {
+                "fields": (MissmatchIdsField.team_1_id, MissmatchIdsField.team_2_id),
+            }
+        }
+
+    admin.add_view(ParentMissmatchIdsFieldAdmin)
+    assert (
+        await ParentMissmatchIdsFieldAdmin()
+        ._form_ajax_refs["missmatch_ids_field"]
+        .format_by_pk("1;2")
+    )["id"] == "1;2"
+
+
+async def test_format_by_pk_with_wrong_pk_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {"team": {"fields": (Team.id,), "order_by": Team.id}}
+
+    admin.add_view(MissedFieldAdmin)
+    assert await MissedFieldAdmin()._form_ajax_refs["team"].format_by_pk(123) == {}
+
+
+async def test_order_by_iterable_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {"fields": (MissedField.id,), "order_by": [MissedField.id]}
+        }
+
+    admin.add_view(MissedFieldAdmin)
+
+    assert (
+        MissedFieldAdmin()._form_ajax_refs["team"]._cached_fields_order_by[0].key
+        == "id"
+    )
+
+
+async def test_order_by_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {"fields": (MissedField.id,), "order_by": MissedField.id}
+        }
+
+    admin.add_view(MissedFieldAdmin)
+
+    assert (
+        MissedFieldAdmin()._form_ajax_refs["team"]._cached_fields_order_by[0].key
+        == "id"
+    )
+
+
+async def test_order_by_desc_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {"fields": (MissedField.id,), "order_by": MissedField.id.desc()}
+        }
+
+    admin.add_view(MissedFieldAdmin)
+
+    assert len(MissedFieldAdmin()._form_ajax_refs["team"]._cached_fields_order_by) == 1
+
+
+async def test_order_by_desc_is_applied_to_query() -> None:
+    """``order_by`` is not just parsed, it actually orders the returned rows."""
+    async with session_maker() as s:
+        s.add_all(
+            [
+                Team(id=1, name="Alpha"),
+                Team(id=2, name="Beta"),
+                Team(id=3, name="Gamma"),
+            ]
+        )
+        await s.commit()
+
+    loader = QueryAjaxModelLoader(
+        name="team",
+        model=Team,
+        model_admin=MemberAdmin(),
+        fields=("name",),
+        order_by=Team.id.desc(),
+    )
+
+    request = Request(
+        {"type": "http", "method": "GET", "headers": [], "query_string": b""}
+    )
+    results = await loader.get_list(request, "")
+
+    assert [team.id for team in results] == [3, 2, 1]
+
+
+async def test_order_by_relationship_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {"fields": (MissedField.id,), "order_by": MissedField.team}
+        }
+
+    admin.add_view(MissedFieldAdmin)
+
+    assert len(MissedFieldAdmin()._form_ajax_refs["team"]._cached_fields_order_by) == 1
+
+
+async def test_order_by_func_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {
+            "team": {
+                "fields": (MissedField.id,),
+                "order_by": func.lower(MissedField.team_id),
+            }
+        }
+
+    admin.add_view(MissedFieldAdmin)
+
+    assert len(MissedFieldAdmin()._form_ajax_refs["team"]._cached_fields_order_by) == 1
+
+
+async def test_order_by_error_type_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {"team": {"fields": (MissedField.id,), "order_by": 1234}}
+
+    error_msg = (
+        "The form_ajax_refs.field.order_by field accepts only str "
+        "and sqlalchemy.orm.attributes.InstrumentedAttribute or collections of them. "
+        "Received: 1234"
+    )
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        admin.add_view(MissedFieldAdmin)
+
+
+async def test_order_by_error_type_list_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {"team": {"fields": (MissedField.id,), "order_by": [None]}}
+
+    error_msg = (
+        "The form_ajax_refs.field.order_by field accepts only str "
+        "and sqlalchemy.orm.attributes.InstrumentedAttribute or collections of them. "
+        "Received <class 'NoneType'>: None"
+    )
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        admin.add_view(MissedFieldAdmin)
+
+
+async def test_order_by_error_type_field_not_found_in_ajax() -> None:
+    class MissedFieldAdmin(ModelView, model=MissedField):
+        form_ajax_refs = {"team": {"fields": (MissedField.id,), "order_by": "error"}}
+
+    with pytest.raises(ValueError, match="error does not exist"):
+        admin.add_view(MissedFieldAdmin)

@@ -1,7 +1,7 @@
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import JSON, Column, Integer, String, Text
 from sqlalchemy.orm import Session, declarative_base
 from starlette.applications import Starlette
 from starlette.testclient import TestClient
@@ -11,6 +11,7 @@ from sqladmin import Admin, ModelView
 from sqladmin.editors import (
     CKEditor5Field,
     FieldMedia,
+    JSONEditorField,
     QuillField,
     SummernoteField,
     TinyMCEField,
@@ -29,6 +30,13 @@ class Post(Base):
     content = Column(Text)
     summary = Column(Text)
     notes = Column(Text)
+
+
+class Config(Base):
+    __tablename__ = "configs_editors"
+
+    id = Column(Integer, primary_key=True)
+    data = Column(JSON)
 
 
 def _make_client(view_class: type[ModelView]) -> TestClient:
@@ -115,6 +123,31 @@ def test_ckeditor5_field_default_min_height() -> None:
 
 def test_ckeditor5_field_init_template() -> None:
     assert CKEditor5Field.editor_init_template == "sqladmin/editors/ckeditor5.html"
+
+
+@pytest.mark.parametrize(
+    "field_class",
+    [CKEditor5Field, TinyMCEField, QuillField, SummernoteField],
+)
+def test_editor_fields_suppress_html5_required(field_class: type) -> None:
+    """Hidden required textareas block Chrome submit ("not focusable")."""
+    from wtforms.validators import InputRequired
+
+    field = _bind(field_class, validators=[InputRequired()])
+    assert field.flags.required
+    html = str(field())
+    assert "required" not in html
+
+
+def test_create_page_editor_textarea_not_html_required() -> None:
+    class PostAdmin(ModelView, model=Post):
+        form_overrides = {"content": CKEditor5Field}
+
+    with _make_client(PostAdmin) as c:
+        response = c.get("/admin/post/create")
+    assert 'id="content"' in response.text
+    assert 'id="content" name="content" required' not in response.text
+    assert "removeAttribute" in response.text
 
 
 def test_tinymce_field_media() -> None:
@@ -374,3 +407,75 @@ def test_form_args_passed_to_field() -> None:
     with _make_client(PostAdmin) as c:
         response = c.get("/admin/post/create")
     assert "quill.bubble.css" in response.text
+
+
+#  JSONEditorField
+def test_jsoneditor_field_media() -> None:
+    field = _bind(JSONEditorField)
+    assert any("jsoneditor.min.js" in url for url in field.media.js)
+    assert any("jsoneditor.min.css" in url for url in field.media.css)
+
+
+def test_jsoneditor_field_custom_version() -> None:
+    field = _bind(JSONEditorField, version="9.10.0")
+    assert any("jsoneditor@9.10.0" in url for url in field.media.js)
+
+
+def test_jsoneditor_field_default_mode() -> None:
+    field = _bind(JSONEditorField)
+    assert field.mode == "tree"
+
+
+def test_jsoneditor_field_init_template() -> None:
+    field = _bind(JSONEditorField)
+    assert field.editor_init_template == "sqladmin/editors/jsoneditor.html"
+
+
+def test_create_page_loads_jsoneditor() -> None:
+    class ConfigAdmin(ModelView, model=Config):
+        form_overrides = {"data": JSONEditorField}
+
+    with _make_client(ConfigAdmin) as c:
+        response = c.get("/admin/config/create")
+    assert response.status_code == 200
+    assert "jsoneditor.min.js" in response.text
+    assert "jsoneditor.min.css" in response.text
+    assert "new JSONEditor" in response.text
+
+
+def test_edit_page_loads_jsoneditor() -> None:
+    class ConfigAdmin(ModelView, model=Config):
+        form_overrides = {"data": JSONEditorField}
+
+    with Session(engine) as session:
+        config = Config(data={"a": 1})
+        session.add(config)
+        session.commit()
+        config_id = config.id
+
+    with _make_client(ConfigAdmin) as c:
+        response = c.get(f"/admin/config/edit/{config_id}")
+    assert response.status_code == 200
+    assert "jsoneditor.min.js" in response.text
+
+
+def test_tinymce_field_default_content_style() -> None:
+    field = _bind(TinyMCEField)
+    assert field.content_style == ""
+
+
+def test_tinymce_field_content_style() -> None:
+    field = _bind(TinyMCEField, content_style="body { font-size: 14px; }")
+    assert field.content_style == "body { font-size: 14px; }"
+
+
+def test_create_page_tinymce_content_style() -> None:
+    class PostAdmin(ModelView, model=Post):
+        form_overrides = {"content": TinyMCEField}
+        form_args = {"content": {"content_style": "body { color: red; }"}}
+
+    with _make_client(PostAdmin) as c:
+        response = c.get("/admin/post/create")
+    assert response.status_code == 200
+    assert "content_style" in response.text
+    assert "color: red" in response.text

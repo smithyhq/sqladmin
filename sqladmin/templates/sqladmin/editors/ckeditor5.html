@@ -18,6 +18,8 @@
     }
     el.dataset.ckInitialized = "1";
     el.style.resize = "none";
+    // Hidden required textareas block submit in Chrome ("not focusable").
+    el.removeAttribute("required");
 
     ClassicEditor.create(el)
       .then(function (editor) {
@@ -28,6 +30,13 @@
             editor.editing.view.document.getRoot()
           );
         });
+
+        var form = el.closest("form");
+        if (form) {
+          form.addEventListener("submit", function () {
+            editor.updateSourceElement();
+          });
+        }
       })
       .catch(function (err) {
         console.error("CKEditor5 init error for", fieldId, err);

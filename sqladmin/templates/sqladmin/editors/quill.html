@@ -9,6 +9,8 @@
     return;
   }
   textarea.dataset.quillInitialized = "1";
+  // Hidden required textareas block submit in Chrome ("not focusable").
+  textarea.removeAttribute("required");
 
   var container = document.createElement("div");
   container.style.minHeight = minHeight + "px";

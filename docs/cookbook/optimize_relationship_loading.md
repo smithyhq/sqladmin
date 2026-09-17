@@ -46,6 +46,60 @@ class ParentAdmin(ModelView, model=Parent):
     }
 ```
 
+You can use additional `where` conditions; in this case, 
+a portion of the records will be excluded during the search based on this rule:
+
+```py
+class ParentAdmin(ModelView, model=Parent):
+    form_ajax_refs = {
+        "children": {
+            "fields": ("id",),
+            "where": Children.id == 1,
+        }
+    }
+```
+
+As a filter, you can use:
+
+- Direct conditions
+    ```py
+    Children.id == 1
+    ```
+- A collection of conditions
+    ```py
+    (
+        Children.id == 1,
+        Children.active.is_(True),
+    )
+    ```
+- A synchronous function with required parameters
+  ```py
+  from starlette.requests import Request
+  from sqlalchemy.sql.elements import ColumnElement
+  
+  def where_clause(request: Request, term: str) -> ColumnElement:
+      return Children.id == 1
+  ```
+- An asynchronous function with required parameters
+  ```py
+  from starlette.requests import Request
+  from sqlalchemy.sql.elements import ColumnElement
+  
+  async def where_clause(request: Request, term: str) -> ColumnElement:
+      return Children.id == 1
+  ```
+- A function with required parameters that returns an iterable `ColumnElement` object
+  ```py
+  from starlette.requests import Request
+  from sqlalchemy.sql.elements import ColumnElement
+  
+  async def where_clause(request: Request, term: str) -> list[ColumnElement]:
+      return [
+          Children.id == 1,
+          Children.active.is_(True),
+      ]
+  ```
+
 This will allow you to search `Child` objects using the `id` field while also ordering the results.
 
 ### Using `form_columns` or `form_excluded_columns`

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Dict, List
 
 from starlette.requests import Request
 
@@ -165,7 +164,7 @@ class Flash:
         return cls.flash(request, message, FlashLevel.error, title)
 
 
-def get_flashed_messages(request: Request) -> List[Dict[str, str]]:
+def get_flashed_messages(request: Request) -> list[dict[str, str]]:
     """Retrieve and clear all stored flash messages from the session.
 
     Called automatically by the built-in templates. You only need this
@@ -188,7 +187,7 @@ def get_flashed_messages(request: Request) -> List[Dict[str, str]]:
         {% endwith %}
         ```
     """
-    messages: List[Dict[str, str]] = []
+    messages: list[dict[str, str]] = []
     if "session" not in request.scope:
         return messages
 

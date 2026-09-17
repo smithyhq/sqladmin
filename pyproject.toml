@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.9.17,<0.12.0"]
+requires = ["uv_build>=0.9.17,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -8,7 +8,7 @@ module-root = ""
 
 [project]
 name = "sqladmin"
-version = "0.29.0"
+version = "0.31.1"
 description = 'SQLAlchemy admin for FastAPI and Starlette'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -42,7 +42,9 @@ dependencies = [
 
 
 [project.optional-dependencies]
-full = ["itsdangerous"]
+auth = ["itsdangerous"]
+i18n = ["babel"]
+full = ["itsdangerous", "babel"]
 
 [project.urls]
 Documentation = "https://smithyhq.github.io/sqladmin/"
@@ -75,7 +77,7 @@ dev = [
   "bandit",
 ]
 
-lint = ["mypy==2.1.0", "ruff==0.15.20", "types-wtforms>=3.2.1.20250809"]
+lint = ["mypy==2.3.0", "ruff==0.15.20", "types-wtforms>=3.2.1.20250809"]
 
 docs = ["zensical~=0.0.42", "mkdocstrings[python]~=1.0.3"]
 
@@ -93,7 +95,12 @@ module = "tests.*"
 ignore_errors = true
 
 [tool.ruff]
-lint.select = ["E", "F", "I"]
+lint.select = [
+  "E", # Pycodestyle
+  "F", # Pyflakes
+  "I", # isort
+  "UP",  # pyupgrade (modern typing / syntax fixes)
+]
 
 [tool.coverage.run]
 source_pkgs = ["sqladmin", "tests"]
@@ -109,3 +116,11 @@ exclude_lines = [
 fail_under = 95
 show_missing = true
 skip_covered = true
+
+[tool.babel]
+# Message extraction mapping for `pybabel extract -F pyproject.toml`.
+# Only Jinja templates are scanned; SQLAdmin marks UI strings with _("...").
+[[tool.babel.mappings]]
+method = "jinja2"
+pattern = "sqladmin/templates/**.html"
+extensions = "jinja2.ext.i18n"

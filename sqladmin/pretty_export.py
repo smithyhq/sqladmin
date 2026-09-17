@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, AsyncGenerator, List
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Any
 
 from starlette.responses import StreamingResponse
 
@@ -40,9 +41,9 @@ class PrettyExport:
         cls,
         model_view: "ModelView",
         row: Any,
-        column_names: List[str],
+        column_names: list[str],
         request: "Request | None" = None,
-    ) -> List[Any]:
+    ) -> list[Any]:
         row_values = []
         for name in column_names:
             value, formatted_value = await model_view.get_list_value(row, name, request)
@@ -60,7 +61,7 @@ class PrettyExport:
     async def pretty_export_csv(
         cls,
         model_view: "ModelView",
-        rows: List[Any],
+        rows: list[Any],
         request: "Request | None" = None,
     ) -> StreamingResponse:
         async def generate(writer: Writer) -> AsyncGenerator[Any, None]:

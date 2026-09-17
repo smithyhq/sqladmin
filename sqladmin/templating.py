@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import jinja2
+from starlette import status
 from starlette.background import BackgroundTask
 from starlette.datastructures import URL
 from starlette.requests import Request
@@ -16,7 +18,7 @@ class _TemplateResponse(HTMLResponse):
         template: jinja2.Template,
         content: str,
         context: dict,
-        status_code: int = 200,
+        status_code: int = status.HTTP_200_OK,
         headers: Mapping[str, str] | None = None,
         media_type: str | None = None,
         background: BackgroundTask | None = None,
@@ -57,10 +59,15 @@ class Jinja2Templates:
         request: Request,
         name: str,
         context: dict | None = None,
-        status_code: int = 200,
+        status_code: int = status.HTTP_200_OK,
     ) -> _TemplateResponse:
         context = context or {}
         context.setdefault("request", request)
         template = self.env.get_template(name)
         content = await template.render_async(context)
-        return _TemplateResponse(template, content, context, status_code)
+        return _TemplateResponse(
+            template=template,
+            content=content,
+            context=context,
+            status_code=status_code,
+        )

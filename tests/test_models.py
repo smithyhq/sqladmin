@@ -1,5 +1,5 @@
 import enum
-from typing import Generator
+from collections.abc import Generator
 from uuid import UUID as PyUUID
 
 import pytest
@@ -657,7 +657,7 @@ async def test_form_edit_query() -> None:
 
     view = UserAdmin()
 
-    class RequestObject(object):
+    class RequestObject:
         pass
 
     request_object = RequestObject()
@@ -867,3 +867,67 @@ def test_expose_decorator(client: TestClient) -> None:
 
     with pytest.raises(TemplateNotFound, match="user.html"):
         client.get("/admin/user/profile/1")
+
+
+async def test_page_context_hooks_default_empty() -> None:
+    # #942: each page context hook returns {} by default.
+    class PlainAdmin(ModelView, model=User):
+        pass
+
+    view = PlainAdmin()
+    request = Request({"type": "http"})
+    assert await view.list_context(request) == {}
+    assert await view.create_context(request) == {}
+    assert await view.edit_context(request) == {}
+    assert await view.details_context(request) == {}
+
+
+async def test_page_context_hook_merged_into_template() -> None:
+    # #942: an overridden page context hook is merged into that page's
+    # template context. The create GET page renders without touching the DB.
+    local_app = Starlette()
+    local_admin = Admin(
+        app=local_app,
+        session_maker=session_maker,
+        templates_dir="tests/templates",
+    )
+
+    class ProbeAdmin(ModelView, model=User):
+        create_template = "context_probe.html"
+
+        async def create_context(self, request: Request) -> dict:
+            return {"probe": "PROBE_VALUE"}
+
+    local_admin.add_view(ProbeAdmin)
+
+    with TestClient(local_app) as client:
+        response = client.get("/admin/user/create")
+
+    assert response.status_code == 200
+    assert "PROBE_VALUE" in response.text
+
+
+async def test_page_context_hook_cannot_override_core_keys() -> None:
+    # Core keys (e.g. model_view) always win over hook-provided values.
+    local_app = Starlette()
+    local_admin = Admin(
+        app=local_app,
+        session_maker=session_maker,
+        templates_dir="tests/templates",
+    )
+
+    class ProbeAdmin(ModelView, model=User):
+        create_template = "context_probe.html"
+
+        async def create_context(self, request: Request) -> dict:
+            return {"model_view": "HIJACKED", "probe": "ok"}
+
+    local_admin.add_view(ProbeAdmin)
+
+    with TestClient(local_app) as client:
+        response = client.get("/admin/user/create")
+
+    assert response.status_code == 200
+    # The real model_view survived (its name rendered); the hook value lost.
+    assert "User" in response.text
+    assert "HIJACKED" not in response.text

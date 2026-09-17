@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import operator
 from collections.abc import Callable, Generator
+from datetime import datetime, tzinfo
+from datetime import timezone as dt_timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -41,6 +43,7 @@ __all__ = [
     "FileField",
     "UuidField",
     "TextAreaField",
+    "TimezoneAwareDateTimeField",
 ]
 
 
@@ -58,6 +61,71 @@ class DateTimeField(fields.DateTimeField):
     """
 
     widget = sqladmin_widgets.DateTimePickerWidget()  # type: ignore[assignment]
+
+
+class TimezoneAwareDateTimeField(DateTimeField):
+    """
+    A `DateTimeField` for `DateTime(timezone=True)` columns.
+
+    The picker input has no notion of timezones, so values are shown and
+    entered as wall-clock times in a single, fixed `display_timezone`
+    (UTC by default):
+
+    * When rendering, a timezone-aware value is converted to
+      `display_timezone` and shown without an offset.
+    * When submitted, the naive value is interpreted as being in
+      `display_timezone`, so the ORM always receives a timezone-aware
+      `datetime` and the stored instant never depends on the database
+      driver or on the server's local timezone.
+
+    Unless a `description` is given, the timezone name is shown as the
+    field description so users know which timezone they are editing in.
+    Pass `description=""` to hide it.
+
+    `ModelConverter` uses this field automatically for columns declared with
+    `DateTime(timezone=True)`. Use `form_args` to change the timezone:
+
+    ```python
+    from zoneinfo import ZoneInfo
+
+    class EventAdmin(ModelView, model=Event):
+        form_args = {"starts_at": {"display_timezone": ZoneInfo("Europe/Berlin")}}
+    ```
+    """
+
+    data: datetime | None
+
+    def __init__(
+        self,
+        *args: Any,
+        display_timezone: tzinfo | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.display_timezone: tzinfo = display_timezone or dt_timezone.utc
+        if kwargs.get("description") is None:
+            kwargs["description"] = str(self.display_timezone)
+        super().__init__(*args, **kwargs)
+
+    def _localize(self, value: datetime) -> datetime:
+        # pytz timezones must be attached with `localize()`;
+        # `replace(tzinfo=...)` would pick the zone's LMT offset.
+        localize = getattr(self.display_timezone, "localize", None)
+        if callable(localize):
+            return localize(value)  # type: ignore[no-any-return]
+        return value.replace(tzinfo=self.display_timezone)
+
+    def process_data(self, value: Any) -> None:
+        if not isinstance(value, datetime):
+            # e.g. `arrow.Arrow` values from `sqlalchemy_utils.ArrowType`
+            value = getattr(value, "datetime", value)
+        if isinstance(value, datetime) and value.tzinfo is not None:
+            value = value.astimezone(self.display_timezone).replace(tzinfo=None)
+        super().process_data(value)
+
+    def process_formdata(self, valuelist: list[str]) -> None:
+        super().process_formdata(valuelist)
+        if self.data is not None and self.data.tzinfo is None:
+            self.data = self._localize(self.data)
 
 
 class IntervalField(fields.StringField):

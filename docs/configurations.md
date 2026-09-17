@@ -431,6 +431,33 @@ The forms are based on `WTForms` package and include the following options:
         form_edit_rules = ["name"]
     ```
 
+### Timezone-aware datetime columns
+
+The date picker has no notion of timezones, so columns declared with
+`DateTime(timezone=True)` use `TimezoneAwareDateTimeField`. Values are shown and
+entered as wall-clock times in a single timezone, which is shown under the input:
+
+- Stored values are converted to that timezone before they are displayed.
+- Submitted values are interpreted in that timezone and saved as timezone-aware
+  `datetime` objects, so the stored instant does not depend on the database driver
+  or on the server's local timezone.
+
+The timezone defaults to UTC. You can change it per column with `form_args`:
+
+!!! example
+
+    ```python
+    from zoneinfo import ZoneInfo
+
+
+    class EventAdmin(ModelView, model=Event):
+        form_args = {
+            "starts_at": {"display_timezone": ZoneInfo("Europe/Berlin")},
+        }
+    ```
+
+Columns declared with plain `DateTime` are not affected.
+
 ### Related models
 
 To define how related model is displayed in the dropdown, `__str__` method must be defined in the related model.

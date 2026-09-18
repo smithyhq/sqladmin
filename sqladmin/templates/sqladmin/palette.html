@@ -1,0 +1,50 @@
+<div class="sa-palette-overlay" id="sa-palette" aria-hidden="true">
+  <div class="sa-palette" role="dialog" aria-modal="true" aria-label="{{ _('Search') }}">
+    <div class="sa-palette-search">
+      <i class="ti ti-search sa-palette-icon" aria-hidden="true"></i>
+      <span id="sa-palette-chip"></span>
+      <input
+        type="text"
+        id="sa-palette-input"
+        class="sa-palette-input"
+        placeholder="{{ _('Search models, records, commands') }}"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="{{ _('Search') }}"
+      />
+      <button type="button" class="sa-palette-close" id="sa-palette-close" aria-label="{{ _('Close') }}">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="sa-palette-results" id="sa-palette-results"></div>
+    <div class="sa-palette-footer">
+      <span>{{ _("Click a model to scope, click a record to open") }}</span>
+    </div>
+  </div>
+</div>
+<script>
+  window.SA_PALETTE_URL = {{ url_for('admin:palette') | string | tojson }};
+  window.SA_PALETTE_LOGIN_URL = {{ request.url_for('admin:login') | string | tojson }};
+  window.SA_PALETTE_I18N = {
+    models: {{ _('Models') | tojson }},
+    modelsHint: {{ _('registry, no database query') | tojson }},
+    commands: {{ _('Commands') | tojson }},
+    records: {{ _('Records') | tojson }},
+    // {name} is substituted client-side so translators keep word order.
+    recordsIn: {{ _('Records in {name}') | tojson }},
+    singleModel: {{ _('single model') | tojson }},
+    searchedOf: {{ _('Searched {searched} of {total} models, keep typing to narrow') | tojson }},
+    searchInside: {{ _('Search inside') | tojson }},
+    goTo: {{ _('Go to {name}') | tojson }},
+    create: {{ _('Create {name}') | tojson }},
+    page: {{ _('page') | tojson }},
+    new: {{ _('new') | tojson }},
+    open: {{ _('open') | tojson }},
+    more: {{ _('{count} more, keep typing to narrow') | tojson }},
+    noMatches: {{ _('No matches') | tojson }},
+    nothingFound: {{ _('Nothing found') | tojson }},
+    searchFailed: {{ _('Search failed') | tojson }},
+    searchPlaceholder: {{ _('Search models, records, commands') | tojson }},
+    searchInsidePlaceholder: {{ _('Search inside {name}') | tojson }}
+  };
+</script>

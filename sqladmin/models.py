@@ -348,6 +348,14 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             column_searchable_list = [User.name]
         ```
     """
+
+    search_auto_submit: ClassVar[bool] = True
+    """Automatically submit search while typing in list view.
+
+    When set to `True`, typing in the search input triggers a delayed search.
+    Set to `False` to require pressing `Enter` or clicking the search button.
+    """
+
     palette_search: ClassVar[bool] = False
     """Whether this model joins *unscoped* command-palette search.
 
@@ -359,82 +367,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     palette_search_limit: ClassVar[int] = 5
     """Maximum number of records returned per model from a palette query."""
-
-    def palette_search_query(self, request: Request, term: str) -> Select:
-        """Statement used for palette record search of this model.
-
-        The default reuses ``search_query`` — the same ``ilike`` expression as
-        the list page — built on top of ``list_query(request)`` so any
-        request-based scoping applied there also applies to the palette, and
-        caps rows at ``palette_search_limit``. Override for full-text search,
-        trigram matching, or anything else the database supports.
-
-        ???+ example
-            ```python
-            class ArticleAdmin(ModelView, model=Article):
-                column_searchable_list = [Article.title]
-                palette_search = True
-
-                def palette_search_query(self, request: Request, term: str) -> Select:
-                    return (
-                        select(Article)
-                        .where(Article.search_vector.match(term))
-                        .limit(self.palette_search_limit)
-                    )
-            ```
-        """
-
-        from sqladmin.palette import default_palette_search_query
-
-        return default_palette_search_query(self, request, term)
-
-    def palette_commands(self, request: Request) -> list[dict]:
-        """Commands the palette offers for this model.
-
-        Called only for the model that best matches what the user typed, so the
-        list stays short and relevant. The default is "Go to <model>" plus
-        "Create <model>" when ``can_create`` is set.
-
-        Each entry is a dict with:
-
-        * ``label``: an i18n key the frontend resolves. ``goTo`` and ``create``
-          are built in and take the model name; any other value is rendered
-          verbatim, which is what custom commands normally want.
-        * ``name``: substituted into the ``goTo`` / ``create`` labels.
-        * ``url``: where clicking navigates.
-        * ``icon``: optional single character or HTML entity.
-        * ``badge``: optional short tag shown on the right.
-
-        ???+ example
-        ```python
-            class UserAdmin(ModelView, model=User):
-                def palette_commands(self, request: Request) -> list[dict]:
-                    commands = super().palette_commands(request)
-                    commands.append(
-                        {
-                            "label": "Export users as CSV",
-                            "url": str(
-                                request.url_for("admin:export", identity=self.identity,
-                                                export_type="csv")
-                            ),
-                            "icon": "\u2193",
-                            "badge": "csv",
-                        }
-                    )
-                    return commands
-        ```
-        """
-
-        from sqladmin.palette import default_model_commands
-
-        return default_model_commands(self, request)
-
-    search_auto_submit: ClassVar[bool] = True
-    """Automatically submit search while typing in list view.
-
-    When set to `True`, typing in the search input triggers a delayed search.
-    Set to `False` to require pressing `Enter` or clicking the search button.
-    """
 
     column_filters: ClassVar[Sequence[ColumnFilter]] = []
     """Collection of the filterable columns for the list view.
@@ -1671,6 +1603,75 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
         return stmt.filter(or_(false(), *expressions))
+
+    def palette_search_query(self, request: Request, term: str) -> Select:
+        """Statement used for palette record search of this model.
+
+        The default reuses ``search_query`` — the same ``ilike`` expression as
+        the list page — built on top of ``list_query(request)`` so any
+        request-based scoping applied there also applies to the palette, and
+        caps rows at ``palette_search_limit``. Override for full-text search,
+        trigram matching, or anything else the database supports.
+
+        ???+ example
+            ```python
+            class ArticleAdmin(ModelView, model=Article):
+                column_searchable_list = [Article.title]
+                palette_search = True
+
+                def palette_search_query(self, request: Request, term: str) -> Select:
+                    return (
+                        select(Article)
+                        .where(Article.search_vector.match(term))
+                        .limit(self.palette_search_limit)
+                    )
+            ```
+        """
+
+        from sqladmin.palette import default_palette_search_query
+
+        return default_palette_search_query(self, request, term)
+
+    def palette_commands(self, request: Request) -> builtins.list[dict]:
+        """Commands the palette offers for this model.
+
+        Called only for the model that best matches what the user typed, so the
+        list stays short and relevant. The default is "Go to <model>" plus
+        "Create <model>" when ``can_create`` is set.
+
+        Each entry is a dict with:
+
+        * ``label``: an i18n key the frontend resolves. ``goTo`` and ``create``
+          are built in and take the model name; any other value is rendered
+          verbatim, which is what custom commands normally want.
+        * ``name``: substituted into the ``goTo`` / ``create`` labels.
+        * ``url``: where clicking navigates.
+        * ``icon``: optional single character or HTML entity.
+        * ``badge``: optional short tag shown on the right.
+
+        ???+ example
+            ```python
+            class UserAdmin(ModelView, model=User):
+                def palette_commands(self, request: Request) -> builtins.list[dict]:
+                    commands = super().palette_commands(request)
+                    commands.append(
+                        {
+                            "label": "Export users as CSV",
+                            "url": str(
+                                request.url_for("admin:export", identity=self.identity,
+                                                export_type="csv")
+                            ),
+                            "icon": "\u2193",
+                            "badge": "csv",
+                        }
+                    )
+                    return commands
+            ```
+        """
+
+        from sqladmin.palette import default_model_commands
+
+        return default_model_commands(self, request)
 
     def list_query(self, request: Request) -> Select:
         """

@@ -1,3 +1,4 @@
+import json
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
@@ -518,9 +519,10 @@ def test_all_locales_cover_every_palette_string() -> None:
         "page",
         "new",
         "open",
-        "one query",
+        "single model",
         "registry, no database query",
         "{count} more, keep typing to narrow",
+        "Searched {searched} of {total} models, keep typing to narrow",
         "No matches",
         "Nothing found",
         "Search failed",
@@ -854,3 +856,164 @@ def test_negative_palette_settings_are_clamped_to_zero() -> None:
     )
     assert admin.palette_search_min_chars == 0
     assert admin.palette_search_max_models == 0
+
+
+# --------------------------------------------------------------------------- #
+# Second review round: gather failure isolation, tojson escaping, capped
+# fan-out visibility
+# --------------------------------------------------------------------------- #
+class FlakyAdmin(ModelView, model=Locked):
+    # Simulates one model's query failing outright — a bad custom
+    # palette_search_query, a transient connection error, anything.
+    column_searchable_list = [Locked.name]
+    palette_search = True
+
+    def palette_search_query(self, request: Request, term: str):  # type: ignore[no-untyped-def]
+        raise RuntimeError("simulated failure in one model's query")
+
+
+async def test_one_model_failing_does_not_fail_the_whole_search() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=async_engine)
+    admin.add_view(UserAdmin)
+    admin.add_view(FlakyAdmin)
+
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    async with async_session_maker() as session:
+        session.add_all(
+            [
+                User(name="John Smith", email="john@acme.com"),
+                Locked(name="john locked"),
+            ]
+        )
+        await session.commit()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/admin/palette", params={"q": "john"})
+
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await async_engine.dispose()
+
+    # The working model's result must still come back with a 200, not a 500
+    # from the broken model taking the whole gather() down with it.
+    assert resp.status_code == 200
+    assert _labels(resp.json()["records"]) == {"User John Smith"}
+
+
+def test_translation_containing_a_quote_is_not_a_syntax_break(
+    sync_client: TestClient,
+) -> None:
+    # A translation is developer/translator content, not sandboxed by Jinja's
+    # HTML autoescaping (jinja2.ext.i18n deliberately exempts gettext output
+    # so translators can include intentional HTML). Embedding it with
+    # `| tojson` rather than manual quoting must keep it a single, valid,
+    # fully round-trippable JS string no matter what it contains.
+    from sqladmin.templating import _tojson_filter
+
+    payload = '"; alert(document.cookie); var x = "'
+    embedded = _tojson_filter(payload)
+
+    # Every quote from the source must be backslash-escaped, not bare — a
+    # bare `"` is what would close the JS string literal early.
+    assert '\\"' in str(embedded)
+    restored = json.loads(
+        str(embedded)
+        .replace("\\u003c", "<")
+        .replace("\\u003e", ">")
+        .replace("\\u0026", "&")
+        .replace("\\u0027", "'")
+    )
+    assert restored == payload
+
+
+def test_tojson_filter_blocks_script_tag_breakout() -> None:
+    from sqladmin.templating import _tojson_filter
+
+    payload = "</script><script>alert(1)</script>"
+    embedded = str(_tojson_filter(payload))
+    assert "</script>" not in embedded
+    assert "\\u003c/script\\u003e" in embedded
+
+
+def test_palette_html_uses_tojson_for_every_interpolation(
+    sync_client: TestClient,
+) -> None:
+    page = sync_client.get("/admin/user/list").text
+    start = page.index("window.SA_PALETTE_I18N")
+    end = page.index("};", start)
+    block = page[start:end]
+    # Every value in the object must be produced by tojson (always opens with
+    # a double quote from json.dumps), never by the old bare `"{{ _(...) }}"`
+    # pattern this fixes.
+    assert "{{" not in block
+
+
+async def test_capped_fanout_reports_searched_and_total() -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=async_engine, palette_search_max_models=2)
+
+    models = []
+    for i in range(5):
+        model = type(
+            f"CapModel{i}",
+            (Base,),
+            {
+                "__tablename__": f"cap_model_{i}",
+                "id": Column(Integer, primary_key=True),
+                "name": Column(String(length=64)),
+                "__str__": lambda self: str(self.name or ""),
+            },
+        )
+        models.append(model)
+        view = type(
+            f"CapModel{i}Admin",
+            (ModelView,),
+            {"column_searchable_list": [model.name], "palette_search": True},
+            model=model,
+        )
+        admin.add_view(view)
+
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    async with async_session_maker() as session:
+        # Only the last (unsearched, given the cap of 2) model has a match.
+        session.add(models[4](name="onlylast"))
+        await session.commit()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/admin/palette", params={"q": "onlylast"})
+
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await async_engine.dispose()
+
+    body = resp.json()
+    assert body["searched_models"] == 2
+    assert body["total_optin_models"] == 5
+    # The match is real but outside the searched prefix: the response must
+    # still say so via the counts, rather than an indistinguishable "nothing
+    # found" that looks identical to a genuine no-match.
+    assert body["records"] == []
+
+
+async def test_uncapped_search_reports_equal_searched_and_total(
+    async_client: AsyncClient,
+) -> None:
+    resp = await async_client.get("/admin/palette", params={"q": "john"})
+    body = resp.json()
+    assert body["searched_models"] == body["total_optin_models"]
+
+
+async def test_scoped_response_reports_single_model(
+    async_client: AsyncClient,
+) -> None:
+    resp = await async_client.get(
+        "/admin/palette", params={"q": "john", "scope": "user"}
+    )
+    body = resp.json()
+    assert body["searched_models"] == 1
+    assert body["total_optin_models"] == 1

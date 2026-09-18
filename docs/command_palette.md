@@ -14,8 +14,11 @@ The palette answers three different questions, and each has a different cost.
 query runs, so this stays instant no matter how many models you register.
 
 **Records inside one model** are searched when you pick a model first: click
-**Search inside** on any row and it becomes the scope. From then on exactly one
-query runs against exactly one model, again regardless of how many exist.
+**Search inside** on any row and it becomes the scope. From then on every
+search hits exactly one model, regardless of how many exist — though a model
+whose `__str__` touches a relationship listed in `column_list` costs one query
+per eager-loaded relation on top of that, the same as anywhere else in
+SQLAdmin.
 
 **Records across models** are searched when you type without picking a model.
 This is the only mode that fans out, so it is opt-in per model and capped.
@@ -44,7 +47,7 @@ expression as the list page, so a model with no searchable columns is skipped.
 - `palette_search_limit`: rows returned per model. Defaults to `5`.
 
 A model that is not opted in is still reachable through **Search inside**.
-Scoping is an explicit choice by the user, and it costs a single query, so the
+Scoping is an explicit choice by the user and always touches one model, so the
 opt-in does not apply there.
 
 ## Limiting the fan-out

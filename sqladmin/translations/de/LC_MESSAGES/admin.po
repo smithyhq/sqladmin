@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-03 18:27+0400\n"
+"POT-Creation-Date: 2026-09-18 14:40+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -201,6 +201,10 @@ msgstr "In {name} suchen"
 msgid "Search models, records, commands"
 msgstr "Modelle, Datensätze, Befehle suchen"
 
+#, python-brace-format
+msgid "Searched {searched} of {total} models, keep typing to narrow"
+msgstr "{searched} von {total} Modellen durchsucht, weiter tippen zum Eingrenzen"
+
 msgid "Select all"
 msgstr "Alle auswählen"
 
@@ -235,9 +239,6 @@ msgstr "neu"
 msgid "next"
 msgstr "weiter"
 
-msgid "one query"
-msgstr "eine Abfrage"
-
 msgid "open"
 msgstr "öffnen"
 
@@ -249,6 +250,9 @@ msgstr "zurück"
 
 msgid "registry, no database query"
 msgstr "Registry, keine Datenbankabfrage"
+
+msgid "single model"
+msgstr "ein Modell"
 
 #, python-brace-format
 msgid "{count} more, keep typing to narrow"

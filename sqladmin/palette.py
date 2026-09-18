@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -13,6 +14,8 @@ from starlette.responses import JSONResponse, Response
 
 from sqladmin.helpers import get_object_identifier
 from sqladmin.models import ModelView
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from sqladmin.application import BaseAdmin
@@ -87,8 +90,8 @@ def palette_base_query(view: ModelView, request: Request) -> Select:
     Relationships referenced by ``__str__`` are a common source of a
     ``DetachedInstanceError`` once the session that loaded the row is closed,
     since the label is rendered after the query has returned. Eager-loading
-    ``view._list_relations`` — the same relations already eager-loaded for the
-    list page — covers that without requiring every view to know to do it.
+    ``view._list_relations`` - the same relations already eager-loaded for the
+    list page - covers that without requiring every view to know to do it.
     """
 
     stmt = view.list_query(request)
@@ -102,8 +105,8 @@ def default_palette_search_query(
 ) -> Select:
     """Default implementation behind ``ModelView.palette_search_query``.
 
-    Reuses ``ModelView.search_query`` — the same ``ilike`` expression as the
-    list page — and caps rows at ``view.palette_search_limit``.
+    Reuses ``ModelView.search_query`` - the same ``ilike`` expression as the
+    list page - and caps rows at ``view.palette_search_limit``.
     """
 
     stmt = palette_base_query(view, request)
@@ -240,6 +243,8 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
                 "models": [],
                 "commands": [],
                 "records": [r.as_dict() for r in scoped],
+                "searched_models": 1,
+                "total_optin_models": 1,
             }
         )
 
@@ -260,15 +265,35 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
         commands = best.palette_commands(request)
 
     # ---- unscoped record fan-out (opt-in models only) -----------------------
+    # searched/total travel with the response even when nothing gets capped,
+    # so the frontend has one code path rather than needing to infer capping
+    # from whether the counts happen to be present.
     records: list[PaletteResult] = []
+    total_optin = 0
+    searched_count = 0
     if len(term) >= admin.palette_search_min_chars:
-        searchable = [v for v in accessible if v.palette_search and v._search_fields][
-            : admin.palette_search_max_models
-        ]
+        optin = [v for v in accessible if v.palette_search and v._search_fields]
+        total_optin = len(optin)
+        searchable = optin[: admin.palette_search_max_models]
+        searched_count = len(searchable)
+
+        # One model's query failing - a bad custom palette_search_query, a
+        # transient connection error, anything - must not take the whole
+        # response down with it. return_exceptions=True keeps the other
+        # models' results; a failure is logged and that model's chunk is
+        # simply empty rather than the entire search reporting 500.
         chunks = await asyncio.gather(
-            *(search_model_records(v, request, term) for v in searchable)
+            *(search_model_records(v, request, term) for v in searchable),
+            return_exceptions=True,
         )
-        for chunk in chunks:
+        for view, chunk in zip(searchable, chunks):
+            if isinstance(chunk, BaseException):
+                logger.exception(
+                    "Command palette search failed for model %r",
+                    view.identity,
+                    exc_info=chunk,
+                )
+                continue
             records.extend(chunk)
 
     return JSONResponse(
@@ -277,5 +302,7 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
             "models": models,
             "commands": commands,
             "records": [r.as_dict() for r in records],
+            "searched_models": searched_count,
+            "total_optin_models": total_optin,
         }
     )

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-03 18:27+0400\n"
+"POT-Creation-Date: 2026-09-18 14:40+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: tr\n"
@@ -200,6 +200,12 @@ msgstr "{name} içinde ara"
 msgid "Search models, records, commands"
 msgstr "Model, kayıt ve komutlarda ara"
 
+#, python-brace-format
+msgid "Searched {searched} of {total} models, keep typing to narrow"
+msgstr ""
+"{total} modelden {searched} tanesi arandı, daraltmak için yazmaya devam "
+"edin"
+
 msgid "Select all"
 msgstr "Tümünü seç"
 
@@ -234,9 +240,6 @@ msgstr "yeni"
 msgid "next"
 msgstr "sonraki"
 
-msgid "one query"
-msgstr "tek sorgu"
-
 msgid "open"
 msgstr "aç"
 
@@ -248,6 +251,9 @@ msgstr "önceki"
 
 msgid "registry, no database query"
 msgstr "kayıt defteri, veritabanı sorgusu yok"
+
+msgid "single model"
+msgstr "tek model"
 
 #, python-brace-format
 msgid "{count} more, keep typing to narrow"

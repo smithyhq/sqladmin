@@ -23,27 +23,28 @@
   </div>
 </div>
 <script>
-  window.SA_PALETTE_URL = "{{ url_for('admin:palette') }}";
-  window.SA_PALETTE_LOGIN_URL = "{{ request.url_for('admin:login') }}";
+  window.SA_PALETTE_URL = {{ url_for('admin:palette') | string | tojson }};
+  window.SA_PALETTE_LOGIN_URL = {{ request.url_for('admin:login') | string | tojson }};
   window.SA_PALETTE_I18N = {
-    models: "{{ _('Models') }}",
-    modelsHint: "{{ _('registry, no database query') }}",
-    commands: "{{ _('Commands') }}",
-    records: "{{ _('Records') }}",
+    models: {{ _('Models') | tojson }},
+    modelsHint: {{ _('registry, no database query') | tojson }},
+    commands: {{ _('Commands') | tojson }},
+    records: {{ _('Records') | tojson }},
     // {name} is substituted client-side so translators keep word order.
-    recordsIn: "{{ _('Records in {name}') }}",
-    oneQuery: "{{ _('one query') }}",
-    searchInside: "{{ _('Search inside') }}",
-    goTo: "{{ _('Go to {name}') }}",
-    create: "{{ _('Create {name}') }}",
-    page: "{{ _('page') }}",
-    new: "{{ _('new') }}",
-    open: "{{ _('open') }}",
-    more: "{{ _('{count} more, keep typing to narrow') }}",
-    noMatches: "{{ _('No matches') }}",
-    nothingFound: "{{ _('Nothing found') }}",
-    searchFailed: "{{ _('Search failed') }}",
-    searchPlaceholder: "{{ _('Search models, records, commands') }}",
-    searchInsidePlaceholder: "{{ _('Search inside {name}') }}"
+    recordsIn: {{ _('Records in {name}') | tojson }},
+    singleModel: {{ _('single model') | tojson }},
+    searchedOf: {{ _('Searched {searched} of {total} models, keep typing to narrow') | tojson }},
+    searchInside: {{ _('Search inside') | tojson }},
+    goTo: {{ _('Go to {name}') | tojson }},
+    create: {{ _('Create {name}') | tojson }},
+    page: {{ _('page') | tojson }},
+    new: {{ _('new') | tojson }},
+    open: {{ _('open') | tojson }},
+    more: {{ _('{count} more, keep typing to narrow') | tojson }},
+    noMatches: {{ _('No matches') | tojson }},
+    nothingFound: {{ _('Nothing found') | tojson }},
+    searchFailed: {{ _('Search failed') | tojson }},
+    searchPlaceholder: {{ _('Search models, records, commands') | tojson }},
+    searchInsidePlaceholder: {{ _('Search inside {name}') | tojson }}
   };
 </script>

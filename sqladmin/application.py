@@ -94,9 +94,9 @@ class BaseAdmin:
         middlewares: Sequence[Middleware] | None = None,
         authentication_backend: AuthenticationBackend | None = None,
         i18n_config: I18nConfig | None = None,
-        audit_backend: AuditBackend | None = None,
         palette_search_min_chars: int = 2,
         palette_search_max_models: int = 8,
+        audit_backend: AuditBackend | None = None,
     ) -> None:
         self.app = app
         self.audit_backend = audit_backend or NullAuditBackend()
@@ -109,6 +109,9 @@ class BaseAdmin:
         self.logo_height = logo_height
         self.favicon_url = favicon_url
         self.i18n_config = i18n_config
+        # Clamp rather than trust the caller: a negative min_chars would let
+        # every keystroke fan a query out across every opted-in model, and a
+        # negative max_models would silently disable the cap it exists for.
         self.palette_search_min_chars = max(0, palette_search_min_chars)
         self.palette_search_max_models = max(0, palette_search_max_models)
         if i18n_config is not None and not BABEL_INSTALLED:
@@ -520,9 +523,9 @@ class Admin(BaseAdminView):
         authentication_backend: AuthenticationBackend | None = None,
         static_files_kwargs: dict[str, Any] | None = None,
         i18n_config: I18nConfig | None = None,
-        audit_backend: AuditBackend | None = None,
         palette_search_min_chars: int = 2,
         palette_search_max_models: int = 8,
+        audit_backend: AuditBackend | None = None,
     ) -> None:
         """
         Args:
@@ -539,10 +542,6 @@ class Admin(BaseAdminView):
             i18n_config: Internationalization configuration. When provided, the
                 interface is translated per request and, if
                 ``language_switcher`` is set, a language switcher is shown.
-            palette_search_min_chars: Minimum term length before the command
-                palette runs an unscoped record search. Defaults to 2.
-            palette_search_max_models: Maximum number of opted-in models the
-                palette fans out to for an unscoped search. Defaults to 8.
         """
 
         super().__init__(
@@ -559,9 +558,9 @@ class Admin(BaseAdminView):
             middlewares=middlewares,
             authentication_backend=authentication_backend,
             i18n_config=i18n_config,
-            audit_backend=audit_backend,
             palette_search_min_chars=palette_search_min_chars,
             palette_search_max_models=palette_search_max_models,
+            audit_backend=audit_backend,
         )
 
         static_files_kwargs = {**(static_files_kwargs or {}), "packages": ["sqladmin"]}
@@ -618,6 +617,7 @@ class Admin(BaseAdminView):
             Route(
                 "/{identity}/ajax/lookup", endpoint=self.ajax_lookup, name="ajax_lookup"
             ),
+            Route("/palette", endpoint=self.palette, name="palette"),
             Route("/login", endpoint=self.login, name="login", methods=["GET", "POST"]),
             Route("/logout", endpoint=self.logout, name="logout", methods=["GET"]),
             Route(
@@ -632,7 +632,6 @@ class Admin(BaseAdminView):
                 name="file_preview",
                 methods=["GET"],
             ),
-            Route("/palette", endpoint=self.palette, name="palette"),
         ]
 
         self.admin.router.routes = routes

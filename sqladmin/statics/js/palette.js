@@ -5,7 +5,8 @@
 //   - Typing filters models (registry, no DB) and, at >= 2 chars, records.
 //   - Clicking a model row navigates to its list page.
 //   - Clicking "Search inside" scopes into one model; records then come from
-//     that model only (one query). The chip's x clears the scope.
+//     that model only, independent of how many models are registered.
+//     The chip's x clears the scope.
 //   - Clicking a record opens its details page.
 //   - The x button or the backdrop closes the modal.
 //
@@ -47,6 +48,25 @@ function saPaletteEsc(value) {
     .html()
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// Every result and command carries a `url` that ends up assigned to
+// window.location.href on click. Server-built URLs (details pages, list
+// pages, the login redirect) are always same-origin relative paths or
+// absolute http(s) links, so this never rejects a legitimate one — but a
+// custom ModelView.palette_commands() is user code, and a value pulled
+// from a database column (a "visit website" command built from obj.url,
+// say) is attacker-controlled if that column is user-editable. A
+// javascript: URI assigned to location.href executes with no further
+// interaction, so the scheme is allow-listed rather than trusted.
+function saPaletteSafeUrl(url) {
+  if (!url) {
+    return null;
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^https?:/i.test(url)) {
+    return null;
+  }
+  return url;
 }
 
 // Wrap occurrences of the search term in <mark>.
@@ -182,7 +202,7 @@ function saPaletteRender(data, term) {
   if (data.scope) {
     html += saPaletteHead(
       saPaletteFormat("recordsIn", { name: saPaletteScopeName || data.scope }),
-      saPaletteText("oneQuery")
+      saPaletteText("singleModel")
     );
     if (data.records.length) {
       $.each(data.records, function (i, r) {
@@ -245,9 +265,22 @@ function saPaletteRender(data, term) {
       });
     }
 
+    // The fan-out is capped: with more opted-in models than
+    // palette_search_max_models allows, only a prefix of them is searched.
+    // A term that happens to match only one of the unsearched models would
+    // otherwise render as a plain "Nothing found" with no indication that
+    // most models were never even queried — this note is shown whenever
+    // capping is in effect, whether or not the searched subset found anything.
+    var searchedCount = data.searched_models || 0;
+    var totalOptin = data.total_optin_models || 0;
+    var capped = totalOptin > searchedCount;
+    var cappedNote = capped
+      ? saPaletteFormat("searchedOf", { searched: searchedCount, total: totalOptin })
+      : "";
+
     var recs = data.records || [];
-    if (recs.length) {
-      html += saPaletteHead(saPaletteText("records"), "");
+    if (recs.length || capped) {
+      html += saPaletteHead(saPaletteText("records"), cappedNote);
       $.each(recs, function (i, r) {
         html += saPaletteRow(
           "&#9673;",
@@ -257,6 +290,9 @@ function saPaletteRender(data, term) {
           'data-url="' + saPaletteEsc(r.url) + '"'
         );
       });
+      if (!recs.length) {
+        html += '<div class="sa-empty">' + saPaletteEsc(saPaletteText("noMatches")) + "</div>";
+      }
     }
 
     if (!html) {
@@ -296,7 +332,7 @@ $(document).on("click", "#sa-palette-results [data-scope]", function (e) {
 
 // Navigate (model / command / record)
 $(document).on("click", "#sa-palette-results .sa-row", function () {
-  var url = $(this).attr("data-url");
+  var url = saPaletteSafeUrl($(this).attr("data-url"));
   if (url) {
     window.location.href = url;
   }

@@ -326,6 +326,32 @@
   
   
     <li class="md-nav__item">
+      <a href="../../authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../working_with_templates/" class="md-nav__link">
         
   
@@ -466,10 +492,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -486,8 +512,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -538,6 +564,33 @@
     
   
   Optimize relationship loading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Profiling and debugging
 
     
   </span>
@@ -841,10 +894,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -861,8 +914,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -967,6 +1020,33 @@
     
   
   Authentication
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
 
     
   </span>
@@ -1129,11 +1209,12 @@ under the <code>sqladmin.audit</code> logger by default:</p>
 <p><code>DBAuditBackend</code> writes entries to a database table — but SQLAdmin does not ship
 an audit model, because the right shape depends on your app, most importantly
 the type of your users' primary key (int, str or UUID) and the foreign key to
-it. Instead you define the model and subclass the backend, overriding two
-methods:</p>
+it. Instead you define the model and subclass the backend, overriding
+these methods:</p>
 <ul>
-<li><code>get_actor(request)</code> — map the current request/session to your user's primary
-  key (or any actor identifier).</li>
+<li><code>get_actor(request)</code> (optional) — map the current request/session to your
+  user's primary key (or any actor identifier). It defaults to the id returned
+  by <a href="../../authentication/#identifying-the-user"><code>AuthenticationBackend.get_user_id</code></a>.</li>
 <li><code>build_row(entry, actor, request)</code> — turn an <code>AuditEntry</code> plus the resolved
   actor into an instance of <em>your</em> model.</li>
 </ul>
@@ -1157,9 +1238,7 @@ methods:</p>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MyAuditBackend</span><span class="p">(</span><span class="n">DBAuditBackend</span><span class="p">):</span>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_actor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">)</span>
-
+    <span class="c1"># get_actor defaults to AuthenticationBackend.get_user_id.</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">AuditLog</span><span class="p">(</span>
             <span class="n">action</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">action</span><span class="p">,</span>

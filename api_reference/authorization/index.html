@@ -1,0 +1,4115 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Flexible admin dashboard for SQLAlchemy.">
+      
+      
+      
+        <link rel="canonical" href="https://smithyhq.github.io/sqladmin/api_reference/authorization/">
+      
+      
+        <link rel="prev" href="../authentication/">
+      
+      
+        <link rel="next" href="../../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.50">
+    
+    
+      
+        <title>Authorization - SQLAlchemy Admin</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.62c9b9cc.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-MV427T1Z9X"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-MV427T1Z9X",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-MV427T1Z9X",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sqladmin.authorization.Action" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="SQLAlchemy Admin" class="md-header__button md-logo" aria-label="SQLAlchemy Admin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQLAlchemy Admin
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Authorization
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/smithyhq/sqladmin" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>GitHub</title><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+  </div>
+  <div class="md-source__repository">
+    smithyhq/sqladmin
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="SQLAlchemy Admin" class="md-nav__button md-logo" aria-label="SQLAlchemy Admin" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+
+    </a>
+    SQLAlchemy Admin
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/smithyhq/sqladmin" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>GitHub</title><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+  </div>
+  <div class="md-source__repository">
+    smithyhq/sqladmin
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Introduction
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configurations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configurations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authentication
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../working_with_templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Working with Templates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../writing_custom_views/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Working with Custom Views
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../working_with_files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Working with Files and Images
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../internationalization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Internationalization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_convertors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Model convertors
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cookbook
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Cookbook
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/deployment_with_https/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deployment with HTTPS
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/optimize_relationship_loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optimize relationship loading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Profiling and debugging
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/display_custom_attributes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Display custom attributes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/using_request_object/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Using a request object
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/multiple_databases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multiple databases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/using_wysiwyg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Using rich text editor
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/audit_logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit logging
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/working_with_passwords/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Working with Passwords
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/displaying_one_time_secrets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Displaying one-time secrets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  API Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Application
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  ModelView
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../base_view/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  BaseView
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authentication
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.Action" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Action
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.ACTIONS" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        sqladmin.authorization.ACTIONS
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.custom_action" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        custom_action
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend.setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        setup
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend.load" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        load
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend.has_permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        has_permission
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AllowAllAuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AllowAllAuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.GrantsAuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GrantsAuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.GrantsAuthorizationBackend.get_grants" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        get_grants
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.matches_grant" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        matches_grant
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.DBAuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DBAuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.DBAuthorizationBackend.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        __init__
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GroupMixin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupAccessMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GroupAccessMixin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.user_group_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        user_group_table
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupAdmin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GroupAdmin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupAdmin.can_grant" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        can_grant
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.exceptions.PermissionEscalationError" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PermissionEscalationError
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.exceptions.InvalidRelationshipError" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        InvalidRelationshipError
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.exceptions.ImproperlyConfigured" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ImproperlyConfigured
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.Action" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Action
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.ACTIONS" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        sqladmin.authorization.ACTIONS
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.custom_action" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        custom_action
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend.setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        setup
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend.load" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        load
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AuthorizationBackend.has_permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        has_permission
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.AllowAllAuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AllowAllAuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.GrantsAuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GrantsAuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.GrantsAuthorizationBackend.get_grants" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        get_grants
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authorization.matches_grant" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        matches_grant
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.DBAuthorizationBackend" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DBAuthorizationBackend
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.DBAuthorizationBackend.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        __init__
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GroupMixin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupAccessMixin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GroupAccessMixin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.user_group_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        user_group_table
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupAdmin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GroupAdmin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.contrib.rbac.GroupAdmin.can_grant" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        can_grant
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.exceptions.PermissionEscalationError" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PermissionEscalationError
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.exceptions.InvalidRelationshipError" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        InvalidRelationshipError
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.exceptions.ImproperlyConfigured" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ImproperlyConfigured
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+  <h1 id="__skip">Authorization</h1>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.authorization.Action"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="str">str</span></code>, <code><span title="enum.Enum">Enum</span></code></p>
+
+
+
+        <p>The built-in actions SQLAdmin asks about.</p>
+<p>Members are plain strings as well, so <code>Action.EDIT == "edit"</code> and a grant
+stored as <code>("user", "edit")</code> matches <code>("user", Action.EDIT)</code> -- use
+whichever reads better.</p>
+<details class="usage" open="open">
+<summary>Usage</summary>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">sqladmin.authorization</span><span class="w"> </span><span class="kn">import</span> <span class="n">Action</span>
+
+<span class="n">grants</span> <span class="o">=</span> <span class="p">{(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="n">Action</span><span class="o">.</span><span class="n">LIST</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="n">Action</span><span class="o">.</span><span class="n">EDIT</span><span class="p">)}</span>
+</code></pre></div>
+</details>
+<p>Custom actions declared with <a class="autorefs autorefs-internal" href="../application/#sqladmin.application.action"><code>@action</code></a> are
+asked about as <code>"action:&lt;slug&gt;"</code> -- see
+<a class="autorefs autorefs-internal" href="./#sqladmin.authorization.custom_action"><code>custom_action</code></a>.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Action</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The built-in actions SQLAdmin asks about.</span>
+
+<span class="sd">    Members are plain strings as well, so ``Action.EDIT == &quot;edit&quot;`` and a grant</span>
+<span class="sd">    stored as ``(&quot;user&quot;, &quot;edit&quot;)`` matches ``(&quot;user&quot;, Action.EDIT)`` -- use</span>
+<span class="sd">    whichever reads better.</span>
+
+<span class="sd">    ???+ usage</span>
+<span class="sd">        ```python</span>
+<span class="sd">        from sqladmin.authorization import Action</span>
+
+<span class="sd">        grants = {(&quot;user&quot;, Action.LIST), (&quot;user&quot;, Action.EDIT)}</span>
+<span class="sd">        ```</span>
+
+<span class="sd">    Custom actions declared with [`@action`][sqladmin.application.action] are</span>
+<span class="sd">    asked about as ``&quot;action:&lt;slug&gt;&quot;`` -- see</span>
+<span class="sd">    [`custom_action`][sqladmin.authorization.custom_action].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">LIST</span> <span class="o">=</span> <span class="s2">&quot;list&quot;</span>
+    <span class="n">DETAILS</span> <span class="o">=</span> <span class="s2">&quot;details&quot;</span>
+    <span class="n">CREATE</span> <span class="o">=</span> <span class="s2">&quot;create&quot;</span>
+    <span class="n">EDIT</span> <span class="o">=</span> <span class="s2">&quot;edit&quot;</span>
+    <span class="n">DELETE</span> <span class="o">=</span> <span class="s2">&quot;delete&quot;</span>
+    <span class="n">EXPORT</span> <span class="o">=</span> <span class="s2">&quot;export&quot;</span>
+    <span class="n">IMPORT</span> <span class="o">=</span> <span class="s2">&quot;import&quot;</span>
+
+    <span class="c1"># ``enum.StrEnum`` needs Python 3.11. Without this, Python 3.12+ formats a</span>
+    <span class="c1"># ``(str, Enum)`` member as ``&quot;Action.EDIT&quot;`` in f-strings.</span>
+    <span class="fm">__str__</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="fm">__str__</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<a id="sqladmin.authorization.ACTIONS"></a>
+    <div class="doc doc-contents first">
+
+        <p>Every <a class="autorefs autorefs-internal" href="./#sqladmin.authorization.Action"><code>Action</code></a>, in display order.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="sqladmin.authorization.custom_action"></a>
+    <div class="doc doc-contents first">
+
+        <p>Return the action name used for a custom <code>@action</code> endpoint.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">custom_action</span><span class="p">(</span><span class="n">slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the action name used for a custom `@action` endpoint.&quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;action:</span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.authorization.AuthorizationBackend"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+
+
+        <p>Base class for deciding <em>what</em> the current user may do.</p>
+<p>Where <a class="autorefs autorefs-internal" href="../authentication/#sqladmin.authentication.AuthenticationBackend"><code>AuthenticationBackend</code></a>
+answers "who is this request", this answers "may they do this". Subclass
+it and implement
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;has_permission&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;identity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;action&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;obj&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-abstractmethod&quot;&gt;&lt;code&gt;abstractmethod&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="./#sqladmin.authorization.AuthorizationBackend.has_permission"><code>has_permission</code></a>,
+then pass an instance as <code>Admin(authorization_backend=...)</code>.</p>
+<details class="usage" open="open">
+<summary>Usage</summary>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RoleAuthorization</span><span class="p">(</span><span class="n">AuthorizationBackend</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_permission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;admin&quot;</span> <span class="ow">or</span> <span class="n">action</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="s2">&quot;details&quot;</span><span class="p">)</span>
+
+
+<span class="n">admin</span> <span class="o">=</span> <span class="n">Admin</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">authorization_backend</span><span class="o">=</span><span class="n">RoleAuthorization</span><span class="p">())</span>
+</code></pre></div>
+</details>
+<p>Without one, <code>Admin</code> uses
+<a class="autorefs autorefs-internal" href="./#sqladmin.authorization.AllowAllAuthorizationBackend"><code>AllowAllAuthorizationBackend</code></a>.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AuthorizationBackend</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for deciding *what* the current user may do.</span>
+
+<span class="sd">    Where [`AuthenticationBackend`][sqladmin.authentication.AuthenticationBackend]</span>
+<span class="sd">    answers &quot;who is this request&quot;, this answers &quot;may they do this&quot;. Subclass</span>
+<span class="sd">    it and implement</span>
+<span class="sd">    [`has_permission`][sqladmin.authorization.AuthorizationBackend.has_permission],</span>
+<span class="sd">    then pass an instance as ``Admin(authorization_backend=...)``.</span>
+
+<span class="sd">    ???+ usage</span>
+<span class="sd">        ```python</span>
+<span class="sd">        class RoleAuthorization(AuthorizationBackend):</span>
+<span class="sd">            def has_permission(self, request, identity, action, obj=None):</span>
+<span class="sd">                role = request.session.get(&quot;role&quot;)</span>
+<span class="sd">                return role == &quot;admin&quot; or action in (&quot;list&quot;, &quot;details&quot;)</span>
+
+
+<span class="sd">        admin = Admin(app, engine, authorization_backend=RoleAuthorization())</span>
+<span class="sd">        ```</span>
+
+<span class="sd">    Without one, `Admin` uses</span>
+<span class="sd">    [`AllowAllAuthorizationBackend`][sqladmin.authorization.AllowAllAuthorizationBackend].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">admin</span><span class="p">:</span> <span class="n">BaseAdmin</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that ``admin`` is configured the way this backend needs.</span>
+
+<span class="sd">        Called once, when the `Admin` is created. Raise</span>
+<span class="sd">        [`ImproperlyConfigured`][sqladmin.exceptions.ImproperlyConfigured] to</span>
+<span class="sd">        report a mistake at startup rather than on the first request.</span>
+
+<span class="sd">        Does nothing by default.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare per-request authorization state.</span>
+
+<span class="sd">        Called once per request, right after authentication succeeds and before</span>
+<span class="sd">        any permission is checked. This is where I/O belongs -- query the</span>
+<span class="sd">        database, call an external service -- storing the result on</span>
+<span class="sd">        ``request.state`` for `has_permission` to read.</span>
+
+<span class="sd">        Does nothing by default.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_permission</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+        <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return whether the current user may perform ``action`` on ``identity``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            request: The current request.</span>
+<span class="sd">            identity: The `ModelView.identity` (or `BaseView.identity`) being</span>
+<span class="sd">                acted on.</span>
+<span class="sd">            action: One of [`Action`][sqladmin.authorization.Action], or</span>
+<span class="sd">                ``&quot;action:&lt;slug&gt;&quot;`` for a custom `@action` endpoint.</span>
+<span class="sd">            obj: The specific object being acted on, when there is one. Passed</span>
+<span class="sd">                for ``details``, ``edit`` and ``delete``; ``None`` everywhere</span>
+<span class="sd">                else, including the row-less buttons that lead to those pages.</span>
+
+<span class="sd">        This method is called many times while rendering a single page -- once</span>
+<span class="sd">        per row on the list page -- so it must be cheap and must not perform</span>
+<span class="sd">        I/O. Do the lookups in</span>
+<span class="sd">        [`load`][sqladmin.authorization.AuthorizationBackend.load].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.authorization.AuthorizationBackend.setup" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">setup</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check that <code>admin</code> is configured the way this backend needs.</p>
+<p>Called once, when the <code>Admin</code> is created. Raise
+<a class="autorefs autorefs-internal" href="./#sqladmin.exceptions.ImproperlyConfigured"><code>ImproperlyConfigured</code></a> to
+report a mistake at startup rather than on the first request.</p>
+<p>Does nothing by default.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">admin</span><span class="p">:</span> <span class="n">BaseAdmin</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that ``admin`` is configured the way this backend needs.</span>
+
+<span class="sd">    Called once, when the `Admin` is created. Raise</span>
+<span class="sd">    [`ImproperlyConfigured`][sqladmin.exceptions.ImproperlyConfigured] to</span>
+<span class="sd">    report a mistake at startup rather than on the first request.</span>
+
+<span class="sd">    Does nothing by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.authorization.AuthorizationBackend.load" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">load</span><span class="p">(</span><span class="n">request</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Prepare per-request authorization state.</p>
+<p>Called once per request, right after authentication succeeds and before
+any permission is checked. This is where I/O belongs -- query the
+database, call an external service -- storing the result on
+<code>request.state</code> for <code>has_permission</code> to read.</p>
+<p>Does nothing by default.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare per-request authorization state.</span>
+
+<span class="sd">    Called once per request, right after authentication succeeds and before</span>
+<span class="sd">    any permission is checked. This is where I/O belongs -- query the</span>
+<span class="sd">    database, call an external service -- storing the result on</span>
+<span class="sd">    ``request.state`` for `has_permission` to read.</span>
+
+<span class="sd">    Does nothing by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.authorization.AuthorizationBackend.has_permission" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">has_permission</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return whether the current user may perform <code>action</code> on <code>identity</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>request</code>
+            </td>
+            <td>
+                  <code><span title="starlette.requests.Request">Request</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The current request.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>identity</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The <code>ModelView.identity</code> (or <code>BaseView.identity</code>) being
+acted on.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>action</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One of <a class="autorefs autorefs-internal" href="./#sqladmin.authorization.Action"><code>Action</code></a>, or
+<code>"action:&lt;slug&gt;"</code> for a custom <code>@action</code> endpoint.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>obj</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The specific object being acted on, when there is one. Passed
+for <code>details</code>, <code>edit</code> and <code>delete</code>; <code>None</code> everywhere
+else, including the row-less buttons that lead to those pages.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>This method is called many times while rendering a single page -- once
+per row on the list page -- so it must be cheap and must not perform
+I/O. Do the lookups in
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;load&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-async&quot;&gt;&lt;code&gt;async&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="./#sqladmin.authorization.AuthorizationBackend.load"><code>load</code></a>.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_permission</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether the current user may perform ``action`` on ``identity``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        request: The current request.</span>
+<span class="sd">        identity: The `ModelView.identity` (or `BaseView.identity`) being</span>
+<span class="sd">            acted on.</span>
+<span class="sd">        action: One of [`Action`][sqladmin.authorization.Action], or</span>
+<span class="sd">            ``&quot;action:&lt;slug&gt;&quot;`` for a custom `@action` endpoint.</span>
+<span class="sd">        obj: The specific object being acted on, when there is one. Passed</span>
+<span class="sd">            for ``details``, ``edit`` and ``delete``; ``None`` everywhere</span>
+<span class="sd">            else, including the row-less buttons that lead to those pages.</span>
+
+<span class="sd">    This method is called many times while rendering a single page -- once</span>
+<span class="sd">    per row on the list page -- so it must be cheap and must not perform</span>
+<span class="sd">    I/O. Do the lookups in</span>
+<span class="sd">    [`load`][sqladmin.authorization.AuthorizationBackend.load].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.authorization.AllowAllAuthorizationBackend"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sqladmin.authorization.AuthorizationBackend" href="./#sqladmin.authorization.AuthorizationBackend">AuthorizationBackend</a></code></p>
+
+
+
+        <p>The backend <code>Admin</code> uses when none is configured: it allows everything.</p>
+<p>With it, only the <code>can_*</code> flags and your own <code>is_accessible</code> /
+<code>check_can_*</code> overrides decide what users may do.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AllowAllAuthorizationBackend</span><span class="p">(</span><span class="n">AuthorizationBackend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The backend `Admin` uses when none is configured: it allows everything.</span>
+
+<span class="sd">    With it, only the ``can_*`` flags and your own ``is_accessible`` /</span>
+<span class="sd">    ``check_can_*`` overrides decide what users may do.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_permission</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+        <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.authorization.GrantsAuthorizationBackend"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sqladmin.authorization.AuthorizationBackend" href="./#sqladmin.authorization.AuthorizationBackend">AuthorizationBackend</a></code></p>
+
+
+
+        <p>An <code>AuthorizationBackend</code> backed by a set of <code>(identity, action)</code> grants.</p>
+<p>Subclasses implement
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;get_grants&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-abstractmethod&quot;&gt;&lt;code&gt;abstractmethod&lt;/code&gt;&lt;/small&gt;
+      &lt;small class=&quot;doc doc-label doc-label-async&quot;&gt;&lt;code&gt;async&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="./#sqladmin.authorization.GrantsAuthorizationBackend.get_grants"><code>get_grants</code></a>;
+this class loads them once per request and matches them, wildcards
+included. A superuser is simply granted <code>("*", "*")</code>.</p>
+<details class="usage" open="open">
+<summary>Usage</summary>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SessionAuthorization</span><span class="p">(</span><span class="n">GrantsAuthorizationBackend</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_grants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_admin&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{(</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">)}</span>
+        <span class="c1"># &quot;user:action:deactivate&quot; -&gt; (&quot;user&quot;, &quot;action:deactivate&quot;)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;grants&quot;</span><span class="p">]}</span>
+</code></pre></div>
+</details>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">GrantsAuthorizationBackend</span><span class="p">(</span><span class="n">AuthorizationBackend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An `AuthorizationBackend` backed by a set of ``(identity, action)`` grants.</span>
+
+<span class="sd">    Subclasses implement</span>
+<span class="sd">    [`get_grants`][sqladmin.authorization.GrantsAuthorizationBackend.get_grants];</span>
+<span class="sd">    this class loads them once per request and matches them, wildcards</span>
+<span class="sd">    included. A superuser is simply granted ``(&quot;*&quot;, &quot;*&quot;)``.</span>
+
+<span class="sd">    ???+ usage</span>
+<span class="sd">        ```python</span>
+<span class="sd">        class SessionAuthorization(GrantsAuthorizationBackend):</span>
+<span class="sd">            async def get_grants(self, request):</span>
+<span class="sd">                if request.session.get(&quot;is_admin&quot;):</span>
+<span class="sd">                    return {(&quot;*&quot;, &quot;*&quot;)}</span>
+<span class="sd">                # &quot;user:action:deactivate&quot; -&gt; (&quot;user&quot;, &quot;action:deactivate&quot;)</span>
+<span class="sd">                return {tuple(g.split(&quot;:&quot;, 1)) for g in request.session[&quot;grants&quot;]}</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_grants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the ``(identity, action)`` pairs granted to the current user.</span>
+
+<span class="sd">        Called once per request from `load`. Either element of a pair may be</span>
+<span class="sd">        [`WILDCARD`][sqladmin.authorization.WILDCARD]; return</span>
+<span class="sd">        ``{(&quot;*&quot;, &quot;*&quot;)}`` for a user who may do everything.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">_GRANTS_STATE_ATTR</span><span class="p">,</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_grants</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_permission</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
+        <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="c1"># ``None`` means ``load()`` never ran -- deny rather than fall open.</span>
+        <span class="n">grants</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">_GRANTS_STATE_ATTR</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">grants</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">matches_grant</span><span class="p">(</span><span class="n">grants</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.authorization.GrantsAuthorizationBackend.get_grants" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_grants</span><span class="p">(</span><span class="n">request</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the <code>(identity, action)</code> pairs granted to the current user.</p>
+<p>Called once per request from <code>load</code>. Either element of a pair may be
+[<code>WILDCARD</code>][sqladmin.authorization.WILDCARD]; return
+<code>{("*", "*")}</code> for a user who may do everything.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@abstractmethod</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_grants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``(identity, action)`` pairs granted to the current user.</span>
+
+<span class="sd">    Called once per request from `load`. Either element of a pair may be</span>
+<span class="sd">    [`WILDCARD`][sqladmin.authorization.WILDCARD]; return</span>
+<span class="sd">    ``{(&quot;*&quot;, &quot;*&quot;)}`` for a user who may do everything.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="sqladmin.authorization.matches_grant"></a>
+    <div class="doc doc-contents first">
+
+        <p>Check <code>(identity, action)</code> against a set of grants, honouring wildcards.</p>
+<p>A grant of <code>("*", "edit")</code> allows editing every view, <code>("user", "*")</code>
+allows every action on the <code>user</code> view, and <code>("*", "*")</code> allows
+everything.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authorization.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">matches_grant</span><span class="p">(</span>
+    <span class="n">grants</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+    <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check ``(identity, action)`` against a set of grants, honouring wildcards.</span>
+
+<span class="sd">    A grant of ``(&quot;*&quot;, &quot;edit&quot;)`` allows editing every view, ``(&quot;user&quot;, &quot;*&quot;)``</span>
+<span class="sd">    allows every action on the ``user`` view, and ``(&quot;*&quot;, &quot;*&quot;)`` allows</span>
+<span class="sd">    everything.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span> <span class="ow">in</span> <span class="n">grants</span>
+        <span class="ow">or</span> <span class="p">(</span><span class="n">WILDCARD</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span> <span class="ow">in</span> <span class="n">grants</span>
+        <span class="ow">or</span> <span class="p">(</span><span class="n">identity</span><span class="p">,</span> <span class="n">WILDCARD</span><span class="p">)</span> <span class="ow">in</span> <span class="n">grants</span>
+        <span class="ow">or</span> <span class="p">(</span><span class="n">WILDCARD</span><span class="p">,</span> <span class="n">WILDCARD</span><span class="p">)</span> <span class="ow">in</span> <span class="n">grants</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.contrib.rbac.DBAuthorizationBackend"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sqladmin.authorization.GrantsAuthorizationBackend" href="./#sqladmin.authorization.GrantsAuthorizationBackend">GrantsAuthorizationBackend</a></code></p>
+
+
+
+        <p>Resolve a user's grants from the group tables, once per request.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>session_maker</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A sync or async sessionmaker.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>user_model</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Your user model. Required, keyword-only.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>groups_attr</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Relationship on the user model pointing at groups.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;groups&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>accesses_attr</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Relationship on the group model pointing at grants.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;accesses&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>superuser_attr</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Boolean attribute on the user model that bypasses all
+grant checks. Missing attributes are treated as <code>False</code>, so a user
+model without one simply has no superusers.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;is_superuser&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <details class="usage" open="open">
+<summary>Usage</summary>
+<div class="highlight"><pre><span></span><code><span class="n">backend</span> <span class="o">=</span> <span class="n">DBAuthorizationBackend</span><span class="p">(</span><span class="n">session_maker</span><span class="p">,</span> <span class="n">user_model</span><span class="o">=</span><span class="n">User</span><span class="p">)</span>
+<span class="n">admin</span> <span class="o">=</span> <span class="n">Admin</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">authorization_backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+</code></pre></div>
+</details>
+<p>The user id comes from
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;get_user_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-async&quot;&gt;&lt;code&gt;async&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="../authentication/#sqladmin.authentication.AuthenticationBackend.get_user_id"><code>AuthenticationBackend.get_user_id</code></a>.
+Superusers are granted <code>("*", "*")</code>. Without an
+<code>Admin(authentication_backend=...)</code> there is no user id to look up, so
+creating the <code>Admin</code> fails with
+<a class="autorefs autorefs-internal" href="./#sqladmin.exceptions.ImproperlyConfigured"><code>ImproperlyConfigured</code></a>.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DBAuthorizationBackend</span><span class="p">(</span><span class="n">GrantsAuthorizationBackend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a user&#39;s grants from the group tables, once per request.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        session_maker: A sync or async sessionmaker.</span>
+<span class="sd">        user_model: Your user model. Required, keyword-only.</span>
+<span class="sd">        groups_attr: Relationship on the user model pointing at groups.</span>
+<span class="sd">        accesses_attr: Relationship on the group model pointing at grants.</span>
+<span class="sd">        superuser_attr: Boolean attribute on the user model that bypasses all</span>
+<span class="sd">            grant checks. Missing attributes are treated as `False`, so a user</span>
+<span class="sd">            model without one simply has no superusers.</span>
+
+<span class="sd">    ???+ usage</span>
+<span class="sd">        ```python</span>
+<span class="sd">        backend = DBAuthorizationBackend(session_maker, user_model=User)</span>
+<span class="sd">        admin = Admin(app, engine, authorization_backend=backend)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">    The user id comes from</span>
+<span class="sd">    [`AuthenticationBackend.get_user_id`][sqladmin.authentication.AuthenticationBackend.get_user_id].</span>
+<span class="sd">    Superusers are granted ``(&quot;*&quot;, &quot;*&quot;)``. Without an</span>
+<span class="sd">    ``Admin(authentication_backend=...)`` there is no user id to look up, so</span>
+<span class="sd">    creating the `Admin` fails with</span>
+<span class="sd">    [`ImproperlyConfigured`][sqladmin.exceptions.ImproperlyConfigured].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">session_maker</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">user_model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">groups_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span>
+        <span class="n">accesses_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;accesses&quot;</span><span class="p">,</span>
+        <span class="n">superuser_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;is_superuser&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_maker</span> <span class="o">=</span> <span class="n">session_maker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_async</span> <span class="o">=</span> <span class="n">is_async_session_maker</span><span class="p">(</span><span class="n">session_maker</span><span class="p">)</span>
+
+        <span class="n">pks</span> <span class="o">=</span> <span class="n">get_primary_keys</span><span class="p">(</span><span class="n">user_model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pks</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> needs </span><span class="si">{</span><span class="n">user_model</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> to have a &quot;</span>
+                <span class="s2">&quot;single-column primary key.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">mapper</span> <span class="o">=</span> <span class="n">sa_inspect</span><span class="p">(</span><span class="n">user_model</span><span class="p">)</span><span class="o">.</span><span class="n">mapper</span>
+        <span class="n">group_model</span> <span class="o">=</span> <span class="n">_related_model</span><span class="p">(</span>
+            <span class="n">user_model</span><span class="p">,</span>
+            <span class="n">groups_attr</span><span class="p">,</span>
+            <span class="s2">&quot;Pass groups_attr= with its relationship to the group model.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">access_model</span> <span class="o">=</span> <span class="n">_related_model</span><span class="p">(</span>
+            <span class="n">group_model</span><span class="p">,</span>
+            <span class="n">accesses_attr</span><span class="p">,</span>
+            <span class="s2">&quot;Pass accesses_attr= with its relationship to the grant model.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># A missing superuser column means there are no superusers.</span>
+        <span class="n">superuser</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">user_model</span><span class="p">,</span> <span class="n">superuser_attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">superuser_attr</span> <span class="ow">in</span> <span class="n">mapper</span><span class="o">.</span><span class="n">column_attrs</span>
+            <span class="k">else</span> <span class="n">false</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="c1"># One round trip: the superuser flag plus every grant of every group,</span>
+        <span class="c1"># each once even when several groups hold it. A user without groups</span>
+        <span class="c1"># yields one row of NULL grants; an unknown user yields no rows.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grants_query</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">select</span><span class="p">(</span><span class="n">superuser</span><span class="p">,</span> <span class="n">access_model</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">access_model</span><span class="o">.</span><span class="n">action</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">select_from</span><span class="p">(</span><span class="n">user_model</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">outerjoin</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">user_model</span><span class="p">,</span> <span class="n">groups_attr</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">outerjoin</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">group_model</span><span class="p">,</span> <span class="n">accesses_attr</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_pk</span> <span class="o">=</span> <span class="n">pks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grants_query</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_user_pk</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_grants_from_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">grants</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">is_superuser</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_superuser</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{(</span><span class="n">WILDCARD</span><span class="p">,</span> <span class="n">WILDCARD</span><span class="p">)}</span>
+            <span class="k">if</span> <span class="n">identity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">grants</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">grants</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_grants_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_maker</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grants_from_rows</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_for</span><span class="p">(</span><span class="n">user_id</span><span class="p">)))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">admin</span><span class="p">:</span> <span class="n">BaseAdmin</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">admin</span><span class="o">.</span><span class="n">authentication_backend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> looks users up by the id from the &quot;</span>
+                <span class="s2">&quot;authentication backend, but none is configured. Pass &quot;</span>
+                <span class="s2">&quot;authentication_backend= to Admin.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_grants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_current_user_id</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">user_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_async</span><span class="p">:</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">anyio</span><span class="o">.</span><span class="n">to_thread</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_load_grants_sync</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_maker</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_for</span><span class="p">(</span><span class="n">user_id</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grants_from_rows</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.contrib.rbac.DBAuthorizationBackend.__init__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">session_maker</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">user_model</span><span class="p">,</span> <span class="n">groups_attr</span><span class="o">=</span><span class="s1">&#39;groups&#39;</span><span class="p">,</span> <span class="n">accesses_attr</span><span class="o">=</span><span class="s1">&#39;accesses&#39;</span><span class="p">,</span> <span class="n">superuser_attr</span><span class="o">=</span><span class="s1">&#39;is_superuser&#39;</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">session_maker</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">user_model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">groups_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span>
+    <span class="n">accesses_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;accesses&quot;</span><span class="p">,</span>
+    <span class="n">superuser_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;is_superuser&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">session_maker</span> <span class="o">=</span> <span class="n">session_maker</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">is_async</span> <span class="o">=</span> <span class="n">is_async_session_maker</span><span class="p">(</span><span class="n">session_maker</span><span class="p">)</span>
+
+    <span class="n">pks</span> <span class="o">=</span> <span class="n">get_primary_keys</span><span class="p">(</span><span class="n">user_model</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pks</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> needs </span><span class="si">{</span><span class="n">user_model</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> to have a &quot;</span>
+            <span class="s2">&quot;single-column primary key.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">mapper</span> <span class="o">=</span> <span class="n">sa_inspect</span><span class="p">(</span><span class="n">user_model</span><span class="p">)</span><span class="o">.</span><span class="n">mapper</span>
+    <span class="n">group_model</span> <span class="o">=</span> <span class="n">_related_model</span><span class="p">(</span>
+        <span class="n">user_model</span><span class="p">,</span>
+        <span class="n">groups_attr</span><span class="p">,</span>
+        <span class="s2">&quot;Pass groups_attr= with its relationship to the group model.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">access_model</span> <span class="o">=</span> <span class="n">_related_model</span><span class="p">(</span>
+        <span class="n">group_model</span><span class="p">,</span>
+        <span class="n">accesses_attr</span><span class="p">,</span>
+        <span class="s2">&quot;Pass accesses_attr= with its relationship to the grant model.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># A missing superuser column means there are no superusers.</span>
+    <span class="n">superuser</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">user_model</span><span class="p">,</span> <span class="n">superuser_attr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">superuser_attr</span> <span class="ow">in</span> <span class="n">mapper</span><span class="o">.</span><span class="n">column_attrs</span>
+        <span class="k">else</span> <span class="n">false</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># One round trip: the superuser flag plus every grant of every group,</span>
+    <span class="c1"># each once even when several groups hold it. A user without groups</span>
+    <span class="c1"># yields one row of NULL grants; an unknown user yields no rows.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_grants_query</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">select</span><span class="p">(</span><span class="n">superuser</span><span class="p">,</span> <span class="n">access_model</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">access_model</span><span class="o">.</span><span class="n">action</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">select_from</span><span class="p">(</span><span class="n">user_model</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">outerjoin</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">user_model</span><span class="p">,</span> <span class="n">groups_attr</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">outerjoin</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">group_model</span><span class="p">,</span> <span class="n">accesses_attr</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_user_pk</span> <span class="o">=</span> <span class="n">pks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.contrib.rbac.GroupMixin"></a>
+    <div class="doc doc-contents first">
+
+
+
+        <p>Declarative mixin for the group table.</p>
+<p>Mix into your own <code>Base</code> and set <code>__tablename__</code>. If you name the access
+model something other than <code>GroupAccess</code>, set <code>__access_model__</code> to
+match.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">GroupMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Declarative mixin for the group table.</span>
+
+<span class="sd">    Mix into your own `Base` and set ``__tablename__``. If you name the access</span>
+<span class="sd">    model something other than ``GroupAccess``, set ``__access_model__`` to</span>
+<span class="sd">    match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__access_model__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_ACCESS_MODEL</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">accesses</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">__access_model__</span><span class="p">,</span>
+            <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+            <span class="n">cascade</span><span class="o">=</span><span class="s2">&quot;all, delete-orphan&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.contrib.rbac.GroupAccessMixin"></a>
+    <div class="doc doc-contents first">
+
+
+
+        <p>Declarative mixin for one <code>(identity, action)</code> grant on a group.</p>
+<p>Mix into your own <code>Base</code> and set <code>__tablename__</code>. Set <code>__group_table__</code>
+and <code>__group_model__</code> if your group table or class is not named
+<code>admin_groups</code> / <code>Group</code>.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">GroupAccessMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Declarative mixin for one ``(identity, action)`` grant on a group.</span>
+
+<span class="sd">    Mix into your own `Base` and set ``__tablename__``. Set ``__group_table__``</span>
+<span class="sd">    and ``__group_model__`` if your group table or class is not named</span>
+<span class="sd">    ``admin_groups`` / ``Group``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__group_table__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_GROUP_TABLE</span>
+    <span class="n">__group_model__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_GROUP_MODEL</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">identity</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">action</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">group_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">mapped_column</span><span class="p">(</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">__group_table__</span><span class="si">}</span><span class="s2">.id&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s2">&quot;CASCADE&quot;</span><span class="p">),</span>
+            <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@declared_attr</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">relationship</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">__group_model__</span><span class="p">,</span> <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;accesses&quot;</span><span class="p">)</span>
+
+    <span class="nd">@declared_attr</span><span class="o">.</span><span class="n">directive</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__table_args__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s2">&quot;group_id&quot;</span><span class="p">,</span> <span class="s2">&quot;identity&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">),)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="sqladmin.contrib.rbac.user_group_table"></a>
+    <div class="doc doc-contents first">
+
+        <p>Build the user-to-group association table.</p>
+<p>This is a factory rather than a mixin because it needs your user table's
+name and primary key type, which SQLAdmin cannot know.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>base</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Your declarative base (its <code>metadata</code> is used).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>user_table</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of your users table, e.g. <code>"users"</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>user_pk_column</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Primary key column on that table.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;id&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>user_pk_type</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>SQLAlchemy type of that column -- <code>Integer</code>,
+<code>String(36)</code>, <code>Uuid()</code>, etc.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="sqlalchemy.Integer">Integer</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>group_table</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the group table.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="sqladmin.contrib.rbac.DEFAULT_GROUP_TABLE">DEFAULT_GROUP_TABLE</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>table_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name for the association table itself.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;admin_user_groups&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">user_group_table</span><span class="p">(</span>
+    <span class="n">base</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">user_table</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">user_pk_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
+    <span class="n">user_pk_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Integer</span><span class="p">,</span>
+    <span class="n">group_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_GROUP_TABLE</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;admin_user_groups&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Table</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the user-to-group association table.</span>
+
+<span class="sd">    This is a factory rather than a mixin because it needs your user table&#39;s</span>
+<span class="sd">    name and primary key type, which SQLAdmin cannot know.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        base: Your declarative base (its ``metadata`` is used).</span>
+<span class="sd">        user_table: Name of your users table, e.g. ``&quot;users&quot;``.</span>
+<span class="sd">        user_pk_column: Primary key column on that table.</span>
+<span class="sd">        user_pk_type: SQLAlchemy type of that column -- ``Integer``,</span>
+<span class="sd">            ``String(36)``, ``Uuid()``, etc.</span>
+<span class="sd">        group_table: Name of the group table.</span>
+<span class="sd">        table_name: Name for the association table itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">Table</span><span class="p">(</span>
+        <span class="n">table_name</span><span class="p">,</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+        <span class="n">Column</span><span class="p">(</span>
+            <span class="s2">&quot;user_id&quot;</span><span class="p">,</span>
+            <span class="n">user_pk_type</span><span class="p">,</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">user_table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">user_pk_column</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s2">&quot;CASCADE&quot;</span><span class="p">),</span>
+            <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">Column</span><span class="p">(</span>
+            <span class="s2">&quot;group_id&quot;</span><span class="p">,</span>
+            <span class="n">Integer</span><span class="p">,</span>
+            <span class="n">ForeignKey</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">group_table</span><span class="si">}</span><span class="s2">.id&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s2">&quot;CASCADE&quot;</span><span class="p">),</span>
+            <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.contrib.rbac.GroupAdmin"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sqladmin.models.ModelView" href="../model_view/#sqladmin.models.ModelView">ModelView</a></code></p>
+
+
+
+        <p>Admin view for editing a group and its permissions.</p>
+<p>Subclass it with your group model::</p>
+<div class="highlight"><pre><span></span><code>class MyGroupAdmin(GroupAdmin, model=Group):
+    pass
+</code></pre></div>
+<p>The permission matrix replaces the raw list of grant rows: one row per
+registered view, one checkbox per action.</p>
+<p>Saving only touches the grants the matrix offers. Anything else stored on
+the group -- wildcard grants such as <code>("*", "*")</code>, or grants for an action
+a view has since disabled -- is left alone.</p>
+<p>By default an editor may only <em>grant</em> permissions they hold themselves
+(superusers hold all of them), so edit access to this view cannot be
+turned into more access than the editor already has. Ticking any other box
+fails with a form error and nothing is saved. Override
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;can_grant&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;identity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;action&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;" href="./#sqladmin.contrib.rbac.GroupAdmin.can_grant"><code>can_grant</code></a> to change that
+rule. Removing grants is not restricted beyond access to this view:
+who may edit or delete groups is decided by the <code>group</code> permissions.</p>
+<p>The grants are written in the same transaction as the group, and the
+resulting grants are recorded in the audit entry under the permissions
+field. If you override <code>on_model_change</code> or <code>after_model_change</code>, call
+<code>super()</code>.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">GroupAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Admin view for editing a group and its permissions.</span>
+
+<span class="sd">    Subclass it with your group model::</span>
+
+<span class="sd">        class MyGroupAdmin(GroupAdmin, model=Group):</span>
+<span class="sd">            pass</span>
+
+<span class="sd">    The permission matrix replaces the raw list of grant rows: one row per</span>
+<span class="sd">    registered view, one checkbox per action.</span>
+
+<span class="sd">    Saving only touches the grants the matrix offers. Anything else stored on</span>
+<span class="sd">    the group -- wildcard grants such as ``(&quot;*&quot;, &quot;*&quot;)``, or grants for an action</span>
+<span class="sd">    a view has since disabled -- is left alone.</span>
+
+<span class="sd">    By default an editor may only *grant* permissions they hold themselves</span>
+<span class="sd">    (superusers hold all of them), so edit access to this view cannot be</span>
+<span class="sd">    turned into more access than the editor already has. Ticking any other box</span>
+<span class="sd">    fails with a form error and nothing is saved. Override</span>
+<span class="sd">    [`can_grant`][sqladmin.contrib.rbac.GroupAdmin.can_grant] to change that</span>
+<span class="sd">    rule. Removing grants is not restricted beyond access to this view:</span>
+<span class="sd">    who may edit or delete groups is decided by the ``group`` permissions.</span>
+
+<span class="sd">    The grants are written in the same transaction as the group, and the</span>
+<span class="sd">    resulting grants are recorded in the audit entry under the permissions</span>
+<span class="sd">    field. If you override `on_model_change` or `after_model_change`, call</span>
+<span class="sd">    ``super()``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">accesses_attr</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;accesses&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Relationship on the group model holding its ``(identity, action)`` rows.&quot;&quot;&quot;</span>
+
+    <span class="n">icon</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;fa-solid fa-users&quot;</span>
+
+    <span class="n">column_list</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="n">form_columns</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># Checked here so a misconfigured view fails when it is added.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_access_model</span> <span class="o">=</span> <span class="n">_related_model</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accesses_attr</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Set </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.accesses_attr to its relationship to grants.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># The edit form reads the grants and saving changes them, so load them</span>
+        <span class="c1"># with the group there -- and only there.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_form_relations</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_form_relations</span><span class="p">,</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accesses_attr</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">scaffold_form</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Form</span><span class="p">]:</span>
+        <span class="n">base_form</span> <span class="o">=</span> <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">scaffold_form</span><span class="p">(</span><span class="n">rules</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span>
+            <span class="s2">&quot;GroupPermissionForm&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">base_form</span><span class="p">,),</span>
+            <span class="p">{</span>
+                <span class="n">_PERMISSIONS_FIELD</span><span class="p">:</span> <span class="n">PermissionMatrixField</span><span class="p">(</span>
+                    <span class="n">label</span><span class="o">=</span><span class="n">lazy_gettext</span><span class="p">(</span><span class="s2">&quot;Permissions&quot;</span><span class="p">),</span>
+                    <span class="n">rows</span><span class="o">=</span><span class="n">build_permission_rows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_admin_ref</span><span class="p">),</span>
+                    <span class="n">validate_choice</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_form_data_for_edit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_form_data_for_edit</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="c1"># ``form_edit_query`` loads the grants unless an override dropped them.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accesses_attr</span> <span class="ow">in</span> <span class="n">sa_inspect</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="n">unloaded</span><span class="p">:</span>
+            <span class="n">relation</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accesses_attr</span><span class="p">)</span>
+            <span class="n">accesses</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_query</span><span class="p">(</span>
+                <span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_access_model</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">with_parent</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">relation</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">accesses</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accesses_attr</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">_PERMISSIONS_FIELD</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">_grant_value</span><span class="p">(</span><span class="n">access</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">access</span><span class="o">.</span><span class="n">action</span><span class="p">)</span> <span class="k">for</span> <span class="n">access</span> <span class="ow">in</span> <span class="n">accesses</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="c1"># Persistence ---------------------------------------------------------</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">on_model_change</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">is_created</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">on_model_change</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">is_created</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">_PERMISSIONS_FIELD</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># Popped so the base class does not try to set it as a model attribute.</span>
+        <span class="c1"># No box ticked arrives as ``None``, not ``[]``.</span>
+        <span class="n">submitted</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">_PERMISSIONS_FIELD</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+
+        <span class="n">offered</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">choice</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">choice</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">build_permission_rows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_admin_ref</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">choices</span>
+        <span class="p">}</span>
+        <span class="n">accesses</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accesses_attr</span><span class="p">)</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="p">{</span><span class="n">_grant_value</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">identity</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">action</span><span class="p">):</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">accesses</span><span class="p">}</span>
+
+        <span class="n">desired</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">submitted</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">offered</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="p">(</span><span class="n">desired</span> <span class="o">^</span> <span class="nb">set</span><span class="p">(</span><span class="n">existing</span><span class="p">))</span> <span class="o">&amp;</span> <span class="n">offered</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="n">added</span> <span class="o">=</span> <span class="n">changed</span> <span class="o">&amp;</span> <span class="n">desired</span>
+        <span class="n">forbidden</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">offered</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">added</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_grant</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="o">*</span><span class="n">_parse_grant</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">forbidden</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionEscalationError</span><span class="p">(</span>
+                <span class="n">gettext</span><span class="p">(</span><span class="s2">&quot;You are not allowed to grant: </span><span class="si">%(permissions)s</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="o">%</span> <span class="p">{</span><span class="s2">&quot;permissions&quot;</span><span class="p">:</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">forbidden</span><span class="p">)}</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">changed</span> <span class="o">-</span> <span class="n">desired</span><span class="p">:</span>
+            <span class="n">accesses</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">existing</span><span class="p">[</span><span class="n">value</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">added</span><span class="p">):</span>
+            <span class="n">identity</span><span class="p">,</span> <span class="n">action</span> <span class="o">=</span> <span class="n">_parse_grant</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">accesses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_access_model</span><span class="p">(</span><span class="n">identity</span><span class="o">=</span><span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">))</span>
+
+        <span class="c1"># The field was popped above so it is not set on the model; hand the</span>
+        <span class="c1"># outcome to ``after_model_change`` so the audit entry includes it.</span>
+        <span class="nb">setattr</span><span class="p">(</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">_SAVED_PERMISSIONS_ATTR</span><span class="p">,</span>
+            <span class="nb">sorted</span><span class="p">((</span><span class="nb">set</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span> <span class="o">-</span> <span class="n">changed</span><span class="p">)</span> <span class="o">|</span> <span class="n">added</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">after_model_change</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">is_created</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">saved</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">_SAVED_PERMISSIONS_ATTR</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">saved</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">delattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">_SAVED_PERMISSIONS_ATTR</span><span class="p">)</span>
+            <span class="c1"># ``data`` is the dict the audit entry is built from.</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">_PERMISSIONS_FIELD</span><span class="p">]</span> <span class="o">=</span> <span class="n">saved</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_model_change</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">is_created</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_grant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return whether the current user may give ``(identity, action)`` to a group.</span>
+
+<span class="sd">        Called for every newly ticked box when a group is saved. The default</span>
+<span class="sd">        allows only permissions the user holds themselves, so nobody can use</span>
+<span class="sd">        this screen to gain access they do not already have.</span>
+
+<span class="sd">        ???+ usage</span>
+<span class="sd">            ```python</span>
+<span class="sd">            class MyGroupAdmin(GroupAdmin, model=Group):</span>
+<span class="sd">                def can_grant(self, request, identity, action):</span>
+<span class="sd">                    # HR assigns billing access without using it themselves.</span>
+<span class="sd">                    if identity == &quot;billing&quot;:</span>
+<span class="sd">                        return self.has_permission(request, &quot;edit&quot;)</span>
+<span class="sd">                    return super().can_grant(request, identity, action)</span>
+<span class="sd">            ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_authorization_backend</span><span class="p">()</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.contrib.rbac.GroupAdmin.can_grant" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">can_grant</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return whether the current user may give <code>(identity, action)</code> to a group.</p>
+<p>Called for every newly ticked box when a group is saved. The default
+allows only permissions the user holds themselves, so nobody can use
+this screen to gain access they do not already have.</p>
+<details class="usage" open="open">
+<summary>Usage</summary>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MyGroupAdmin</span><span class="p">(</span><span class="n">GroupAdmin</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Group</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_grant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+        <span class="c1"># HR assigns billing access without using it themselves.</span>
+        <span class="k">if</span> <span class="n">identity</span> <span class="o">==</span> <span class="s2">&quot;billing&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">&quot;edit&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">can_grant</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+</code></pre></div>
+</details>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/contrib/rbac.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">can_grant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether the current user may give ``(identity, action)`` to a group.</span>
+
+<span class="sd">    Called for every newly ticked box when a group is saved. The default</span>
+<span class="sd">    allows only permissions the user holds themselves, so nobody can use</span>
+<span class="sd">    this screen to gain access they do not already have.</span>
+
+<span class="sd">    ???+ usage</span>
+<span class="sd">        ```python</span>
+<span class="sd">        class MyGroupAdmin(GroupAdmin, model=Group):</span>
+<span class="sd">            def can_grant(self, request, identity, action):</span>
+<span class="sd">                # HR assigns billing access without using it themselves.</span>
+<span class="sd">                if identity == &quot;billing&quot;:</span>
+<span class="sd">                    return self.has_permission(request, &quot;edit&quot;)</span>
+<span class="sd">                return super().can_grant(request, identity, action)</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_authorization_backend</span><span class="p">()</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.exceptions.PermissionEscalationError"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="sqladmin.exceptions.SQLAdminException">SQLAdminException</span></code>, <code><span title="PermissionError">PermissionError</span></code></p>
+
+
+
+        <p>A group editor tried to grant a permission they may not grant.</p>
+<p>See <code>GroupAdmin.can_grant</code>.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/exceptions.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">PermissionEscalationError</span><span class="p">(</span><span class="n">SQLAdminException</span><span class="p">,</span> <span class="ne">PermissionError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A group editor tried to grant a permission they may not grant.</span>
+
+<span class="sd">    See `GroupAdmin.can_grant`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.exceptions.InvalidRelationshipError"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="sqladmin.exceptions.ImproperlyConfigured" href="./#sqladmin.exceptions.ImproperlyConfigured">ImproperlyConfigured</a></code></p>
+
+
+
+        <p>A model has no relationship under the name SQLAdmin was told to use.</p>
+<p>Raised at startup when an RBAC model or view is misconfigured, e.g. when
+<code>DBAuthorizationBackend(groups_attr=...)</code> names a missing relationship.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/exceptions.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">InvalidRelationshipError</span><span class="p">(</span><span class="n">ImproperlyConfigured</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A model has no relationship under the name SQLAdmin was told to use.</span>
+
+<span class="sd">    Raised at startup when an RBAC model or view is misconfigured, e.g. when</span>
+<span class="sd">    `DBAuthorizationBackend(groups_attr=...)` names a missing relationship.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<a id="sqladmin.exceptions.ImproperlyConfigured"></a>
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="sqladmin.exceptions.SQLAdminException">SQLAdminException</span></code>, <code><span title="ValueError">ValueError</span></code></p>
+
+
+
+        <p>SQLAdmin was set up in a way that cannot work.</p>
+<p>Raised as soon as the mistake can be detected: usually when the view or
+backend is created, or on the first admin request when it depends on how
+the <code>Admin</code> was configured. Also a <code>ValueError</code>, so existing
+<code>except ValueError</code> handlers still work.</p>
+
+
+
+
+
+
+
+
+              <details class="mkdocstrings-source">
+                <summary>Source code in <code>sqladmin/exceptions.py</code></summary>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ImproperlyConfigured</span><span class="p">(</span><span class="n">SQLAdminException</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAdmin was set up in a way that cannot work.</span>
+
+<span class="sd">    Raised as soon as the mistake can be detected: usually when the view or</span>
+<span class="sd">    backend is created, or on the first admin request when it depends on how</span>
+<span class="sd">    the `Admin` was configured. Also a `ValueError`, so existing</span>
+<span class="sd">    ``except ValueError`` handlers still work.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div></td></tr></table></div>
+              </details>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/smithyhq" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/in/amin-alaee" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy"],"search":"../../assets/javascripts/workers/search.b6b7e04f.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7f30b55.min.js"></script>
+      
+    
+  </body>
+</html>

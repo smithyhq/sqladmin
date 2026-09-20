@@ -16,7 +16,7 @@
         <link rel="prev" href="../base_view/">
       
       
-        <link rel="next" href="../../contributing/">
+        <link rel="next" href="../authorization/">
       
       
         
@@ -326,6 +326,32 @@
   
   
     <li class="md-nav__item">
+      <a href="../../authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../working_with_templates/" class="md-nav__link">
         
   
@@ -464,10 +490,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -484,8 +510,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -536,6 +562,33 @@
     
   
   Optimize relationship loading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Profiling and debugging
 
     
   </span>
@@ -761,10 +814,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -781,8 +834,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -988,10 +1041,59 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sqladmin.authentication.AuthenticationBackend.get_user_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        get_user_id
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authentication.get_current_user_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        get_current_user_id
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1121,6 +1223,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#sqladmin.authentication.AuthenticationBackend.get_user_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        get_user_id
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqladmin.authentication.get_current_user_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        get_current_user_id
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1202,7 +1326,25 @@ You need to inherit this class and override the methods:
 <span class="normal">50</span>
 <span class="normal">51</span>
 <span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AuthenticationBackend</span><span class="p">:</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AuthenticationBackend</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for implementing the Authentication into SQLAdmin.</span>
 <span class="sd">    You need to inherit this class and override the methods:</span>
 <span class="sd">    `login`, `logout` and `authenticate`.</span>
@@ -1242,6 +1384,24 @@ You need to inherit this class and override the methods:
 <span class="sd">        otherwise a True/False is expected.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an identifier for the authenticated user, or `None`.</span>
+
+<span class="sd">        Called once per request after `authenticate` succeeds. The result is</span>
+<span class="sd">        stored on the request and read back by</span>
+<span class="sd">        [`get_current_user_id`][sqladmin.authentication.get_current_user_id],</span>
+<span class="sd">        so everything that needs to know *who* is acting -- the audit backend</span>
+<span class="sd">        and the authorization backend among them -- shares one answer instead</span>
+<span class="sd">        of each re-deriving it.</span>
+
+<span class="sd">        The default reads ``user_id`` from the session, which suits the</span>
+<span class="sd">        session-based login flow in the docs. Override it for anything else.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="s2">&quot;session&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">scope</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -1425,10 +1585,119 @@ otherwise the user will be redirected to the index page.</p>
 
 </div>
 
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sqladmin.authentication.AuthenticationBackend.get_user_id" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_user_id</span><span class="p">(</span><span class="n">request</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return an identifier for the authenticated user, or <code>None</code>.</p>
+<p>Called once per request after <code>authenticate</code> succeeds. The result is
+stored on the request and read back by
+<a class="autorefs autorefs-internal" href="./#sqladmin.authentication.get_current_user_id"><code>get_current_user_id</code></a>,
+so everything that needs to know <em>who</em> is acting -- the audit backend
+and the authorization backend among them -- shares one answer instead
+of each re-deriving it.</p>
+<p>The default reads <code>user_id</code> from the session, which suits the
+session-based login flow in the docs. Override it for anything else.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authentication.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an identifier for the authenticated user, or `None`.</span>
+
+<span class="sd">    Called once per request after `authenticate` succeeds. The result is</span>
+<span class="sd">    stored on the request and read back by</span>
+<span class="sd">    [`get_current_user_id`][sqladmin.authentication.get_current_user_id],</span>
+<span class="sd">    so everything that needs to know *who* is acting -- the audit backend</span>
+<span class="sd">    and the authorization backend among them -- shares one answer instead</span>
+<span class="sd">    of each re-deriving it.</span>
+
+<span class="sd">    The default reads ``user_id`` from the session, which suits the</span>
+<span class="sd">    session-based login flow in the docs. Override it for anything else.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s2">&quot;session&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">scope</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
 
 
   </div>
 
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<a id="sqladmin.authentication.get_current_user_id"></a>
+    <div class="doc doc-contents first">
+
+        <p>Return the user id resolved for this request, or <code>None</code>.</p>
+<p>Populated from
+<a class="autorefs autorefs-internal" title="&lt;code class=&quot;highlight language-python&quot;&gt;&lt;span class=&quot;n&quot;&gt;get_user_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;
+
+  &lt;span class=&quot;doc doc-labels&quot;&gt;
+      &lt;small class=&quot;doc doc-label doc-label-async&quot;&gt;&lt;code&gt;async&lt;/code&gt;&lt;/small&gt;
+  &lt;/span&gt;" href="./#sqladmin.authentication.AuthenticationBackend.get_user_id"><code>AuthenticationBackend.get_user_id</code></a>
+when the request enters an Admin route.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sqladmin/authentication.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_current_user_id</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the user id resolved for this request, or `None`.</span>
+
+<span class="sd">    Populated from</span>
+<span class="sd">    [`AuthenticationBackend.get_user_id`][sqladmin.authentication.AuthenticationBackend.get_user_id]</span>
+<span class="sd">    when the request enters an Admin route.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">_USER_ID_STATE_ATTR</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
     </div>
 
 </div>

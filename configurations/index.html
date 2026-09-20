@@ -446,6 +446,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#timezone-aware-datetime-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Timezone-aware datetime columns
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#related-models" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -669,6 +680,32 @@
   
   
     <li class="md-nav__item">
+      <a href="../authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../working_with_templates/" class="md-nav__link">
         
   
@@ -807,10 +844,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -827,8 +864,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -879,6 +916,33 @@
     
   
   Optimize relationship loading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Profiling and debugging
 
     
   </span>
@@ -1102,10 +1166,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -1122,8 +1186,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1228,6 +1292,33 @@
     
   
   Authentication
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_reference/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
 
     
   </span>
@@ -1425,6 +1516,17 @@
   
     <nav class="md-nav" aria-label="Form options">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#timezone-aware-datetime-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Timezone-aware datetime columns
+      </span>
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#related-models" class="md-nav__link">
@@ -1694,6 +1796,10 @@ The following options are available:</p>
 <li><code>can_export</code>: If the model data can be exported in the list page. Default value is <code>True</code>.</li>
 <li><code>can_import</code>: If the model data can be imported from a CSV file in the list page. Default value is <code>False</code>.</li>
 </ul>
+<p>These are static, per-model settings that apply to everyone. For permissions
+that depend on who is logged in, see <a href=".././authorization/">Authorization</a>; the
+<code>can_*</code> flags above act as a ceiling over whatever an authorization backend
+grants.</p>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UserAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">User</span><span class="p">):</span>
@@ -2023,6 +2129,29 @@ The forms are based on <code>WTForms</code> package and include the following op
     <span class="n">form_edit_rules</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
 </code></pre></div>
 </div>
+<h3 id="timezone-aware-datetime-columns">Timezone-aware datetime columns</h3>
+<p>The date picker has no notion of timezones, so columns declared with
+<code>DateTime(timezone=True)</code> use <code>TimezoneAwareDateTimeField</code>. Values are shown and
+entered as wall-clock times in a single timezone, which is shown under the input:</p>
+<ul>
+<li>Stored values are converted to that timezone before they are displayed.</li>
+<li>Submitted values are interpreted in that timezone and saved as timezone-aware
+  <code>datetime</code> objects, so the stored instant does not depend on the database driver
+  or on the server's local timezone.</li>
+</ul>
+<p>The timezone defaults to UTC. You can change it per column with <code>form_args</code>:</p>
+<div class="admonition example">
+<p class="admonition-title">Example</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">zoneinfo</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZoneInfo</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">EventAdmin</span><span class="p">(</span><span class="n">ModelView</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">Event</span><span class="p">):</span>
+    <span class="n">form_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;starts_at&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;display_timezone&quot;</span><span class="p">:</span> <span class="n">ZoneInfo</span><span class="p">(</span><span class="s2">&quot;Europe/Berlin&quot;</span><span class="p">)},</span>
+    <span class="p">}</span>
+</code></pre></div>
+</div>
+<p>Columns declared with plain <code>DateTime</code> are not affected.</p>
 <h3 id="related-models">Related models</h3>
 <p>To define how related model is displayed in the dropdown, <code>__str__</code> method must be defined in the related model.</p>
 <h2 id="export-options">Export options</h2>

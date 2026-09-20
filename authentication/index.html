@@ -16,7 +16,7 @@
         <link rel="prev" href="../configurations/">
       
       
-        <link rel="next" href="../working_with_templates/">
+        <link rel="next" href="../authorization/">
       
       
         
@@ -367,6 +367,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#identifying-the-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Identifying the user
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#loginlogout-return-values" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -408,6 +419,32 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -557,10 +594,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -577,8 +614,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -629,6 +666,33 @@
     
   
   Optimize relationship loading
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Profiling and debugging
 
     
   </span>
@@ -852,10 +916,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -872,8 +936,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -990,6 +1054,33 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_reference/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authorization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1070,6 +1161,17 @@
   
     <nav class="md-nav" aria-label="AuthenticationBackend">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#identifying-the-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Identifying the user
+      </span>
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#loginlogout-return-values" class="md-nav__link">
@@ -1174,6 +1276,17 @@ to integrate any existing authentication to it.</p>
 
 <span class="n">authentication_backend</span> <span class="o">=</span> <span class="n">AdminAuth</span><span class="p">(</span><span class="n">secret_key</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
 <span class="n">admin</span> <span class="o">=</span> <span class="n">Admin</span><span class="p">(</span><span class="n">app</span><span class="o">=...</span><span class="p">,</span> <span class="n">authentication_backend</span><span class="o">=</span><span class="n">authentication_backend</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="identifying-the-user">Identifying the user</h3>
+<p><code>get_user_id</code> tells SQLAdmin who the logged-in user is. It defaults to
+<code>request.session.get("user_id")</code>. <a href=".././authorization/">Authorization</a> and
+<a href=".././cookbook/audit_logging/">audit logging</a> both use it, so if your <code>login</code>
+stores something else, such as the <code>token</code> above, override it:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AdminAuth</span><span class="p">(</span><span class="n">AuthenticationBackend</span><span class="p">):</span>
+    <span class="o">...</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_user_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">lookup_user_id</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;token&quot;</span><span class="p">))</span>
 </code></pre></div>
 <h3 id="loginlogout-return-values">Login/logout return values</h3>
 <p><code>AuthenticationBackend.login</code> and <code>AuthenticationBackend.logout</code> may return:</p>

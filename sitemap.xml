@@ -10,6 +10,9 @@
         <loc>https://smithyhq.github.io/sqladmin/authentication/</loc>
       </url>
       <url>
+        <loc>https://smithyhq.github.io/sqladmin/authorization/</loc>
+      </url>
+      <url>
         <loc>https://smithyhq.github.io/sqladmin/working_with_templates/</loc>
       </url>
       <url>
@@ -29,6 +32,9 @@
       </url>
       <url>
         <loc>https://smithyhq.github.io/sqladmin/cookbook/optimize_relationship_loading/</loc>
+      </url>
+      <url>
+        <loc>https://smithyhq.github.io/sqladmin/cookbook/profiling/</loc>
       </url>
       <url>
         <loc>https://smithyhq.github.io/sqladmin/cookbook/display_custom_attributes/</loc>
@@ -62,6 +68,9 @@
       </url>
       <url>
         <loc>https://smithyhq.github.io/sqladmin/api_reference/authentication/</loc>
+      </url>
+      <url>
+        <loc>https://smithyhq.github.io/sqladmin/api_reference/authorization/</loc>
       </url>
       <url>
         <loc>https://smithyhq.github.io/sqladmin/contributing/</loc>

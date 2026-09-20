@@ -146,3 +146,31 @@ def test_db_backend_persists_row() -> None:
     assert logs[0].identity == "audit-thing"
     assert logs[0].object_pk == "1"
     assert logs[0].actor == "tester"
+
+
+def test_db_backend_get_actor_not_override() -> None:
+    class MyDBBackend(DBAuditBackend):
+        def build_row(self, entry: AuditEntry, actor: object, request: Request):
+            return AuditLog(
+                action=entry.action,
+                identity=entry.identity,
+                object_pk=entry.pk,
+                actor=actor,
+            )
+
+    admin = Admin(
+        app=Starlette(), engine=engine, audit_backend=MyDBBackend(session_maker)
+    )
+    admin.add_view(AuditThingAdmin)
+
+    with _client(admin) as c:
+        c.post("/admin/audit-thing/create", data={"name": "persisted"})
+
+    with session_maker() as s:
+        logs = s.query(AuditLog).all()
+
+    assert len(logs) == 1
+    assert logs[0].action == "create"
+    assert logs[0].identity == "audit-thing"
+    assert logs[0].object_pk == "1"
+    assert logs[0].actor is None

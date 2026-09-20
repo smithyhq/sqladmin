@@ -1,7 +1,10 @@
 import enum
 import inspect
-from collections.abc import AsyncGenerator
+import time
+from collections.abc import AsyncGenerator, Generator
+from datetime import datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import (
@@ -20,7 +23,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, INET, MACADDR, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, INET, MACADDR, TIMESTAMP, UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import (
     ColumnProperty,
@@ -30,12 +33,19 @@ from sqlalchemy.orm import (
     relationship,
 )
 from wtforms import BooleanField, Field, Form, IntegerField, StringField, TimeField
+from wtforms.fields import DateTimeField as WTFormsDateTimeField
 from wtforms.fields.core import UnboundField
 
 from sqladmin import ModelView
 from sqladmin.ajax import create_ajax_loader
-from sqladmin.fields import Select2TagsField, SelectField
+from sqladmin.fields import (
+    DateTimeField,
+    Select2TagsField,
+    SelectField,
+    TimezoneAwareDateTimeField,
+)
 from sqladmin.forms import ModelConverter, converts, get_model_form
+from tests.common import DummyData
 from tests.common import async_engine as engine
 
 pytestmark = pytest.mark.anyio
@@ -85,6 +95,22 @@ class User(Base):
     addresses = relationship("Address", back_populates="user")
     profile = relationship("Profile", back_populates="user", uselist=False)
     point = composite(Point, x, y)
+
+
+class TZDateTime(TypeDecorator):
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=True)
+    naive_at = Column(DateTime, nullable=True)
+    aware_at = Column(DateTime(timezone=True), nullable=True)
+    pg_aware_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    decorated_at = Column(TZDateTime, nullable=True)
 
 
 class Address(Base):
@@ -406,3 +432,93 @@ async def test_column_property_is_ignored_in_form() -> None:
     Form = await get_model_form(model=Model, session_maker=session_maker)
 
     assert "count" not in Form()._fields
+
+
+async def test_model_form_timezone_aware_datetime() -> None:
+    Form = await get_model_form(model=Event, session_maker=session_maker)
+    form = Form()
+
+    naive = form._fields["naive_at"]
+    assert type(naive) is DateTimeField
+    assert isinstance(naive, WTFormsDateTimeField)
+    assert not naive.description
+
+    for name in ("aware_at", "pg_aware_at", "decorated_at"):
+        field = form._fields[name]
+        assert isinstance(field, TimezoneAwareDateTimeField), name
+        assert field.display_timezone is timezone.utc
+        assert field.description == "UTC"
+
+
+async def test_model_form_timezone_aware_datetime_form_args() -> None:
+    Form = await get_model_form(
+        model=Event,
+        session_maker=session_maker,
+        form_args={"aware_at": {"display_timezone": ZoneInfo("Asia/Kolkata")}},
+    )
+    stored = datetime(2026, 7, 26, 9, 30, tzinfo=timezone.utc)
+
+    form = Form(data={"aware_at": stored})
+    assert form.aware_at.description == "Asia/Kolkata"
+    assert form.aware_at._value() == "2026-07-26 15:00:00"
+
+    submitted = Form(DummyData(aware_at=[form.aware_at._value()]))
+    assert submitted.aware_at.data == stored
+
+
+async def test_model_form_timezone_aware_datetime_hidden_description() -> None:
+    Form = await get_model_form(
+        model=Event,
+        session_maker=session_maker,
+        form_args={"aware_at": {"description": ""}},
+    )
+    assert Form().aware_at.description == ""
+
+
+@pytest.fixture
+def non_utc_local_timezone() -> Generator[None, None, None]:
+    if not hasattr(time, "tzset"):  # pragma: no cover
+        pytest.skip("time.tzset() is not available on this platform")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("TZ", "Europe/Berlin")
+        time.tzset()
+        yield
+    time.tzset()
+
+
+@pytest.mark.usefixtures("non_utc_local_timezone")
+async def test_edit_does_not_shift_timezone_aware_datetime() -> None:
+    """Regression test for https://github.com/smithyhq/sqladmin/issues/796"""
+    ist = timezone(timedelta(hours=5, minutes=30))
+    stored = datetime(2026, 7, 26, 15, 0, tzinfo=ist)
+    columns = ("aware_at", "pg_aware_at", "decorated_at")
+
+    async with session_maker() as session:
+        session.add(Event(id=1, name="before", **{c: stored for c in columns}))
+        await session.commit()
+
+    async with session_maker() as session:
+        event = await session.get(Event, 1)
+        assert event is not None
+        before = {c: getattr(event, c) for c in columns}
+
+    Form = await get_model_form(model=Event, session_maker=session_maker)
+    rendered = Form(data={"name": "before", **before})
+    # Simulate the user changing an unrelated field and saving.
+    formdata = DummyData(name=["after"], naive_at=[""])
+    formdata.update({c: [rendered[c]._value()] for c in columns})
+    submitted = Form(formdata)
+
+    async with session_maker() as session:
+        event = await session.get(Event, 1)
+        assert event is not None
+        for name, value in submitted.data.items():
+            setattr(event, name, value)
+        await session.commit()
+
+    async with session_maker() as session:
+        event = await session.get(Event, 1)
+        assert event is not None
+        assert event.name == "after"
+        for column in columns:
+            assert getattr(event, column) == before[column], column

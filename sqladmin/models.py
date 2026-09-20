@@ -1051,8 +1051,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def list(self, request: Request) -> Pagination:
         page = self.validate_page_number(request.query_params.get("page"), 1)
-        page_size = self.validate_page_number(request.query_params.get("pageSize"), 0)
-        page_size = min(page_size or self.page_size, max(self.page_size_options))
+        page_size = self.validate_page_number(
+            request.query_params.get("pageSize"), self.page_size
+        )
+        page_size = min(page_size, max(self.page_size_options))
+        if page_size < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid page or pageSize parameter",
+            )
         search = request.query_params.get("search", None)
 
         stmt = self.list_query(request)
@@ -1091,17 +1098,19 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             request, select(func.count()).select_from(stmt.subquery())
         )
 
+        # Clamp before the offset is built: an out-of-range page would otherwise
+        # reach the driver as a huge or negative OFFSET.
+        page = min(max(page, 1), Pagination.max_page(count, page_size))
+
         stmt = stmt.limit(page_size).offset((page - 1) * page_size)
         rows = await self._run_query(stmt)
 
-        pagination = Pagination(
+        return Pagination(
             rows=rows,
             page=page,
             page_size=page_size,
             count=count,
         )
-
-        return pagination
 
     async def get_model_objects(
         self, request: Request, limit: int | None = 0

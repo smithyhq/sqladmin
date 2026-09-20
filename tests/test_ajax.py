@@ -735,6 +735,49 @@ async def test_ajax_where_invalid_return_from_callable_without_name(
         await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
 
 
+async def test_ajax_is_accessible_false(client: AsyncClient) -> None:
+    async with session_maker() as s:
+        s.add_all([Team(id=1, name="1")])
+        await s.commit()
+
+    def is_accessible(self, request: Request) -> bool:
+        return False
+
+    unique_suffix = uuid.uuid4().hex[:8]
+    dynamic_classname = f"AjaxIsAccessibleFalse_{unique_suffix}"
+    dynamic_tablename = f"ajax_is_accessible_false_{unique_suffix}"
+
+    model = type(
+        dynamic_classname,
+        (Base,),
+        {
+            "__tablename__": dynamic_tablename,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    view = type(
+        f"{dynamic_classname}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",)}},
+            "is_accessible": is_accessible,
+        },
+        model=model,
+    )
+
+    admin.add_view(view)
+
+    identity = view().identity
+
+    response = await client.get(f"/admin/{identity}/ajax/lookup?name=team&term=1")
+
+    assert "Forbidden" in response.text
+    assert response.status_code == 403
+
+
 async def test_fields_not_str_in_ajax() -> None:
     class MissedFieldAdmin(ModelView, model=MissedField):
         form_ajax_refs = {
@@ -941,3 +984,71 @@ async def test_order_by_error_type_field_not_found_in_ajax() -> None:
 
     with pytest.raises(ValueError, match="error does not exist"):
         admin.add_view(MissedFieldAdmin)
+
+
+async def test_ajax_allow_blank_true(client: AsyncClient) -> None:
+    name = f"ajax_allow_blank_true_{uuid.uuid4().hex[:8]}"
+
+    model = type(
+        name,
+        (Base,),
+        {
+            "__tablename__": name,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    view = type(
+        f"{name}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",)}},
+            "form_args": {"team": {"allow_blank": True}},
+        },
+        model=model,
+    )
+    admin.add_view(view)
+    identity = view().identity
+
+    response = await client.post(f"/admin/{identity}/create", data={"team": "__None"})
+    assert f"http://testserver/admin/{name}/create" == str(response.url)
+    assert response.status_code == 302
+
+
+async def test_ajax_allow_blank_false(client: AsyncClient) -> None:
+    name = f"ajax_allow_blank_false_{uuid.uuid4().hex[:8]}"
+
+    model = type(
+        name,
+        (Base,),
+        {
+            "__tablename__": name,
+            "id": Column(Integer, primary_key=True),
+            "team_id": Column(Integer, ForeignKey("teams.id")),
+            "team": relationship("Team"),
+        },
+    )
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    view = type(
+        f"{name}Admin",
+        (ModelView,),
+        {
+            "form_ajax_refs": {"team": {"fields": ("id",)}},
+            "form_args": {"team": {"allow_blank": False}},
+        },
+        model=model,
+    )
+    admin.add_view(view)
+    identity = view().identity
+
+    response = await client.post(f"/admin/{identity}/create", data={"team": ""})
+    assert "Not a valid choice" in str(response.text)
+    assert response.status_code == 400

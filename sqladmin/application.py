@@ -659,7 +659,7 @@ class Admin(BaseAdminView):
             request.query_params.get("page"), 1
         )
 
-        if request_page > pagination.page:
+        if request_page != pagination.page:
             return RedirectResponse(
                 request.url.include_query_params(page=pagination.page),
                 status_code=status.HTTP_302_FOUND,

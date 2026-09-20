@@ -5,8 +5,8 @@ from collections.abc import Generator
 from unittest import mock
 
 import pytest
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, Integer, String, select
+from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
@@ -31,6 +31,7 @@ from sqladmin.i18n import (
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
+session_maker = sessionmaker(bind=engine)
 
 SWITCHER = ["en", "az", "de", "ru", "tr"]
 
@@ -45,6 +46,11 @@ class User(Base):
 class UserAdmin(ModelView, model=User):
     column_list = [User.id, User.name]
     column_searchable_list = [User.name]
+
+
+class SaveAsUserAdmin(ModelView, model=User):
+    column_list = [User.id, User.name]
+    save_as = True
 
 
 @pytest.fixture(autouse=True)
@@ -70,6 +76,19 @@ def client() -> Generator[TestClient, None, None]:
         i18n_config=I18nConfig(language_switcher=SWITCHER),
     )
     admin.add_view(UserAdmin)
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture
+def save_as_client() -> Generator[TestClient, None, None]:
+    app = Starlette()
+    admin = Admin(
+        app=app,
+        engine=engine,
+        i18n_config=I18nConfig(language_switcher=SWITCHER),
+    )
+    admin.add_view(SaveAsUserAdmin)
     with TestClient(app) as c:
         yield c
 
@@ -355,6 +374,59 @@ def test_every_locale_covers_the_full_catalog() -> None:
         catalog = translations[locale]._catalog  # type: ignore[attr-defined]
         missing = [msgid for msgid in reference if not catalog.get(msgid)]
         assert not missing, f"{locale} is missing translations for: {missing}"
+
+
+######################################################
+################## SAVE AS NEW #######################
+######################################################
+def test_save_as_new_with_translated_label_inserts(
+    save_as_client: TestClient,
+) -> None:
+    """`save_as` must create a copy, not update in place, when the submitted
+    button value is the translated "Save as new" label."""
+
+    with session_maker() as session:
+        session.add(User(name="Joe"))
+        session.commit()
+
+    set_locale("ru")
+    label = gettext("Save as new")
+    set_locale(DEFAULT_LOCALE)
+    assert label != "Save as new"
+
+    response = save_as_client.post(
+        "/admin/user/edit/1",
+        data={"name": "Jack", "save": label},
+        headers={"Accept-Language": "ru"},
+    )
+
+    assert response.url == "http://testserver/admin/user/edit/2"
+
+    with session_maker() as session:
+        users = session.execute(select(User).order_by(User.id)).scalars().all()
+        assert [(user.id, user.name) for user in users] == [(1, "Joe"), (2, "Jack")]
+
+
+def test_save_as_new_with_english_label_still_inserts(
+    save_as_client: TestClient,
+) -> None:
+    """The English literal keeps working while a non-English locale is active."""
+
+    with session_maker() as session:
+        session.add(User(name="Joe"))
+        session.commit()
+
+    response = save_as_client.post(
+        "/admin/user/edit/1",
+        data={"name": "Jack", "save": "Save as new"},
+        headers={"Accept-Language": "ru"},
+    )
+
+    assert response.url == "http://testserver/admin/user/edit/2"
+
+    with session_maker() as session:
+        users = session.execute(select(User).order_by(User.id)).scalars().all()
+        assert [(user.id, user.name) for user in users] == [(1, "Joe"), (2, "Jack")]
 
 
 ######################################################

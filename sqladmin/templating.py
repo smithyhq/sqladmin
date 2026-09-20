@@ -1,15 +1,41 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from typing import Any
 
 import jinja2
+from markupsafe import Markup
 from starlette import status
 from starlette.background import BackgroundTask
 from starlette.datastructures import URL
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.types import Receive, Scope, Send
+
+
+def _tojson_filter(value: Any) -> Markup:
+    """Embed a Python value inside a ``<script>`` block as a JS literal.
+
+    ``jinja2.ext.i18n``'s gettext output is exempt from Jinja's HTML
+    autoescaping by design, so translators can put safe HTML in a translated
+    string. That also means a translation containing a plain ``"`` reaches a
+    template's ``<script>`` block completely unescaped: it closes the JS
+    string literal early, and anything after it becomes live JavaScript. This
+    is the correct way to embed any dynamic value — translated or not — inside
+    inline script: ``json.dumps`` produces a valid JS literal, and ``<``,
+    ``>``, ``&`` and ``'`` are additionally escaped so the value cannot close
+    an enclosing ``</script>`` tag either. Wrapped in ``Markup`` so autoescape
+    does not re-escape the already-correct output as if it were HTML.
+    """
+
+    return Markup(  # nosec: markupsafe_markup_xss
+        json.dumps(value, ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("'", "\\u0027")
+    )
 
 
 class _TemplateResponse(HTMLResponse):
@@ -53,6 +79,7 @@ class Jinja2Templates:
         loader = jinja2.FileSystemLoader(directory)
         self.env = jinja2.Environment(loader=loader, autoescape=True, enable_async=True)
         self.env.globals["url_for"] = url_for
+        self.env.filters["tojson"] = _tojson_filter
 
     async def TemplateResponse(
         self,

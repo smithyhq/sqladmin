@@ -115,6 +115,9 @@ This is the recommended setup when you already run the admin:
 
 - The viewer goes through SQLAdmin's `expose`, so it sits behind your
   `authentication_backend`. The standalone viewer has no authentication of its own.
+- With an [authorization backend](../authorization.md) configured, the page also needs a
+  `list` grant on its identity -- for custom pages, `list` means "may open this page".
+  Without it the entry is hidden and the page returns `403`.
 - Requests to the admin are **not** recorded by default, so the history shows your
   application's traffic rather than admin page views. Pass `profile_admin=True` when the
   admin itself is what you are debugging.

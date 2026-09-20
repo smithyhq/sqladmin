@@ -699,3 +699,51 @@ function formatImportTemplate(template, values) {
     if (name !== null) rememberCategory(name, false);
   });
 })();
+
+// Event for the clear button of the optional file input
+$(document).on('click', '[data-role="clear-file-input"]', function () {
+    const fieldId = $(this).data('field-id');
+    if (!fieldId) return;
+
+    const $fileInput = $(fieldId);
+    if (!$fileInput.length || !$fileInput.is('input[type="file"]')) return;
+
+    $fileInput.wrap('<form>').closest('form').get(0).reset();
+    $fileInput.unwrap();
+});
+
+// Function for loading a file from base64 to a value in the file input
+function handlePreloadedFile(base64Data, fieldId, filename) {
+  const binaryString = window.atob(base64Data);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  const blob = new Blob([bytes], { type: 'application/octet-stream'});
+  const file = new File([blob], filename, { type: 'application/octet-stream' });
+
+  const fileInput = document.getElementById(fieldId);
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  fileInput.files = dt.files;
+}
+
+// Event for searching all file inputs and loading files from base64
+$(document).ready(async function() {
+  const $containers = $('.file-input-container');
+
+  const promises = $containers.map(function() {
+    const $container = $(this);
+
+    const base64Data = $container.data('base64');
+    const fieldId = $container.data('field-id');
+    const filename = $container.data('filename');
+
+    if (base64Data && fieldId && filename) {
+      return handlePreloadedFile(base64Data, fieldId, filename);
+    }
+  }).get();
+
+  await Promise.all(promises);
+});

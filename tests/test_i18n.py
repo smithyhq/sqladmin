@@ -33,7 +33,7 @@ from tests.common import sync_engine as engine
 Base = declarative_base()  # type: ignore
 session_maker = sessionmaker(bind=engine)
 
-SWITCHER = ["en", "az", "de", "ru", "tr"]
+SWITCHER = ["en", "az", "de", "ru", "tr", "ja"]
 
 
 class User(Base):
@@ -130,6 +130,16 @@ def test_lazy_gettext_defers_evaluation() -> None:
 def test_lazy_gettext_per_locale() -> None:
     set_locale("de")
     assert str(lazy_gettext("Save")) == "Speichern"
+
+
+def test_lazy_gettext_follows_each_locale() -> None:
+    # A module-level label is rendered for many requests in different locales.
+    label = lazy_gettext("Save")
+
+    set_locale("de")
+    assert str(label) == "Speichern"
+    set_locale("az")
+    assert str(label) == "Yadda saxla"
 
 
 ######################################################
@@ -357,6 +367,7 @@ def test_switcher_absent_without_i18n_config() -> None:
         ("de", "Actions", "Aktionen"),
         ("ru", "Export", "Экспорт"),
         ("tr", "Actions", "İşlemler"),
+        ("ja", "Actions", "操作"),
     ],
 )
 def test_expanded_ui_strings_translate(locale: str, source: str, expected: str) -> None:
@@ -370,7 +381,7 @@ def test_every_locale_covers_the_full_catalog() -> None:
     reference = [msgid for msgid in translations["az"]._catalog if msgid]  # type: ignore[attr-defined]
     assert len(reference) >= 40
 
-    for locale in ("de", "ru", "tr"):
+    for locale in ("de", "ru", "tr", "ja"):
         catalog = translations[locale]._catalog  # type: ignore[attr-defined]
         missing = [msgid for msgid in reference if not catalog.get(msgid)]
         assert not missing, f"{locale} is missing translations for: {missing}"

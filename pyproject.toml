@@ -8,7 +8,7 @@ module-root = ""
 
 [project]
 name = "sqladmin"
-version = "0.31.0"
+version = "0.31.1"
 description = 'SQLAlchemy admin for FastAPI and Starlette'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -77,7 +77,7 @@ dev = [
   "bandit",
 ]
 
-lint = ["mypy==2.3.0", "ruff==0.15.20", "types-wtforms>=3.2.1.20250809"]
+lint = ["mypy==2.3.1", "ruff==0.15.20", "types-wtforms>=3.2.1.20250809"]
 
 docs = ["zensical~=0.0.42", "mkdocstrings[python]~=1.0.3"]
 
@@ -103,7 +103,7 @@ lint.select = [
 ]
 
 [tool.coverage.run]
-source_pkgs = ["sqladmin", "tests"]
+source_pkgs = ["sqladmin"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -119,8 +119,15 @@ skip_covered = true
 
 [tool.babel]
 # Message extraction mapping for `pybabel extract -F pyproject.toml`.
-# Only Jinja templates are scanned; SQLAdmin marks UI strings with _("...").
+# Jinja templates mark UI strings with _("..."); the contrib modules use
+# lazy_gettext("..."), which `make i18n-extract` passes as a keyword. The
+# Python mapping is limited to contrib so WTForms' own gettext() calls in
+# sqladmin/fields.py stay out of the catalog.
 [[tool.babel.mappings]]
 method = "jinja2"
 pattern = "sqladmin/templates/**.html"
 extensions = "jinja2.ext.i18n"
+
+[[tool.babel.mappings]]
+method = "python"
+pattern = "sqladmin/contrib/**.py"

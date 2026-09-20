@@ -1,4 +1,4 @@
-# Turkish translations for SQLAdmin.
+# Japanese translations for SQLAdmin.
 # Copyright (C) 2026 ORGANIZATION
 # This file is distributed under the same license as the SQLAdmin project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
@@ -8,10 +8,10 @@ msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-09-16 14:31+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Vahid Hasanzade <@vahidzhe>\n"
-"Language: tr\n"
-"Language-Team: tr <LL@li.org>\n"
+"PO-Revision-Date: 2026-09-11 13:26+0900\n"
+"Last-Translator: Hiroki Sawano <hiroki.sawano.2512@gmail.com>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -20,59 +20,58 @@ msgstr ""
 
 #: sqladmin/contrib/rbac.py:369
 msgid "List"
-msgstr "Liste"
+msgstr "一覧"
 
 #: sqladmin/contrib/rbac.py:370
 msgid "Details"
-msgstr "Ayrıntılar"
+msgstr "詳細"
 
 #: sqladmin/contrib/rbac.py:371
 msgid "Create"
-msgstr "Oluştur"
+msgstr "作成"
 
 #: sqladmin/contrib/rbac.py:372 sqladmin/templates/sqladmin/details.html:80
 #: sqladmin/templates/sqladmin/list.html:166
 msgid "Edit"
-msgstr "Düzenle"
+msgstr "編集"
 
 #: sqladmin/contrib/rbac.py:373 sqladmin/templates/sqladmin/details.html:73
 #: sqladmin/templates/sqladmin/list.html:174
 #: sqladmin/templates/sqladmin/modals/delete.html:21
 msgid "Delete"
-msgstr "Sil"
+msgstr "削除"
 
 #: sqladmin/contrib/rbac.py:374 sqladmin/templates/sqladmin/list.html:21
 #: sqladmin/templates/sqladmin/list.html:35
 msgid "Export"
-msgstr "Dışa aktar"
+msgstr "エクスポート"
 
-#: sqladmin/contrib/rbac.py:375
-#: sqladmin/templates/sqladmin/modals/import.html:44
+#: sqladmin/contrib/rbac.py:375 sqladmin/templates/sqladmin/modals/import.html:44
 msgid "Import"
-msgstr "İçe aktar"
+msgstr "インポート"
 
 #: sqladmin/contrib/rbac.py:423
 msgid "Access"
-msgstr "Erişim"
+msgstr "アクセス"
 
 #: sqladmin/contrib/rbac.py:467
 msgid "Page"
-msgstr "Sayfa"
+msgstr "ページ"
 
 #: sqladmin/contrib/rbac.py:467 sqladmin/contrib/rbac.py:573
 msgid "Permissions"
-msgstr "İzinler"
+msgstr "権限"
 
 #: sqladmin/contrib/rbac.py:627
 #, python-format
 msgid "You are not allowed to grant: %(permissions)s"
-msgstr "Aşağıdaki izinleri veremezsiniz: %(permissions)s"
+msgstr "次の権限を付与する権限がありません: %(permissions)s"
 
 #: sqladmin/templates/sqladmin/create.html:7
 #: sqladmin/templates/sqladmin/list.html:50
 #, python-format
 msgid "New %(name)s"
-msgstr "Yeni %(name)s"
+msgstr "%(name)sを新規作成"
 
 #: sqladmin/templates/sqladmin/create.html:24
 #: sqladmin/templates/sqladmin/edit.html:26
@@ -81,136 +80,136 @@ msgstr "Yeni %(name)s"
 #: sqladmin/templates/sqladmin/modals/import.html:39
 #: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:16
 msgid "Cancel"
-msgstr "İptal"
+msgstr "キャンセル"
 
 #: sqladmin/templates/sqladmin/create.html:30
 #: sqladmin/templates/sqladmin/edit.html:32
 msgid "Save"
-msgstr "Kaydet"
+msgstr "保存"
 
 #: sqladmin/templates/sqladmin/create.html:32
 #: sqladmin/templates/sqladmin/edit.html:33
 msgid "Save and continue editing"
-msgstr "Kaydet ve düzenlemeye devam et"
+msgstr "保存して編集を続ける"
 
 #: sqladmin/templates/sqladmin/create.html:34
 #: sqladmin/templates/sqladmin/edit.html:38
 msgid "Save and add another"
-msgstr "Kaydet ve başka ekle"
+msgstr "保存してさらに追加"
 
 #: sqladmin/templates/sqladmin/details.html:18
 msgid "Column"
-msgstr "Sütun"
+msgstr "カラム"
 
 #: sqladmin/templates/sqladmin/details.html:19
 msgid "Value"
-msgstr "Değer"
+msgstr "値"
 
 #: sqladmin/templates/sqladmin/details.html:65
 msgid "Go Back"
-msgstr "Geri dön"
+msgstr "戻る"
 
 #: sqladmin/templates/sqladmin/edit.html:7
 #, python-format
 msgid "Edit %(name)s"
-msgstr "%(name)s düzenle"
+msgstr "%(name)sを編集"
 
 #: sqladmin/templates/sqladmin/edit.html:36
 msgid "Save as new"
-msgstr "Yeni olarak kaydet"
+msgstr "新規保存"
 
 #: sqladmin/templates/sqladmin/layout.html:28
 msgid "Logout"
-msgstr "Çıkış"
+msgstr "ログアウト"
 
 #: sqladmin/templates/sqladmin/layout.html:44
 msgid "Language"
-msgstr "Dil"
+msgstr "言語"
 
 #: sqladmin/templates/sqladmin/list.html:44
 #: sqladmin/templates/sqladmin/modals/import.html:7
 msgid "Import CSV"
-msgstr "CSV içe aktar"
+msgstr "CSVをインポート"
 
 #: sqladmin/templates/sqladmin/list.html:67
 msgid "You are not authorized to view these records."
-msgstr "Bu kayıtları görüntüleme yetkiniz yok."
+msgstr "これらのレコードを表示する権限がありません。"
 
 #: sqladmin/templates/sqladmin/list.html:76
 msgid "Actions"
-msgstr "İşlemler"
+msgstr "操作"
 
 #: sqladmin/templates/sqladmin/list.html:83
 msgid "Delete selected items"
-msgstr "Seçili öğeleri sil"
+msgstr "選択した項目を削除"
 
 #: sqladmin/templates/sqladmin/list.html:106
 #: sqladmin/templates/sqladmin/list.html:108
 msgid "Search"
-msgstr "Ara"
+msgstr "検索"
 
 #: sqladmin/templates/sqladmin/list.html:124
 msgid "Select all"
-msgstr "Tümünü seç"
+msgstr "すべて選択"
 
 #: sqladmin/templates/sqladmin/list.html:155
 msgid "Select item"
-msgstr "Öğeyi seç"
+msgstr "項目を選択"
 
 #: sqladmin/templates/sqladmin/list.html:160
 msgid "View"
-msgstr "Görüntüle"
+msgstr "詳細"
 
 #: sqladmin/templates/sqladmin/list.html:220
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(count)s items"
-msgstr "%(count)s öğeden %(start)s-%(end)s gösteriliyor"
+msgstr "%(count)s件中 %(start)s〜%(end)s件を表示"
 
 #: sqladmin/templates/sqladmin/list.html:233
 msgid "prev"
-msgstr "önceki"
+msgstr "前へ"
 
 #: sqladmin/templates/sqladmin/list.html:246
 msgid "next"
-msgstr "sonraki"
+msgstr "次へ"
 
 #: sqladmin/templates/sqladmin/list.html:252
 msgid "Show"
-msgstr "Göster"
+msgstr "表示件数"
 
 #: sqladmin/templates/sqladmin/list.html:255
 #: sqladmin/templates/sqladmin/list.html:261
 #, python-format
 msgid "%(size)s / Page"
-msgstr "%(size)s / Sayfa"
+msgstr "%(size)s件 / ページ"
 
 #: sqladmin/templates/sqladmin/list.html:274
 msgid "Filters"
-msgstr "Filtreler"
+msgstr "フィルタ"
 
 #: sqladmin/templates/sqladmin/login.html:6
 #, python-format
 msgid "Login to %(title)s"
-msgstr "%(title)s girişi"
+msgstr "%(title)sにログイン"
 
 #: sqladmin/templates/sqladmin/login.html:8
 msgid "Username"
-msgstr "Kullanıcı adı"
+msgstr "ユーザー名"
 
 #: sqladmin/templates/sqladmin/login.html:10
 #: sqladmin/templates/sqladmin/login.html:14
 msgid "Enter username"
-msgstr "Kullanıcı adını girin"
+msgstr "ユーザー名を入力"
 
 #: sqladmin/templates/sqladmin/login.html:19
 #: sqladmin/templates/sqladmin/login.html:23
 #: sqladmin/templates/sqladmin/login.html:27
 msgid "Password"
-msgstr "Parola"
+msgstr "パスワード"
 
 #: sqladmin/templates/sqladmin/login.html:32
 msgid "Login"
-msgstr "Giriş"
+msgstr "ログイン"
 
 #: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
 #: sqladmin/templates/sqladmin/modals/import.html:4
@@ -219,59 +218,57 @@ msgstr "Giriş"
 #: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
 #: sqladmin/templates/sqladmin/secret_modal.html:9
 msgid "Close"
-msgstr "Kapat"
+msgstr "閉じる"
 
 #: sqladmin/templates/sqladmin/secret_modal.html:26
 msgid "Done"
-msgstr "Tamam"
+msgstr "完了"
 
 #: sqladmin/templates/sqladmin/filters/lookup_filter.html:12
 msgid "Clear filter"
-msgstr "Filtreyi temizle"
+msgstr "フィルタを解除"
 
 #: sqladmin/templates/sqladmin/filters/operation_filter.html:36
 msgid "Apply Filter"
-msgstr "Filtreyi uygula"
+msgstr "フィルタを適用"
 
 #: sqladmin/templates/sqladmin/modals/delete.html:8
 msgid "Please confirm"
-msgstr "Lütfen onaylayın"
+msgstr "確認してください"
 
 #: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:21
 #: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:21
 msgid "Yes"
-msgstr "Evet"
+msgstr "はい"
 
 #: sqladmin/templates/sqladmin/modals/import.html:11
 msgid "Choose CSV file"
-msgstr "CSV dosyası seçin"
+msgstr "CSVファイルを選択"
 
 #: sqladmin/templates/sqladmin/modals/import.html:14
 msgid "No file selected"
-msgstr "Dosya seçilmedi"
+msgstr "ファイルが選択されていません"
 
 #: sqladmin/templates/sqladmin/modals/import.html:18
 msgid "Skip invalid rows and continue import"
-msgstr "Geçersiz satırları atla ve içe aktarmaya devam et"
+msgstr "無効な行をスキップしてインポートを続行"
 
 #: sqladmin/templates/sqladmin/modals/import.html:21
 msgid "Import progress"
-msgstr "İçe aktarma ilerlemesi"
+msgstr "インポートの進捗"
 
 #: sqladmin/templates/sqladmin/modals/import.html:25
 #: sqladmin/templates/sqladmin/modals/import.html:30
 #, python-format
 msgid "%(processed)s/%(total)s rows processed"
-msgstr "%(processed)s/%(total)s satır işlendi"
+msgstr "%(processed)s/%(total)s行を処理しました"
 
 #: sqladmin/templates/sqladmin/modals/import.html:27
 #, python-format
 msgid ""
 "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
 "processed"
-msgstr ""
-"%(imported)s içe aktarıldı, %(skipped)s atlandı, %(processed)s/%(total)s "
-"satır işlendi"
+msgstr "%(imported)s件インポート、%(skipped)s件スキップ、%(processed)s/%(total)s行を処理しました"
 
 #: sqladmin/templates/sqladmin/modals/import.html:29
 #, python-format
@@ -279,26 +276,26 @@ msgid ""
 "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
 "processed - saving valid rows... (%(seconds)ss)"
 msgstr ""
-"%(imported)s içe aktarıldı, %(skipped)s atlandı, %(processed)s/%(total)s "
-"satır işlendi - geçerli satırlar kaydediliyor... (%(seconds)s sn)"
+"%(imported)s件インポート、%(skipped)s件スキップ、%(processed)s/%(total)s行を処理しました - "
+"有効な行を保存中... (%(seconds)s秒)"
 
 #: sqladmin/templates/sqladmin/modals/import.html:60
 msgid "Import result"
-msgstr "İçe aktarma sonucu"
+msgstr "インポート結果"
 
 #: sqladmin/templates/sqladmin/modals/import.html:63
 msgid "Missed rows"
-msgstr "Atlanan satırlar"
+msgstr "スキップされた行"
 
 #: sqladmin/templates/sqladmin/modals/import.html:66
 msgid "Download CSV"
-msgstr "CSV indir"
+msgstr "CSVをダウンロード"
 
 #: sqladmin/templates/sqladmin/modals/import.html:69
 msgid "Download TXT"
-msgstr "TXT indir"
+msgstr "TXTをダウンロード"
 
 #: sqladmin/templates/sqladmin/modals/import.html:82
 msgid "Refresh list"
-msgstr "Listeyi yenile"
+msgstr "一覧を更新"
 

@@ -74,6 +74,22 @@ def test_multi_page_unequal_previous_and_next() -> None:
     assert pagination.page_controls == page_controls
 
 
+@pytest.mark.parametrize(
+    ("count", "page", "expected"),
+    [(0, 2, 1), (10, 0, 1), (10, 3, 2), (11, 3, 3)],
+)
+def test_clamp_page(count: int, page: int, expected: int) -> None:
+    pagination = Pagination(rows=[], page=page, page_size=5, count=count)
+
+    assert pagination.page == expected
+
+
+@pytest.mark.parametrize("page_size", [0, -1])
+def test_page_size_must_be_positive(page_size: int) -> None:
+    with pytest.raises(ValueError, match="page_size must be greater than 0"):
+        Pagination(rows=[], page=1, page_size=page_size, count=10)
+
+
 def test_resize_pagination() -> None:
     pagination = Pagination(rows=[], page=3, page_size=5, count=20)
     assert pagination.resize(100).page == 1

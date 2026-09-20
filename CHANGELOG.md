@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version [0.31.1](https://github.com/smithyhq/sqladmin/releases/tag/0.31.1): 2026-09-01
+
+### Security
+
+* Fix advisory `GHSA-h6cj-3759-22v4`: enforce the per-view `is_accessible()` authorization hook on `@action` and `@expose` endpoints, which were wrapped in `login_required` only, allowing an authenticated but unauthorized user to invoke custom actions and exposed views. Rejected requests now return HTTP 403 by @aminalaee.
+
+**Full Changelog**: [0.31.0...0.31.1](https://github.com/smithyhq/sqladmin/compare/0.31.0...0.31.1)
+
 ## Version [0.31.0](https://github.com/smithyhq/sqladmin/releases/tag/0.31.0): 2026-08-06
 
 ### Added

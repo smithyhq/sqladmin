@@ -42,6 +42,7 @@ SUPPORTED_LOCALES = [
     "az",  # Azerbaijani
     "ru",  # Russian
     "tr",  # Turkish
+    "ja",  # Japanese
 ]
 """Locale codes for which a compiled catalog ships with the package."""
 
@@ -171,7 +172,10 @@ try:
             LABEL = _("Save")
             ```
         """
-        return LazyProxy(gettext, message)  # type: ignore[return-value]
+        # No caching: the same proxy must follow each request's locale.
+        return LazyProxy(  # type: ignore[return-value]
+            gettext, message, enable_cache=False
+        )
 
     def format_datetime(
         value: datetime.datetime,
@@ -314,7 +318,7 @@ class I18nConfig:
             engine,
             i18n_config=I18nConfig(
                 default_locale="az",
-                language_switcher=["en", "az", "de", "ru", "tr"],
+                language_switcher=["en", "az", "de", "ru", "tr", "ja"],
             ),
         )
         ```

@@ -2,11 +2,14 @@ import enum
 
 import pytest
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from starlette.datastructures import MultiDict
 
 from sqladmin import ModelView
-from sqladmin._import import validate_import_row
+from sqladmin._import import (
+    validate_foreign_key_values,
+    validate_import_row,
+)
 from sqladmin.application import Admin
 from tests.common import sync_engine as engine
 
@@ -34,11 +37,41 @@ class ImportWidget(Base):
     profile_id = Column(Integer, ForeignKey("import_profile_validate.id"))
     active = Column(Boolean, nullable=False)
 
+    profile = relationship("ImportProfile")
+
 
 class ImportProfile(Base):
     __tablename__ = "import_profile_validate"
 
     id = Column(Integer, primary_key=True)
+
+
+class ImportRequiredWidget(Base):
+    __tablename__ = "import_required_widget_validate"
+
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(
+        Integer, ForeignKey("import_profile_validate.id"), nullable=False
+    )
+
+    profile = relationship("ImportProfile")
+
+
+class ImportTag(Base):
+    __tablename__ = "import_tag_validate"
+
+    id = Column(Integer, primary_key=True)
+    label = Column(String)
+    post_id = Column(Integer, ForeignKey("import_post_validate.id"))
+
+
+class ImportPost(Base):
+    __tablename__ = "import_post_validate"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+
+    tags = relationship("ImportTag")
 
 
 class ImportUserAdmin(ModelView, model=ImportUser):
@@ -47,6 +80,13 @@ class ImportUserAdmin(ModelView, model=ImportUser):
 
 class ImportWidgetAdmin(ModelView, model=ImportWidget):
     column_import_list = [ImportWidget.profile_id, ImportWidget.active]
+
+
+@pytest.fixture(autouse=True)
+def prepare_database():
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)
 
 
 def _model_view(admin_class: type[ModelView]) -> ModelView:
@@ -111,3 +151,155 @@ async def test_validate_import_row_reports_coercion_errors() -> None:
     assert merged == {"active": True}
     assert "profile_id" in errors
     assert "Invalid value" in errors["profile_id"][0]
+
+
+@pytest.mark.anyio
+async def test_import_value_error_coerce_column_value() -> None:
+    # row_data is built by hand, so the value reaches foreign_key_error_message
+    # uncoerced and fails when coerced against the Integer target column.
+    model_view = _model_view(ImportWidgetAdmin)
+    result = await validate_foreign_key_values(
+        model_view,
+        {
+            ImportWidget.id.key: 1,
+            ImportWidget.profile_id.key: "not-an-int",
+        },
+        {},
+    )
+    assert result == {
+        "profile_id": ["Invalid value 'not-an-int' for column profile_id."]
+    }
+
+
+@pytest.mark.anyio
+async def test_import_type_error_coerce_column_value(monkeypatch) -> None:
+    def mock_coerce_column_value(column: Column, value):
+        raise TypeError("error!")
+
+    monkeypatch.setattr(
+        "sqladmin._import.coerce_column_value", mock_coerce_column_value
+    )
+
+    model_view = _model_view(ImportWidgetAdmin)
+    result = await validate_foreign_key_values(
+        model_view,
+        {
+            ImportWidget.id.key: 1,
+            ImportWidget.active.key: True,
+            ImportWidget.profile_id.key: 1,
+        },
+        {},
+    )
+    assert result == {"profile_id": ["Invalid value 1 for column profile_id."]}
+
+
+class ImportWidgetRelationshipAdmin(ModelView, model=ImportWidget):
+    column_import_list = [ImportWidget.active, ImportWidget.profile]
+
+
+@pytest.mark.anyio
+async def test_validate_import_row_reports_invalid_relationship_value() -> None:
+    model_view = _model_view(ImportWidgetRelationshipAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict([("active", "true"), ("profile", "adg34gfb13")])
+
+    merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportWidget,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+
+    assert merged["profile"] is None
+    assert errors["profile"] == ["Not a valid choice"]
+
+
+@pytest.mark.anyio
+async def test_validate_import_row_accepts_valid_relationship_value() -> None:
+    with session_maker() as session:
+        session.add(ImportProfile(id=1))
+        session.commit()
+
+    model_view = _model_view(ImportWidgetRelationshipAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict([("active", "true"), ("profile", "1")])
+
+    merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportWidget,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+
+    assert errors == {}
+    assert merged["active"] is True
+    assert merged["profile"] == "1"
+
+
+class ImportRequiredWidgetRelationshipAdmin(ModelView, model=ImportRequiredWidget):
+    column_import_list = [ImportRequiredWidget.profile]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("value", ["adg34gfb13", ""])
+async def test_validate_import_row_does_not_duplicate_relationship_errors(
+    value: str,
+) -> None:
+    model_view = _model_view(ImportRequiredWidgetRelationshipAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict([("profile", value)])
+
+    _merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportRequiredWidget,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+
+    assert errors["profile"] == ["Not a valid choice"]
+
+
+class ImportPostTagsAdmin(ModelView, model=ImportPost):
+    column_import_list = [ImportPost.title, ImportPost.tags]
+
+
+@pytest.mark.anyio
+async def test_validate_import_row_round_trips_valid_multi_select_value() -> None:
+    with session_maker() as session:
+        session.add(ImportTag(id=1, label="t1"))
+        session.commit()
+
+    model_view = _model_view(ImportPostTagsAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict([("title", "good"), ("tags", "1")])
+
+    merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportPost,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+
+    assert errors == {}
+    assert merged["title"] == "good"
+    assert merged["tags"] == ["1"]
+
+
+@pytest.mark.anyio
+async def test_validate_import_row_defaults_non_nullable_column_from_form():
+    model_view = _model_view(ImportWidgetAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict([("profile_id", "1"), ("active", "")])
+    merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportWidget,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+    assert errors == {}
+    assert merged == {"profile_id": 1, "active": False}

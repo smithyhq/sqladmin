@@ -390,7 +390,15 @@ def build_import_form_row(
     form_row = MultiDict()
     for column_name in import_columns:
         if column_name in merged:
-            form_row[column_name] = serialize_import_value_for_form(merged[column_name])
+            value = merged[column_name]
+            if isinstance(value, (list, tuple)):
+                # A multi-select field reads one form value per selected item,
+                # so re-emit each item separately: str()-ing the list would
+                # hand the next validation pass the literal string "['1']".
+                for item in value:
+                    form_row.append(column_name, serialize_import_value_for_form(item))
+            else:
+                form_row[column_name] = serialize_import_value_for_form(value)
         else:
             form_row[column_name] = row.get(column_name) or ""
     return form_row

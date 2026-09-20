@@ -34,11 +34,12 @@ admin = Admin(app, engine, audit_backend=LoggingAuditBackend())
 `DBAuditBackend` writes entries to a database table — but SQLAdmin does not ship
 an audit model, because the right shape depends on your app, most importantly
 the type of your users' primary key (int, str or UUID) and the foreign key to
-it. Instead you define the model and subclass the backend, overriding two
-methods:
+it. Instead you define the model and subclass the backend, overriding
+these methods:
 
-* `get_actor(request)` — map the current request/session to your user's primary
-  key (or any actor identifier).
+* `get_actor(request)` (optional) — map the current request/session to your
+  user's primary key (or any actor identifier). It defaults to the id returned
+  by [`AuthenticationBackend.get_user_id`](../authentication.md#identifying-the-user).
 * `build_row(entry, actor, request)` — turn an `AuditEntry` plus the resolved
   actor into an instance of *your* model.
 
@@ -64,9 +65,7 @@ class AuditLog(Base):
 
 
 class MyAuditBackend(DBAuditBackend):
-    async def get_actor(self, request):
-        return request.session.get("user_id")
-
+    # get_actor defaults to AuthenticationBackend.get_user_id.
     def build_row(self, entry, actor, request):
         return AuditLog(
             action=entry.action,

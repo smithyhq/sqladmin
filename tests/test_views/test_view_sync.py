@@ -1,6 +1,7 @@
 import enum
 import json
 from collections.abc import Generator
+from typing import Any
 
 import pytest
 from sqlalchemy import (
@@ -23,6 +24,7 @@ from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
+from sqladmin.exceptions import ValidationError
 from tests.common import sync_engine as engine
 
 Base = declarative_base()
@@ -152,6 +154,12 @@ class Product(Base):
     is_sold = Column(Boolean, nullable=False)
 
 
+class SyncValidation(Base):
+    __tablename__ = "sync_validation"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+
 @pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
@@ -236,6 +244,20 @@ class WorkerAdmin(ModelView, model=Worker):
     column_details_list = [Worker.id, Worker.person_name]
 
 
+class SyncValidationAdmin(ModelView, model=SyncValidation):
+    column_list = [SyncValidation.name]
+
+    async def on_model_change(
+        self, data: dict, model: Any, is_created: bool, request: Request
+    ) -> None:
+        if data.get("name") == "invalid":
+            raise ValidationError(name="This name is forbidden")
+        if data.get("name") == "formlevel":
+            raise ValidationError("Cross-field check failed")
+        if data.get("name") == "anything":
+            raise ValidationError()
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
@@ -243,6 +265,7 @@ admin.add_view(MovieAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(PersonAdmin)
 admin.add_view(WorkerAdmin)
+admin.add_view(SyncValidationAdmin)
 
 
 def _parse_ndjson_events(content: str) -> list[dict]:
@@ -1904,3 +1927,103 @@ def test_import_csv_on_import_row_hook(client: TestClient) -> None:
             select(User).where(User.name == "Hooked_imported")
         ).scalar_one()
     assert user.status == Status.ACTIVE
+
+
+def test_validation_error(client: TestClient) -> None:
+    # Test creation with invalid data (field error)
+    response = client.post(
+        "/admin/sync-validation/create",
+        data={"name": "invalid"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"This name is forbidden" in response.content
+
+    # Test creation with valid data
+    response = client.post(
+        "/admin/sync-validation/create",
+        data={"name": "valid"},
+    )
+
+    assert response.status_code == 200
+
+    # Verify the record was created
+    with session_maker() as session:
+        obj = session.execute(
+            select(SyncValidation).where(SyncValidation.name == "valid")
+        ).scalar_one()
+    assert obj is not None
+
+    # Test edit with field error
+    with session_maker() as session:
+        obj = SyncValidation(id=9999, name="original")
+        session.add(obj)
+        session.commit()
+
+    response = client.post(
+        "/admin/sync-validation/edit/9999",
+        data={"name": "invalid"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"This name is forbidden" in response.content
+
+    # Test edit with valid data
+    response = client.post(
+        "/admin/sync-validation/edit/9999",
+        data={"name": "updated"},
+    )
+
+    assert response.status_code == 200
+
+    # Verify the record was updated
+    with session_maker() as session:
+        obj = session.execute(
+            select(SyncValidation).where(SyncValidation.id == 9999)
+        ).scalar_one()
+    assert obj.name == "updated"
+
+
+def test_validation_error_form_level(client: TestClient) -> None:
+    """Test that form-level validation errors are displayed on the page."""
+    # Create a record to edit
+    with session_maker() as session:
+        obj = SyncValidation(id=9998, name="test")
+        session.add(obj)
+        session.commit()
+
+    # Test create with form-level error
+    response = client.post(
+        "/admin/sync-validation/create",
+        data={"name": "formlevel"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"Cross-field check failed" in response.content
+
+    # Test edit with form-level error
+    response = client.post(
+        "/admin/sync-validation/edit/9998",
+        data={"name": "formlevel"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"Cross-field check failed" in response.content
+
+    # Test create with bare form-level error
+    response = client.post(
+        "/admin/sync-validation/create",
+        data={"name": "anything"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"Validation error" in response.content
+
+    # Test edit with bare form-level error
+    response = client.post(
+        "/admin/sync-validation/edit/9998",
+        data={"name": "anything"},
+    )
+
+    assert response.status_code == 400, response.content
+    assert b"Validation error" in response.content

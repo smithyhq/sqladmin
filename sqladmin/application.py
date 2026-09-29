@@ -48,6 +48,7 @@ from sqladmin.authorization import (
     custom_action,
 )
 from sqladmin.editors import collect_form_media
+from sqladmin.exceptions import ValidationError
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
@@ -838,6 +839,15 @@ class Admin(BaseAdminView):
         form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
         try:
             obj = await model_view.insert_model(request, form_data_dict)
+
+        except ValidationError as exc:
+            exc.enrich_form(form)
+            if form.form_errors:
+                context["error"] = " ".join(form.form_errors)
+
+            return await self.templates.TemplateResponse(
+                request, model_view.create_template, context, status_code=400
+            )
         except Exception as e:
             logger.exception(e)
             context["error"] = str(e)
@@ -916,6 +926,14 @@ class Admin(BaseAdminView):
                 obj = await model_view.update_model(
                     request, pk=request.path_params["pk"], data=form_data_dict
                 )
+        except ValidationError as exc:
+            exc.enrich_form(form)
+            if form.form_errors:
+                context["error"] = " ".join(form.form_errors)
+
+            return await self.templates.TemplateResponse(
+                request, model_view.edit_template, context, status_code=400
+            )
         except Exception as e:
             logger.exception(e)
             context["error"] = str(e)

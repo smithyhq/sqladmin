@@ -854,6 +854,31 @@ def test_search_two_fks_to_same_model() -> None:
     assert "destination_address_id" in stmt_str
 
 
+async def test_sort_and_search_keep_rows_without_related_object() -> None:
+    class AddressAdmin(ModelView, model=Address):
+        column_searchable_list = [Address.name, "user.name"]
+        column_sortable_list = [Address.id, "user.name"]
+
+    admin.add_view(AddressAdmin)
+
+    with session_maker() as session:
+        user = User(name="batman")
+        session.add_all(
+            [
+                Address(name="home", user=user),
+                Address(name="office"),
+                Address(name="studio"),
+            ]
+        )
+        session.commit()
+
+    for query_string in (b"sortBy=user.name", b"search=o"):
+        request = Request({"type": "http", "query_string": query_string})
+        pagination = await AddressAdmin().list(request)
+        assert pagination.count == 3
+        assert len(pagination.rows) == 3
+
+
 def test_expose_decorator(client: TestClient) -> None:
     class UserAdmin(ModelView, model=User):
         @expose("/profile/{pk}")

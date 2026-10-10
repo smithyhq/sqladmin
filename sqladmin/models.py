@@ -1687,7 +1687,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         """Join relationship paths and return the statement and target model.
 
         Navigates through a dotted relationship path (e.g. ``user.profile.role``)
-        and joins each segment via its relationship attribute, which lets
+        and outer-joins each segment via its relationship attribute, which lets
         SQLAlchemy pick the correct foreign key when a model has multiple
         relationships to the same target. Paths are tracked to avoid duplicate
         joins within a single call; SQLAlchemy itself dedupes joins on the same
@@ -1703,7 +1703,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             next_model = relationship_attr.mapper.class_
 
             if current_path not in joined_paths:
-                stmt = stmt.join(relationship_attr)
+                stmt = stmt.outerjoin(relationship_attr)
                 joined_paths.add(current_path)
 
             model = next_model

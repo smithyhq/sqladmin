@@ -307,8 +307,11 @@ def _coerce_pk_value(value: Any) -> Any:
 
 def get_object_identifier(obj: Any) -> Any:
     """Returns a value that uniquely identifies this object."""
-    primary_keys = get_primary_keys(obj)
-    values = [_coerce_pk_value(getattr(obj, pk.name)) for pk in primary_keys]
+    mapper = sa_inspect(obj).mapper
+    values = [
+        _coerce_pk_value(getattr(obj, mapper.get_property_by_column(pk).key))
+        for pk in mapper.primary_key
+    ]
 
     # Unaltered value for tables with a single primary key
     if len(values) == 1:

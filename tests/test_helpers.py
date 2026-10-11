@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 from sqlalchemy import (
+    ARRAY,
+    JSON,
     Boolean,
     Column,
     Date,
@@ -137,6 +139,62 @@ def test_coerce_column_value_bool(raw: str, expected: bool) -> None:
 def test_coerce_column_value_bool_invalid() -> None:
     with pytest.raises(ValueError, match="Invalid boolean value"):
         coerce_column_value(Flagged.active, "maybe")
+
+
+class Document(Base):
+    __tablename__ = "document"
+    id = Column(Integer, primary_key=True)
+    meta = Column(JSON)
+    tags = Column(ARRAY(String))
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ('{"a": 1}', {"a": 1}),
+        ('[1, "two"]', [1, "two"]),
+        ("3", 3),
+        ('"text"', "text"),
+        ("null", None),
+    ],
+)
+def test_coerce_column_value_json(raw: str, expected: Any) -> None:
+    assert coerce_column_value(Document.meta, raw) == expected
+
+
+def test_coerce_column_value_json_invalid() -> None:
+    with pytest.raises(ValueError, match="Invalid JSON value"):
+        coerce_column_value(Document.meta, "{'a': 1}")
+
+
+def test_coerce_column_value_array() -> None:
+    assert coerce_column_value(Document.tags, '["a", "b"]') == ["a", "b"]
+    assert coerce_column_value(Document.tags, "[]") == []
+
+
+@pytest.mark.parametrize("raw", ["a,b", '{"a": 1}', '"a"', "['a', 'b']"])
+def test_coerce_column_value_array_invalid(raw: str) -> None:
+    with pytest.raises(ValueError):
+        coerce_column_value(Document.tags, raw)
+
+
+def test_merge_import_row_data_coerces_json_and_array() -> None:
+    merged, errors = merge_import_row_data(
+        Document,
+        ["meta", "tags"],
+        {"meta": '{"a": 1}', "tags": '["a", "b"]'},
+        {},
+    )
+
+    assert errors == {}
+    assert merged == {"meta": {"a": 1}, "tags": ["a", "b"]}
+
+
+def test_merge_import_row_data_reports_invalid_array() -> None:
+    merged, errors = merge_import_row_data(Document, ["tags"], {"tags": "a,b"}, {})
+
+    assert merged == {}
+    assert errors == {"tags": ["Invalid value 'a,b' for column tags."]}
 
 
 def test_serialize_import_value_for_form() -> None:

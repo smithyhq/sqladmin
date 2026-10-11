@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncGenerator, Callable
+from contextlib import nullcontext
 from typing import Any, NamedTuple
 
 import anyio
@@ -238,9 +239,10 @@ async def persist_import_row_async(
     model_view: ModelView,
     request: Request,
     row_entry: dict[str, Any],
+    use_savepoint: bool = True,
 ) -> Any:
     row = row_entry["model"]
-    async with session.begin_nested():
+    async with session.begin_nested() if use_savepoint else nullcontext():
         obj = query._get_model_object(row)
         await model_view.on_import_row(row, obj, request)
         obj = await query._set_attributes_async(session, obj, row)
@@ -255,9 +257,10 @@ def persist_import_row_sync(
     model_view: ModelView,
     request: Request,
     row_entry: dict[str, Any],
+    use_savepoint: bool = True,
 ) -> Any:
     row = row_entry["model"]
-    with session.begin_nested():
+    with session.begin_nested() if use_savepoint else nullcontext():
         obj = query._get_model_object(row)
         anyio.from_thread.run(model_view.on_import_row, row, obj, request)
         obj = query._set_attributes_sync(session, obj, row)
@@ -317,6 +320,7 @@ async def persist_import_models_with_count_check_async(
                         model_view,
                         request,
                         row_entry,
+                        use_savepoint=continue_on_error,
                     )
                     persisted_count += 1
                 except Exception as exc:
@@ -383,6 +387,7 @@ def persist_import_models_with_count_check_sync(
                         model_view,
                         request,
                         row_entry,
+                        use_savepoint=continue_on_error,
                     )
                     persisted_count += 1
                 except Exception as exc:

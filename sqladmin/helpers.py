@@ -358,7 +358,21 @@ def coerce_column_value(column: Column, value: Any) -> Any:
         return type_.fromisoformat(value)
     if inspect.isclass(type_) and issubclass(type_, bool):
         return _coerce_bool(value)
+    if inspect.isclass(type_) and issubclass(type_, (dict, list)):
+        return _coerce_json(value, type_)
     return type_(value)  # type: ignore[call-arg]
+
+
+def _coerce_json(value: str, type_: type) -> Any:
+    # JSON columns report `dict` but may hold any JSON value, while ARRAY
+    # columns report `list` and must receive a JSON array.
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON value {value!r}.") from exc
+    if type_ is list and not isinstance(parsed, list):
+        raise ValueError(f"Expected a JSON array, got {value!r}.")
+    return parsed
 
 
 def _coerce_bool(value: str) -> bool:

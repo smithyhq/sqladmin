@@ -460,7 +460,8 @@ async def stream_import_response(
             }
         )
 
-        for line_number, row in enumerate(data, start=2):
+        for index, row in enumerate(data):
+            line_number = getattr(row, "line", index + 2)
             await anyio.sleep(0)
             if await request.is_disconnected():
                 return

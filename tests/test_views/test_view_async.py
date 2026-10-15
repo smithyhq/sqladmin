@@ -1732,6 +1732,26 @@ async def test_import_csv_continue_on_error_modes(client: AsyncClient) -> None:
     assert users_after_continue[0].name == "GOOD"
 
 
+async def test_import_csv_reports_line_after_multiline_cell(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/admin/user/import",
+        data={"continue_on_error": "1"},
+        files={
+            "csvfile": (
+                "user.csv",
+                b'name,status\r\n"A\nB\r\nC",ACTIVE\r\n\r\nBAD,NOT_A_STATUS\r\n',
+                "text/csv",
+            )
+        },
+    )
+    result = _parse_ndjson_events(response.text)[-1]
+
+    assert result["skipped"] == 1
+    assert [row["line"] for row in result["missed_rows"]] == [6]
+
+
 async def test_import_csv_missed_rows_cap(client: AsyncClient) -> None:
     class UserImportCapAdmin(ModelView, model=User):
         can_import = True

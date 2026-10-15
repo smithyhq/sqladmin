@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import enum
 import inspect
+import io
 import json
 import os
 import re
@@ -10,6 +11,7 @@ import unicodedata
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable, Generator, Sequence
 from datetime import date, datetime, time, timedelta
+from itertools import zip_longest
 from pathlib import Path
 from typing import (
     Any,
@@ -254,21 +256,34 @@ def stream_to_csv(
     return callback(writer)  # type: ignore
 
 
+class CsvRow(MultiDict):
+    """A parsed CSV record with the first physical line it starts on."""
+
+    def __init__(self, line: int) -> None:
+        super().__init__()
+        self.line = line
+
+
 def parse_csv(
     csv_content: bytes, columns: list[str], delimiter: str = ","
 ) -> list[MultiDict]:
     if csv_content[:3] == b"\xef\xbb\xbf":
         csv_content = csv_content[3:]
     try:
-        _csv_content = csv_content.decode("utf-8").splitlines()
+        _csv_content = csv_content.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ValueError("CSV file must be UTF-8 encoded.") from exc
 
-    reader = csv.DictReader(_csv_content, delimiter=delimiter)
-    if not reader.fieldnames:
+    reader = csv.reader(io.StringIO(_csv_content, newline=""), delimiter=delimiter)
+    fieldnames: list[str] = []
+    for header in reader:
+        if header:
+            fieldnames = header
+            break
+    if not fieldnames:
         raise ValueError("CSV file is missing a header row.")
 
-    missing_columns = [column for column in columns if column not in reader.fieldnames]
+    missing_columns = [column for column in columns if column not in fieldnames]
     if missing_columns:
         raise ValueError(
             "CSV file is missing required column(s): "
@@ -276,11 +291,19 @@ def parse_csv(
             + "."
         )
 
-    result = []
-    for row in reader:
-        md = MultiDict()
-        for column, value in row.items():
-            if column not in columns:
+    result: list[MultiDict] = []
+    while True:
+        # line_num is the last physical line consumed, so +1 is the first
+        # line of the next record (csv.reader reads lazily).
+        line = reader.line_num + 1
+        values = next(reader, None)
+        if values is None:
+            break
+        if not values:
+            continue  # blank line
+        md = CsvRow(line=line)
+        for column, value in zip_longest(fieldnames, values):
+            if column is None or column not in columns:
                 continue
             md.append(column, value)
         result.append(md)

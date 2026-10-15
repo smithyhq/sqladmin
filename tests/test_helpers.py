@@ -19,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.type_api import TypeDecorator
 
+from sqladmin._types import StrEnum
 from sqladmin.helpers import (
     build_import_form_row,
     coerce_column_value,
@@ -137,6 +138,48 @@ def test_coerce_column_value_bool(raw: str, expected: bool) -> None:
 def test_coerce_column_value_bool_invalid() -> None:
     with pytest.raises(ValueError, match="Invalid boolean value"):
         coerce_column_value(Flagged.active, "maybe")
+
+
+def test_coerce_column_value_enum() -> None:
+    class Color(enum.Enum):
+        RED = "red"
+
+    column = Column("color", Enum(Color))
+    assert coerce_column_value(column, "RED", enum_by_name=True) is Color.RED
+    assert coerce_column_value(column, "red", enum_by_name=True) is Color.RED
+    assert coerce_column_value(column, "red") is Color.RED
+
+    with pytest.raises(ValueError):
+        coerce_column_value(column, "blue", enum_by_name=True)
+
+
+def test_coerce_column_value_enum_collision() -> None:
+    class Swap(enum.Enum):
+        A = "B"
+        B = "A"
+
+    class StrSwap(StrEnum):
+        A = "B"
+        B = "A"
+
+    column = Column("c", Enum(Swap))
+    assert coerce_column_value(column, "B", enum_by_name=True) is Swap.B
+    assert coerce_column_value(column, "B") is Swap.A
+
+    str_column = Column("s", Enum(StrSwap))
+    assert coerce_column_value(str_column, "B", enum_by_name=True) is StrSwap.A
+
+
+def test_coerce_column_value_int_enum() -> None:
+    class Level(enum.IntEnum):
+        LOW = 1
+        HIGH = 2
+
+    column = Column("level", Enum(Level))
+    assert coerce_column_value(column, "HIGH", enum_by_name=True) is Level.HIGH
+    assert coerce_column_value(column, 1, enum_by_name=True) == 1
+    with pytest.raises(ValueError):
+        coerce_column_value(column, "2", enum_by_name=True)
 
 
 def test_serialize_import_value_for_form() -> None:

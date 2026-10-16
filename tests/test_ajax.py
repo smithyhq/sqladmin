@@ -145,6 +145,54 @@ class MissmatchIdsField(Base):
     team_2 = relationship("Team", foreign_keys=[team_2_id])
 
 
+class Category(Base):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=32))
+    parent_id = Column(Integer, ForeignKey("categories.id"))
+
+    children = relationship("Category")
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=32))
+    type = Column(String(length=16))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "employee",
+        "polymorphic_on": type,
+    }
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+class Manager(Employee):
+    __tablename__ = "managers"
+
+    id = Column(Integer, ForeignKey("employees.id"), primary_key=True)
+
+    reports = relationship("Employee", secondary="manager_reports")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "manager",
+    }
+
+
+class ManagerReport(Base):
+    __tablename__ = "manager_reports"
+
+    manager_id = Column(Integer, ForeignKey("managers.id"), primary_key=True)
+    report_id = Column(Integer, ForeignKey("employees.id"), primary_key=True)
+
+
 class UserAdmin(ModelView, model=User):
     form_ajax_refs = {
         "addresses": {
@@ -186,10 +234,29 @@ class MemberAdmin(ModelView, model=Member):
     }
 
 
+class CategoryAdmin(ModelView, model=Category):
+    form_ajax_refs = {
+        "children": {
+            "fields": ("name",),
+        }
+    }
+
+
+class ManagerAdmin(ModelView, model=Manager):
+    form_columns = ["name", "reports"]
+    form_ajax_refs = {
+        "reports": {
+            "fields": ("name",),
+        }
+    }
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(RoomAdmin)
 admin.add_view(MemberAdmin)
+admin.add_view(CategoryAdmin)
+admin.add_view(ManagerAdmin)
 
 
 @pytest.fixture(autouse=True)
@@ -360,6 +427,63 @@ async def test_edit_page_template(client: AsyncClient) -> None:
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
     assert 'data-allow-blank="1"' in response.text
+
+
+async def test_edit_page_self_referential_ajax_relation(client: AsyncClient) -> None:
+    async with session_maker() as s:
+        s.add(Category(id=1, name="root"))
+        await s.flush()
+        s.add(Category(id=2, name="leaf", parent_id=1))
+        await s.commit()
+
+    response = await client.get("/admin/category/edit/1")
+    assert response.status_code == 200
+    assert (
+        'data-json="[{&#34;id&#34;: &#34;2&#34;, &#34;text&#34;: &#34;leaf&#34;}]"'
+        in response.text
+    )
+
+    response = await client.get("/admin/category/edit/2")
+    assert response.status_code == 200
+    assert 'data-json="[]"' in response.text
+
+    data = {"name": "root", "children": ["2"]}
+    response = await client.post("/admin/category/edit/1", data=data)
+    assert response.status_code == 302
+
+    async with session_maker() as s:
+        child = await s.get(Category, 2)
+
+    assert child is not None
+    assert child.parent_id == 1
+
+
+async def test_edit_page_ajax_relation_to_inherited_base(client: AsyncClient) -> None:
+    async with session_maker() as s:
+        s.add(Manager(id=1, name="boss"))
+        s.add(Employee(id=2, name="report"))
+        s.add(Employee(id=3, name="newcomer"))
+        await s.flush()
+        s.add(ManagerReport(manager_id=1, report_id=2))
+        await s.commit()
+
+    response = await client.get("/admin/manager/edit/1")
+    assert response.status_code == 200
+    assert (
+        'data-json="[{&#34;id&#34;: &#34;2&#34;, &#34;text&#34;: &#34;report&#34;}]"'
+        in response.text
+    )
+
+    data = {"name": "boss", "reports": ["2", "3"]}
+    response = await client.post("/admin/manager/edit/1", data=data)
+    assert response.status_code == 302
+
+    async with session_maker() as s:
+        stmt = select(Manager).options(selectinload(Manager.reports))
+        result = await s.execute(stmt)
+
+    manager = result.scalar_one()
+    assert sorted(report.id for report in manager.reports) == [2, 3]
 
 
 async def test_create_and_edit_forms(client: AsyncClient) -> None:

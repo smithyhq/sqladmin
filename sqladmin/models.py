@@ -21,7 +21,7 @@ from urllib.parse import urlencode
 import anyio
 from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy.orm.collections import InstrumentedList, InstrumentedSet
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.sql.elements import ClauseElement
@@ -1210,9 +1210,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                     whereclause = parent_stmt.whereclause
                     if whereclause is None:
                         continue
+                    # Alias the target so the join stays valid when the
+                    # relationship points back to the model's own table.
+                    target_alias = aliased(target, flat=True)
                     stmt = (
-                        select(target)
-                        .join(getattr(self.model, name))
+                        select(target_alias)
+                        .select_from(self.model)
+                        .join(getattr(self.model, name).of_type(target_alias))
                         .where(whereclause)
                         .distinct()
                     )

@@ -51,44 +51,13 @@ class Document(Base):
     remote_file = Column(FileType(OpenlessStorage(".uploads")), nullable=False)
 
 
-class UploadToStorage(FileSystemStorage):
-    """
-    Keeps the directory of a stored name and names a copy in it, as
-    `FileSystemStorage` does in fastapi-storages 0.5.0.
-    """
-
-    def get_name(self, name: str) -> str:
-        return name
-
-    def write(self, file: BinaryIO, name: str) -> str:
-        Path(self.get_path(name)).parent.mkdir(exist_ok=True)
-        return super().write(file, name)
-
-    def generate_new_filename(self, filename: str) -> str:
-        path, counter = Path(filename), 0
-        while Path(self.get_path(str(path))).exists():
-            counter += 1
-            path = path.with_stem(f"{Path(filename).stem}_{counter}")
-        return str(path)
-
-
-class UploadToFileType(FileType):
-    """
-    Writes under `docs/` and keeps it in the stored name, as
-    `FileType(upload_to="docs")` does in fastapi-storages 0.5.0.
-    """
-
-    def process_bind_param(self, value: Any, dialect: Any) -> str | None:
-        if value is not None:
-            value.filename = f"docs/{value.filename}"
-        return super().process_bind_param(value, dialect)
-
-
 class Report(Base):
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True)
-    file = Column(UploadToFileType(UploadToStorage(".uploads")), nullable=False)
+    file = Column(
+        FileType(FileSystemStorage(".uploads"), upload_to="docs"), nullable=False
+    )
 
 
 @pytest.fixture(autouse=True)

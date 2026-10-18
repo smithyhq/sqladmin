@@ -1229,8 +1229,8 @@ class Admin(BaseAdminView):
     @staticmethod
     def _copy_stored_file(obj: Any, key: str) -> UploadFile:
         """
-        Copy a stored file for "Save as new" under a name its storage has no
-        file for yet, so the new row gets its own file.
+        Copy a stored file for "Save as new" under the name its storage's
+        `generate_new_filename` gives, so the new row gets its own file.
         """
 
         f = getattr(obj, key)
@@ -1255,9 +1255,8 @@ class Admin(BaseAdminView):
                 copy.close()
                 raise
         copy.seek(0)
-        # fastapi-storages 0.5.0 keeps the `upload_to` directory of a column in
-        # the stored name and adds it again on write, so the copy carries the
-        # base name.
+        # A column's `upload_to` (fastapi-storages 0.5.0) stays in the stored
+        # name and is added again on write, so the copy carries the base name.
         return UploadFile(copy, filename=Path(name).name)  # type: ignore[arg-type]
 
     @staticmethod

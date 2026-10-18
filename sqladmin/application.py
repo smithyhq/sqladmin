@@ -4,17 +4,21 @@ import functools
 import inspect
 import io
 import logging
+import shutil
+import tempfile
 import warnings
 from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 from types import MethodType
 from typing import (
     Any,
+    BinaryIO,
     cast,
     no_type_check,
 )
 from urllib.parse import parse_qsl, urljoin
 
+import anyio
 from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader, PrefixLoader
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -34,6 +38,7 @@ from starlette.responses import (
 )
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
+from wtforms import ValidationError
 
 from sqladmin._import import handle_import_upload, import_csv, import_error_response
 from sqladmin._menu import CategoryMenu, Menu, ViewMenu
@@ -48,6 +53,7 @@ from sqladmin.authorization import (
     custom_action,
 )
 from sqladmin.editors import collect_form_media
+from sqladmin.exceptions import NewUploadRequired
 from sqladmin.flash import get_flashed_messages
 from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
@@ -86,6 +92,60 @@ def _save_button_clicked(form: FormData, label: str) -> bool:
     """
 
     return form.get("save") in (label, gettext(label))
+
+
+class _StoredFileReader(io.RawIOBase):
+    """
+    Reads a stored file for the edit form's validators, through the handle its
+    storage opens on first use: an edit whose validators never use it never
+    opens it. A storage that cannot open it gives the validator a validation
+    error asking for a new upload.
+    """
+
+    def __init__(self, f: Any) -> None:
+        super().__init__()
+        self._f = f
+        self._handle: BinaryIO | None = None
+
+    def _opened(self) -> BinaryIO:
+        if self._handle is None:
+            try:
+                self._handle = self._f.open()
+            except NotImplementedError as exc:
+                raise ValidationError(
+                    "This file needs a new upload: "
+                    "its storage cannot read the stored file."
+                ) from exc
+        return self._handle
+
+    @property
+    def name(self) -> str:
+        return self._opened().name
+
+    def fileno(self) -> int:
+        return self._opened().fileno()
+
+    def readable(self) -> bool:
+        return True
+
+    def seekable(self) -> bool:
+        return True
+
+    def readinto(self, buffer: Any) -> int:
+        data = self._opened().read(len(buffer))
+        buffer[: len(data)] = data
+        return len(data)
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        return self._opened().seek(offset, whence)
+
+    def tell(self) -> int:
+        return self._opened().tell()
+
+    def close(self) -> None:
+        if self._handle is not None:
+            self._handle.close()
+        super().close()
 
 
 class BaseAdmin:
@@ -818,7 +878,7 @@ class Admin(BaseAdminView):
                 request, model_view.create_template, context
             )
 
-        form_data = await self._handle_form_data(request)
+        form_data, _ = await self._handle_form_data(request)
         form = Form(form_data)
 
         context = {
@@ -888,7 +948,7 @@ class Admin(BaseAdminView):
                 request, model_view.edit_template, context
             )
 
-        form_data = await self._handle_form_data(request, model)
+        form_data, stored_files = await self._handle_form_data(request, model)
         save_as_new = model_view.save_as and _save_button_clicked(
             form_data, "Save as new"
         )
@@ -900,7 +960,14 @@ class Admin(BaseAdminView):
         form = Form(form_data)
         context["form"] = form
 
-        if not form.validate():
+        try:
+            valid = form.validate()
+        finally:
+            # A validator may have opened a stored file to read it.
+            for key in stored_files:
+                await cast(UploadFile, form_data[key]).close()
+
+        if not valid:
             return await self.templates.TemplateResponse(
                 request,
                 model_view.edit_template,
@@ -909,7 +976,17 @@ class Admin(BaseAdminView):
             )
 
         form_data_dict = self._denormalize_wtform_data(form.data, model)
+        copies: list[UploadFile] = []
         try:
+            for key in stored_files:
+                if save_as_new:
+                    copy = await anyio.to_thread.run_sync(
+                        self._copy_stored_file, model, key
+                    )
+                    copies.append(copy)
+                    form_data_dict[key] = copy
+                else:
+                    form_data_dict.pop(key, None)
             if save_as_new:
                 obj = await model_view.insert_model(request, form_data_dict)
             else:
@@ -917,7 +994,10 @@ class Admin(BaseAdminView):
                     request, pk=request.path_params["pk"], data=form_data_dict
                 )
         except Exception as e:
-            logger.exception(e)
+            if isinstance(e, NewUploadRequired):
+                logger.info(e)
+            else:
+                logger.exception(e)
             context["error"] = str(e)
             return await self.templates.TemplateResponse(
                 request,
@@ -925,6 +1005,9 @@ class Admin(BaseAdminView):
                 context,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+        finally:
+            for copy in copies:
+                await copy.close()
 
         override = await self._resolve_after_change_response(
             request, context, obj, model_view.edit_template, identity
@@ -1103,15 +1186,21 @@ class Admin(BaseAdminView):
         return request.url_for("admin:create", identity=identity)
 
     @staticmethod
-    async def _handle_form_data(request: Request, obj: Any = None) -> FormData:
+    async def _handle_form_data(
+        request: Request, obj: Any = None
+    ) -> tuple[FormData, Sequence[str]]:
         """
         Handle form data and modify in case of UploadFile.
         This is needed since in edit page
         there's no way to show current file of object.
+
+        Also returns the keys of file inputs left empty on an object that
+        already has a file: those keep their stored file.
         """
 
         form = await request.form()
         form_data: list[tuple[str, str | UploadFile]] = []
+        stored_files: list[str] = []
         for key, value in form.multi_items():
             if not isinstance(value, UploadFile):
                 form_data.append((key, value))
@@ -1123,11 +1212,52 @@ class Admin(BaseAdminView):
             if should_clear:
                 form_data.append((key, UploadFile(io.BytesIO(b""))))
             elif empty_upload and obj and getattr(obj, key):
-                f = getattr(obj, key)  # In case of update, imitate UploadFile
-                form_data.append((key, UploadFile(filename=f.name, file=f.open())))
+                # Stands in for the stored file so the form validates. It is
+                # opened only when a validator uses it, and `edit()` decides
+                # what to write.
+                f = getattr(obj, key)
+                stand_in = UploadFile(
+                    _StoredFileReader(f),  # type: ignore[arg-type]
+                    filename=f.name,
+                )
+                form_data.append((key, stand_in))
+                stored_files.append(key)
             else:
                 form_data.append((key, value))
-        return FormData(form_data)
+        return FormData(form_data), stored_files
+
+    @staticmethod
+    def _copy_stored_file(obj: Any, key: str) -> UploadFile:
+        """
+        Copy a stored file for "Save as new" under the name its storage's
+        `generate_new_filename` gives, so the new row gets its own file.
+        """
+
+        f = getattr(obj, key)
+        storage = getattr(type(obj), key).type.storage
+        message = (
+            f"Save as new needs a new upload for {key}: "
+            "its storage cannot copy the stored file."
+        )
+        try:
+            stored = f.open()
+        except NotImplementedError:
+            raise NewUploadRequired(message)
+        with stored:
+            try:
+                name = storage.generate_new_filename(f.name)
+            except NotImplementedError:
+                raise NewUploadRequired(message)
+            copy = tempfile.SpooledTemporaryFile(max_size=1024 * 1024)
+            try:
+                shutil.copyfileobj(stored, copy)
+            except Exception:
+                copy.close()
+                raise
+        copy.seek(0)
+        # A column's `upload_to` (fastapi-storages 0.5.0) stays in the stored
+        # name and is added again on write, so the copy carries the base name.
+        return UploadFile(copy, filename=Path(name).name)  # type: ignore[arg-type]
 
     @staticmethod
     def _normalize_wtform_data(obj: Any) -> dict:

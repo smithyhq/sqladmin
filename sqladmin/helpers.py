@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import decimal
 import enum
 import inspect
 import json
@@ -358,7 +359,11 @@ def coerce_column_value(column: Column, value: Any) -> Any:
         return type_.fromisoformat(value)
     if inspect.isclass(type_) and issubclass(type_, bool):
         return _coerce_bool(value)
-    return type_(value)  # type: ignore[call-arg]
+    try:
+        return type_(value)  # type: ignore[call-arg]
+    except decimal.InvalidOperation as exc:
+        # Decimal raises InvalidOperation, which is not a ValueError.
+        raise ValueError(f"Invalid value {value!r}.") from exc
 
 
 def _coerce_bool(value: str) -> bool:
@@ -544,9 +549,7 @@ def is_async_session_maker(session_maker: SESSION_MAKER) -> bool:
 def default_encoder(obj: Any) -> Any:
     if hasattr(obj, "isoformat"):  # datetime-like
         return obj.isoformat()
-    from decimal import Decimal
-
-    if isinstance(obj, Decimal):
+    if isinstance(obj, decimal.Decimal):
         return float(obj)
 
     try:

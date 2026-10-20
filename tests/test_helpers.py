@@ -13,6 +13,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Time,
 )
@@ -224,6 +225,23 @@ def test_merge_import_row_data_invalid_foreign_key_type() -> None:
     assert merged == {}
     assert "profile_id" in errors
     assert "Invalid value" in errors["profile_id"][0]
+
+
+def test_merge_import_row_data_invalid_numeric_value() -> None:
+    class PriceWidget(Base):
+        __tablename__ = "import_widget_price"
+        id = Column(Integer, primary_key=True)
+        price = Column(Numeric(10, 2))
+
+    merged, errors = merge_import_row_data(
+        PriceWidget,
+        ["price"],
+        {"price": "abc"},
+        {},
+    )
+
+    assert merged == {}
+    assert errors == {"price": ["Invalid value 'abc' for column price."]}
 
 
 def test_parse_csv_reads_rows_and_filters_columns() -> None:

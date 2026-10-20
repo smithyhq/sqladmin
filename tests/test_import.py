@@ -1,9 +1,12 @@
 import enum
+import json
 
 import pytest
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from starlette.applications import Starlette
 from starlette.datastructures import MultiDict
+from starlette.testclient import TestClient
 
 from sqladmin import ModelView
 from sqladmin._import import (
@@ -72,6 +75,36 @@ class ImportPost(Base):
     title = Column(String)
 
     tags = relationship("ImportTag")
+
+
+class ImportPrice(Base):
+    __tablename__ = "import_price"
+
+    id = Column(Integer, primary_key=True)
+    price = Column(Numeric(10, 2))
+
+
+class ImportNumericParent(Base):
+    __tablename__ = "import_numeric_parent"
+
+    id = Column(Numeric(10, 2), primary_key=True, autoincrement=False)
+
+
+class ImportNumericChild(Base):
+    __tablename__ = "import_numeric_child"
+
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Numeric(10, 2), ForeignKey("import_numeric_parent.id"))
+
+
+class ImportPriceAdmin(ModelView, model=ImportPrice):
+    can_import = True
+    column_import_list = [ImportPrice.price]
+
+
+class ImportNumericChildAdmin(ModelView, model=ImportNumericChild):
+    can_import = True
+    column_import_list = [ImportNumericChild.parent_id]
 
 
 class ImportUserAdmin(ModelView, model=ImportUser):
@@ -303,3 +336,35 @@ async def test_validate_import_row_defaults_non_nullable_column_from_form():
     )
     assert errors == {}
     assert merged == {"profile_id": 1, "active": False}
+
+
+@pytest.mark.parametrize("continue_on_error", ["0", "1"])
+@pytest.mark.parametrize(
+    ("admin_class", "column"),
+    [
+        (ImportPriceAdmin, "price"),
+        (ImportNumericChildAdmin, "parent_id"),
+    ],
+)
+def test_import_csv_reports_invalid_numeric_value(
+    admin_class: type[ModelView], column: str, continue_on_error: str
+) -> None:
+    app = Starlette()
+    admin = Admin(app=app, engine=engine)
+    admin.add_view(admin_class)
+
+    with TestClient(app=app, base_url="http://testserver") as client:
+        response = client.post(
+            f"/admin/{admin_class.identity}/import",
+            data={"continue_on_error": continue_on_error},
+            files={"csvfile": ("data.csv", f"{column}\r\nabc\r\n".encode())},
+        )
+
+    assert response.status_code == 200
+    events = [json.loads(line) for line in response.text.splitlines() if line]
+    result = events[-1]
+    assert result["type"] == "result"
+    assert result["ok"] is (continue_on_error == "1")
+    assert result["imported"] == 0
+    assert result["skipped"] == 1
+    assert result["missed_rows"][0]["errors"][column]

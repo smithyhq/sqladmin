@@ -87,7 +87,7 @@ class ImportPrice(Base):
 class ImportNumericParent(Base):
     __tablename__ = "import_numeric_parent"
 
-    id = Column(Numeric(10, 2), primary_key=True)
+    id = Column(Numeric(10, 2), primary_key=True, autoincrement=False)
 
 
 class ImportNumericChild(Base):

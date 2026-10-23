@@ -12,6 +12,7 @@ from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
+from sqladmin.authorization import Action, AuthorizationBackend
 from sqladmin.palette import PaletteResult
 from tests.common import async_engine, sync_engine
 
@@ -226,7 +227,6 @@ async def test_model_payload_urls_and_flags(async_client: AsyncClient) -> None:
     user = next(m for m in resp.json()["models"] if m["identity"] == "user")
 
     assert user["url"].endswith("/admin/user/list")
-    assert user["create_url"].endswith("/admin/user/create")
     assert user["searchable"] is True
     assert set(user) == {
         "identity",
@@ -234,7 +234,6 @@ async def test_model_payload_urls_and_flags(async_client: AsyncClient) -> None:
         "name_plural",
         "category",
         "url",
-        "create_url",
         "searchable",
     }
 
@@ -543,8 +542,8 @@ def test_all_locales_cover_every_palette_string() -> None:
 class CommandAdmin(ModelView, model=Command):
     column_searchable_list = [Command.name]
 
-    def palette_commands(self, request: Request) -> list:
-        commands = super().palette_commands(request)
+    async def palette_commands(self, request: Request) -> list:
+        commands = await super().palette_commands(request)
         commands.append(
             {
                 "label": "Export as CSV",
@@ -1017,3 +1016,124 @@ async def test_scoped_response_reports_single_model(
     body = resp.json()
     assert body["searched_models"] == 1
     assert body["total_optin_models"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# Role based access control
+# --------------------------------------------------------------------------- #
+class _Grants(AuthorizationBackend):
+    """Allows every action except the ``(identity, action)`` pairs denied."""
+
+    def __init__(self, deny: set[tuple[str, str]] | None = None) -> None:
+        self.deny = deny or set()
+
+    def has_permission(
+        self, request: Request, identity: str, action: str, obj: Any = None
+    ) -> bool:
+        return (identity, action) not in self.deny
+
+
+class _OnlyGrants(AuthorizationBackend):
+    """Allows exactly the ``(identity, action)`` pairs listed."""
+
+    def __init__(self, allow: set[tuple[str, str]]) -> None:
+        self.allow = allow
+
+    def has_permission(
+        self, request: Request, identity: str, action: str, obj: Any = None
+    ) -> bool:
+        return (identity, action) in self.allow
+
+
+async def _palette_get(
+    backend: AuthorizationBackend, **params: str
+) -> tuple[int, dict]:
+    app = Starlette()
+    admin = Admin(app=app, engine=async_engine, authorization_backend=backend)
+    _register(admin)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/admin/palette", params=params)
+    return resp.status_code, (resp.json() if resp.status_code == 200 else {})
+
+
+@pytest.fixture
+async def seeded() -> AsyncGenerator[None, None]:
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    async with async_session_maker() as session:
+        session.add_all(_seed())
+        await session.commit()
+
+    yield
+
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await async_engine.dispose()
+
+
+async def test_model_without_list_permission_is_not_offered(seeded: None) -> None:
+    _, body = await _palette_get(_Grants({("user", Action.LIST)}))
+
+    identities = {m["identity"] for m in body["models"]}
+    assert "user" not in identities
+    assert "vacancy" in identities
+
+
+async def test_model_without_list_permission_cannot_be_scoped_into(
+    seeded: None,
+) -> None:
+    status, _ = await _palette_get(
+        _Grants({("user", Action.LIST)}), q="john", scope="user"
+    )
+
+    assert status == 404
+
+
+async def test_model_without_list_permission_is_skipped_by_fanout(
+    seeded: None,
+) -> None:
+    _, everyone = await _palette_get(_Grants(), q="john")
+    _, body = await _palette_get(_Grants({("user", Action.LIST)}), q="john")
+
+    assert {r["identity"] for r in everyone["records"]} >= {"user"}
+    assert all(r["identity"] != "user" for r in body["records"])
+    # The fan-out budget is not spent on a model the user cannot list.
+    assert body["total_optin_models"] == everyone["total_optin_models"] - 1
+
+
+async def test_details_only_grant_is_accessible_but_not_searchable(
+    seeded: None,
+) -> None:
+    # ``is_accessible`` is true for any single action, so a role that may only
+    # open details pages still reaches the view. It must not be able to search.
+    backend = _OnlyGrants({("user", Action.DETAILS), ("vacancy", Action.LIST)})
+
+    status, body = await _palette_get(backend, q="john", scope="user")
+    assert status == 404
+
+    _, body = await _palette_get(backend, q="john")
+    assert body["records"] == []
+    assert {m["identity"] for m in body["models"]} <= {"vacancy"}
+
+
+async def test_create_command_follows_create_permission(seeded: None) -> None:
+    _, body = await _palette_get(_Grants({("vacancy", Action.CREATE)}), q="vac")
+
+    assert [c["label"] for c in body["commands"]] == ["goTo"]
+
+
+async def test_create_command_present_when_permitted(seeded: None) -> None:
+    _, body = await _palette_get(_Grants(), q="vac")
+
+    assert [c["label"] for c in body["commands"]] == ["goTo", "create"]
+
+
+async def test_default_backend_is_not_stricter_than_the_rest_of_the_admin(
+    async_client: AsyncClient,
+) -> None:
+    resp = await async_client.get("/admin/palette", params={"q": "john"})
+
+    assert resp.status_code == 200
+    assert {r["identity"] for r in resp.json()["records"]} >= {"user"}

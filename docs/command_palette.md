@@ -75,21 +75,31 @@ worker thread, the same as everywhere else in SQLAdmin.
 
 ## Permissions
 
-The palette never exposes anything the rest of the admin would not.
+The palette never exposes anything the rest of the admin would not. It follows
+the [authorization backend](authorization.md) the same way the list page does.
 
-Views hidden by `is_visible` or rejected by `is_accessible` are not listed, not
-searched, and return `404` if named directly as a scope. Individual rows go
-through `check_can_view_details`, so a record you are not allowed to open never
-appears in the results. Models with `can_view_details = False` are skipped
-entirely, since there would be nothing to navigate to.
+| Rule | Effect |
+|---|---|
+| `is_visible` / `is_accessible` | the model is not listed and not searched |
+| `check_can_list` (the `list` permission) | the model is not listed, not searched, gets no commands, and returns `404` if named as a scope |
+| `check_can_view_details` | rows the user may not open never appear in results |
+| `can_view_details = False` | the model is skipped, there is nothing to navigate to |
+| `check_can_create` | the "Create" command is offered only when it passes |
 
-The endpoint itself is behind the same `login_required` as every other admin
-route.
+`is_accessible` is deliberately coarse: it is true as soon as the user holds
+*any* action on a model. A role that may only open details pages therefore
+still reaches the view, but searching lists rows, so the palette asks for the
+`list` permission explicitly. A user without it cannot search that model, with
+or without a crafted request.
+
+The endpoint itself sits behind authentication like every other admin route. An
+unauthenticated call gets a `401` JSON response, which `palette.js` turns into a
+redirect to the login page.
 
 ## Commands
 
 Below the matches, the palette offers commands for the model that best fits what
-you typed: "Go to *model*", and "Create *model*" when `can_create` allows it.
+you typed: "Go to *model*", and "Create *model*" when `check_can_create` allows it.
 With an empty search box no commands are shown, since there is no match to act
 on.
 
@@ -104,8 +114,8 @@ Override `palette_commands` to add your own:
         column_searchable_list = [User.name, User.email]
         palette_search = True
 
-        def palette_commands(self, request: Request) -> list[dict]:
-            commands = super().palette_commands(request)
+        async def palette_commands(self, request: Request) -> list[dict]:
+            commands = await super().palette_commands(request)
             commands.append(
                 {
                     "label": "Export users as CSV",

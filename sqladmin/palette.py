@@ -152,7 +152,9 @@ async def search_model_records(
     ]
 
 
-def default_model_commands(view: ModelView, request: Request) -> list[dict[str, Any]]:
+async def default_model_commands(
+    view: ModelView, request: Request
+) -> list[dict[str, Any]]:
     """Commands offered for a single model.
 
     Override ``ModelView.palette_commands`` to add, remove or reorder these.
@@ -169,7 +171,7 @@ def default_model_commands(view: ModelView, request: Request) -> list[dict[str, 
             "badge": "page",
         }
     ]
-    if view.can_create:
+    if await view.check_can_create(request):
         commands.append(
             {
                 "label": "create",
@@ -189,11 +191,6 @@ def _model_payload(view: ModelView, request: Request) -> dict[str, Any]:
         "name_plural": view.name_plural,
         "category": view.category,
         "url": str(request.url_for("admin:list", identity=view.identity)),
-        "create_url": (
-            str(request.url_for("admin:create", identity=view.identity))
-            if view.can_create
-            else None
-        ),
         "searchable": (
             view.palette_search and bool(view._search_fields) and view.can_view_details
         ),
@@ -213,14 +210,20 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
       ``palette_search = True``, capped by ``palette_search_max_models`` and
       executed concurrently on async engines.
 
-    Authorization is enforced per model via ``is_accessible`` and per row via
-    ``check_can_view_details``; a hidden, inaccessible or unreadable record is
-    never searched and never surfaced.
+    Authorization follows the rest of the admin: a model is offered, scoped
+    into, searched and given commands only when it is visible, accessible and
+    the user holds the ``list`` permission (``check_can_list``). Individual
+    rows are filtered by ``check_can_view_details``, and the "Create" command
+    needs ``check_can_create``. A user without access therefore cannot search
+    a model, however the request is built.
     """
 
     term = (request.query_params.get("q") or "").strip()
     scope = request.query_params.get("scope")
 
+    # ``is_accessible`` is coarse: it is true as soon as the user holds any
+    # action on the model, so a details-only role would pass it. Searching
+    # lists rows, hence the explicit ``list`` check.
     accessible: list[ModelView] = [
         view
         for view in admin.views
@@ -228,11 +231,15 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
         and view.is_visible(request)
         and view.is_accessible(request)
     ]
+    list_permitted = await asyncio.gather(
+        *(view.check_can_list(request) for view in accessible)
+    )
+    listable = [view for view, ok in zip(accessible, list_permitted) if ok]
 
     # ---- scoped: a single model was selected --------------------------------
     if scope is not None:
         model_view: ModelView | None = next(
-            (v for v in accessible if v.identity == scope), None
+            (v for v in listable if v.identity == scope), None
         )
         if model_view is None:
             raise HTTPException(status_code=404)
@@ -252,7 +259,7 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
     term_lower = term.lower()
     models = [
         _model_payload(v, request)
-        for v in accessible
+        for v in listable
         if not term or term_lower in v.name.lower()
     ]
 
@@ -261,8 +268,8 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
     # commands are offered rather than arbitrarily picking the first model.
     commands: list[dict[str, Any]] = []
     if term and models:
-        best = next(v for v in accessible if v.identity == models[0]["identity"])
-        commands = best.palette_commands(request)
+        best = next(v for v in listable if v.identity == models[0]["identity"])
+        commands = await best.palette_commands(request)
 
     # ---- unscoped record fan-out (opt-in models only) -----------------------
     # searched/total travel with the response even when nothing gets capped,
@@ -272,7 +279,7 @@ async def build_palette_response(admin: BaseAdmin, request: Request) -> Response
     total_optin = 0
     searched_count = 0
     if len(term) >= admin.palette_search_min_chars:
-        optin = [v for v in accessible if v.palette_search and v._search_fields]
+        optin = [v for v in listable if v.palette_search and v._search_fields]
         total_optin = len(optin)
         searchable = optin[: admin.palette_search_max_models]
         searched_count = len(searchable)

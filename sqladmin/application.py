@@ -118,6 +118,8 @@ class BaseAdmin:
     ) -> None:
         self.app = app
         self.audit_backend = audit_backend or NullAuditBackend()
+        self.palette_search_min_chars = max(0, palette_search_min_chars)
+        self.palette_search_max_models = max(0, palette_search_max_models)
         self.authorization_backend = (
             authorization_backend or AllowAllAuthorizationBackend()
         )
@@ -130,11 +132,6 @@ class BaseAdmin:
         self.logo_height = logo_height
         self.favicon_url = favicon_url
         self.i18n_config = i18n_config
-        # Clamp rather than trust the caller: a negative min_chars would let
-        # every keystroke fan a query out across every opted-in model, and a
-        # negative max_models would silently disable the cap it exists for.
-        self.palette_search_min_chars = max(0, palette_search_min_chars)
-        self.palette_search_max_models = max(0, palette_search_max_models)
         if i18n_config is not None and not BABEL_INSTALLED:
             warnings.warn(
                 "i18n_config was provided but the 'babel' package is not "
@@ -586,6 +583,10 @@ class Admin(BaseAdminView):
             i18n_config: Internationalization configuration. When provided, the
                 interface is translated per request and, if
                 ``language_switcher`` is set, a language switcher is shown.
+            palette_search_min_chars: Minimum term length before the command
+                palette searches records across models. Defaults to 2.
+            palette_search_max_models: Maximum number of models searched by an
+                unscoped command-palette query. Defaults to 8.
         """
 
         super().__init__(
@@ -1058,6 +1059,12 @@ class Admin(BaseAdminView):
             request_path, filename=request_path.name, content_disposition_type="inline"
         )
 
+    @palette_login_required
+    async def palette(self, request: Request) -> Response:
+        """Command palette search route."""
+
+        return await build_palette_response(self, request)
+
     @login_required
     async def ajax_lookup(self, request: Request) -> Response:
         """Ajax lookup route."""
@@ -1089,19 +1096,6 @@ class Admin(BaseAdminView):
 
         data = [loader.format(m) for m in await loader.get_list(request, term)]
         return JSONResponse({"results": data})
-
-    @palette_login_required
-    async def palette(self, request: Request) -> Response:
-        """Command-palette search endpoint.
-
-        Model name matches are served from the in-memory view registry (no DB
-        access). A ``?scope=<identity>`` query runs a single query against one
-        model. An unscoped query fans out only across models that set
-        ``palette_search = True``, capped and run concurrently. See
-        ``sqladmin.palette.build_palette_response`` for details.
-        """
-
-        return await build_palette_response(self, request)
 
     @staticmethod
     def get_save_redirect_url(

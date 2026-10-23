@@ -73,6 +73,11 @@ The following options are available:
 - `can_export`: If the model data can be exported in the list page. Default value is `True`.
 - `can_import`: If the model data can be imported from a CSV file in the list page. Default value is `False`.
 
+These are static, per-model settings that apply to everyone. For permissions
+that depend on who is logged in, see [Authorization](./authorization.md); the
+`can_*` flags above act as a ceiling over whatever an authorization backend
+grants.
+
 !!! example
 
     ```python

@@ -6,6 +6,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version [0.32.0](https://github.com/smithyhq/sqladmin/releases/tag/0.32.0): 2026-09-21
+
+### Added
+
+* Added Role Based Access Control (RBAC) by @mmzeynalli in [#1139](https://github.com/smithyhq/sqladmin/pull/1139)
+* Added debug_toolbar documentation for sqladmin by @haykeminyan in [#1125](https://github.com/smithyhq/sqladmin/pull/1125)
+* feat(i18n): add Japanese translations by @savvan0h in [#1141](https://github.com/smithyhq/sqladmin/pull/1141)
+
+### Changed
+
+* Increase coverage by @maxim-f1 in [#1113](https://github.com/smithyhq/sqladmin/pull/1113)
+* build(deps): bump starlette from 1.0.0 to 1.3.1 by @dependabot[bot] in [#1140](https://github.com/smithyhq/sqladmin/pull/1140)
+* build(deps): bump python-multipart from 0.0.28 to 0.0.32 by @dependabot[bot] in [#1134](https://github.com/smithyhq/sqladmin/pull/1134)
+* build(deps-dev): bump mypy from 2.3.0 to 2.3.1 by @dependabot[bot] in [#1131](https://github.com/smithyhq/sqladmin/pull/1131)
+* build(deps-dev): bump greenlet from 3.4.0 to 3.5.5 by @dependabot[bot] in [#1132](https://github.com/smithyhq/sqladmin/pull/1132)
+* build(deps-dev): bump sqlmodel from 0.0.39 to 0.0.42 by @dependabot[bot] in [#1135](https://github.com/smithyhq/sqladmin/pull/1135)
+* build(deps-dev): bump coverage from 7.13.5 to 7.16.0 by @dependabot[bot] in [#1133](https://github.com/smithyhq/sqladmin/pull/1133)
+
+### Fixed
+
+* fix: stop DateTime(timezone=True) values shifting on edit (#796) by @mmzeynalli in [#1142](https://github.com/smithyhq/sqladmin/pull/1142)
+* fix(pretty_export): stringify related objects when joining list values by @Sanjays2402 in [#1112](https://github.com/smithyhq/sqladmin/pull/1112)
+* fix(import): report invalid relationship values during CSV import by @Sanjays2402 in [#1120](https://github.com/smithyhq/sqladmin/pull/1120)
+* fix: validate pagination bounds before constructing LIMIT/OFFSET by @Vansh-Sharma27 in [#1137](https://github.com/smithyhq/sqladmin/pull/1137)
+* fix: handle translated save button labels in create/edit redirects by @x23n5902y in [#1126](https://github.com/smithyhq/sqladmin/pull/1126)
+
+### New Contributors
+
+* @Sanjays2402 made their first contribution in [#1112](https://github.com/smithyhq/sqladmin/pull/1112)
+* @savvan0h made their first contribution in [#1141](https://github.com/smithyhq/sqladmin/pull/1141)
+* @x23n5902y made their first contribution in [#1126](https://github.com/smithyhq/sqladmin/pull/1126)
+
+**Full Changelog**: [0.31.1...0.32.0](https://github.com/smithyhq/sqladmin/compare/0.31.1...0.32.0)
+
 ## Version [0.31.1](https://github.com/smithyhq/sqladmin/releases/tag/0.31.1): 2026-09-01
 
 ### Security

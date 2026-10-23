@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-11 13:25+0900\n"
+"POT-Creation-Date: 2026-10-23 15:42+0400\n"
 "PO-Revision-Date: 2026-09-11 13:26+0900\n"
 "Last-Translator: Hiroki Sawano <hiroki.sawano.2512@gmail.com>\n"
 "Language: ja\n"
@@ -18,8 +18,58 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: sqladmin/contrib/rbac.py:366
+msgid "List"
+msgstr "一覧"
+
+#: sqladmin/contrib/rbac.py:367
+msgid "Details"
+msgstr "詳細"
+
+#: sqladmin/contrib/rbac.py:368
+msgid "Create"
+msgstr "作成"
+
+#: sqladmin/contrib/rbac.py:369 sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/templates/sqladmin/list.html:166
+msgid "Edit"
+msgstr "編集"
+
+#: sqladmin/contrib/rbac.py:370 sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/templates/sqladmin/list.html:174
+#: sqladmin/templates/sqladmin/modals/delete.html:21
+msgid "Delete"
+msgstr "削除"
+
+#: sqladmin/contrib/rbac.py:371 sqladmin/templates/sqladmin/list.html:21
+#: sqladmin/templates/sqladmin/list.html:35
+msgid "Export"
+msgstr "エクスポート"
+
+#: sqladmin/contrib/rbac.py:372
+#: sqladmin/templates/sqladmin/modals/import.html:44
+msgid "Import"
+msgstr "インポート"
+
+#: sqladmin/contrib/rbac.py:414
+msgid "Access"
+msgstr "アクセス"
+
+#: sqladmin/contrib/rbac.py:461
+msgid "Page"
+msgstr "ページ"
+
+#: sqladmin/contrib/rbac.py:461 sqladmin/contrib/rbac.py:567
+msgid "Permissions"
+msgstr "権限"
+
+#: sqladmin/contrib/rbac.py:621
+#, python-format
+msgid "You are not allowed to grant: %(permissions)s"
+msgstr "次の権限を付与する権限がありません: %(permissions)s"
+
 #: sqladmin/templates/sqladmin/create.html:7
-#: sqladmin/templates/sqladmin/list.html:47
+#: sqladmin/templates/sqladmin/list.html:50
 #, python-format
 msgid "New %(name)s"
 msgstr "%(name)sを新規作成"
@@ -60,17 +110,6 @@ msgstr "値"
 msgid "Go Back"
 msgstr "戻る"
 
-#: sqladmin/templates/sqladmin/details.html:73
-#: sqladmin/templates/sqladmin/list.html:162
-#: sqladmin/templates/sqladmin/modals/delete.html:21
-msgid "Delete"
-msgstr "削除"
-
-#: sqladmin/templates/sqladmin/details.html:80
-#: sqladmin/templates/sqladmin/list.html:154
-msgid "Edit"
-msgstr "編集"
-
 #: sqladmin/templates/sqladmin/edit.html:7
 #, python-format
 msgid "Edit %(name)s"
@@ -80,73 +119,77 @@ msgstr "%(name)sを編集"
 msgid "Save as new"
 msgstr "新規保存"
 
-#: sqladmin/templates/sqladmin/layout.html:28
-msgid "Logout"
-msgstr "ログアウト"
+#: sqladmin/templates/sqladmin/layout.html:35
+#: sqladmin/templates/sqladmin/layout.html:37
+#: sqladmin/templates/sqladmin/list.html:106
+#: sqladmin/templates/sqladmin/list.html:108
+#: sqladmin/templates/sqladmin/palette.html:2
+#: sqladmin/templates/sqladmin/palette.html:13
+msgid "Search"
+msgstr "検索"
 
 #: sqladmin/templates/sqladmin/layout.html:44
 msgid "Language"
 msgstr "言語"
 
-#: sqladmin/templates/sqladmin/list.html:18
-#: sqladmin/templates/sqladmin/list.html:32
-msgid "Export"
-msgstr "エクスポート"
+#: sqladmin/templates/sqladmin/layout.html:60
+#: sqladmin/templates/sqladmin/layout.html:61
+msgid "Logout"
+msgstr "ログアウト"
 
-#: sqladmin/templates/sqladmin/list.html:41
+#: sqladmin/templates/sqladmin/list.html:44
 #: sqladmin/templates/sqladmin/modals/import.html:7
 msgid "Import CSV"
 msgstr "CSVをインポート"
 
-#: sqladmin/templates/sqladmin/list.html:66
+#: sqladmin/templates/sqladmin/list.html:67
+msgid "You are not authorized to view these records."
+msgstr "これらのレコードを表示する権限がありません。"
+
+#: sqladmin/templates/sqladmin/list.html:76
 msgid "Actions"
 msgstr "操作"
 
-#: sqladmin/templates/sqladmin/list.html:73
+#: sqladmin/templates/sqladmin/list.html:83
 msgid "Delete selected items"
 msgstr "選択した項目を削除"
 
-#: sqladmin/templates/sqladmin/list.html:96
-#: sqladmin/templates/sqladmin/list.html:98
-msgid "Search"
-msgstr "検索"
-
-#: sqladmin/templates/sqladmin/list.html:112
+#: sqladmin/templates/sqladmin/list.html:124
 msgid "Select all"
 msgstr "すべて選択"
 
-#: sqladmin/templates/sqladmin/list.html:143
+#: sqladmin/templates/sqladmin/list.html:155
 msgid "Select item"
 msgstr "項目を選択"
 
-#: sqladmin/templates/sqladmin/list.html:148
+#: sqladmin/templates/sqladmin/list.html:160
 msgid "View"
 msgstr "詳細"
 
-#: sqladmin/templates/sqladmin/list.html:208
+#: sqladmin/templates/sqladmin/list.html:220
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(count)s items"
 msgstr "%(count)s件中 %(start)s〜%(end)s件を表示"
 
-#: sqladmin/templates/sqladmin/list.html:221
+#: sqladmin/templates/sqladmin/list.html:233
 msgid "prev"
 msgstr "前へ"
 
-#: sqladmin/templates/sqladmin/list.html:234
+#: sqladmin/templates/sqladmin/list.html:246
 msgid "next"
 msgstr "次へ"
 
-#: sqladmin/templates/sqladmin/list.html:240
+#: sqladmin/templates/sqladmin/list.html:252
 msgid "Show"
 msgstr "表示件数"
 
-#: sqladmin/templates/sqladmin/list.html:243
-#: sqladmin/templates/sqladmin/list.html:249
+#: sqladmin/templates/sqladmin/list.html:255
+#: sqladmin/templates/sqladmin/list.html:261
 #, python-format
 msgid "%(size)s / Page"
 msgstr "%(size)s件 / ページ"
 
-#: sqladmin/templates/sqladmin/list.html:261
+#: sqladmin/templates/sqladmin/list.html:274
 msgid "Filters"
 msgstr "フィルタ"
 
@@ -174,14 +217,102 @@ msgstr "パスワード"
 msgid "Login"
 msgstr "ログイン"
 
+#: sqladmin/templates/sqladmin/palette.html:10
+#: sqladmin/templates/sqladmin/palette.html:47
+msgid "Search models, records, commands"
+msgstr "モデル・レコード・コマンドを検索"
+
 #: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
 #: sqladmin/templates/sqladmin/modals/import.html:4
 #: sqladmin/templates/sqladmin/modals/import.html:58
 #: sqladmin/templates/sqladmin/modals/import.html:78
 #: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/palette.html:15
 #: sqladmin/templates/sqladmin/secret_modal.html:9
 msgid "Close"
 msgstr "閉じる"
+
+#: sqladmin/templates/sqladmin/palette.html:21
+msgid "Click a model to scope, click a record to open"
+msgstr "モデルをクリックして絞り込み、レコードをクリックして開く"
+
+#: sqladmin/templates/sqladmin/palette.html:29
+msgid "Models"
+msgstr "モデル"
+
+#: sqladmin/templates/sqladmin/palette.html:30
+msgid "registry, no database query"
+msgstr "レジストリ、データベースへのクエリなし"
+
+#: sqladmin/templates/sqladmin/palette.html:31
+msgid "Commands"
+msgstr "コマンド"
+
+#: sqladmin/templates/sqladmin/palette.html:32
+msgid "Records"
+msgstr "レコード"
+
+#: sqladmin/templates/sqladmin/palette.html:34
+#, python-brace-format
+msgid "Records in {name}"
+msgstr "{name} のレコード"
+
+#: sqladmin/templates/sqladmin/palette.html:35
+msgid "single model"
+msgstr "単一モデル"
+
+#: sqladmin/templates/sqladmin/palette.html:36
+#, python-brace-format
+msgid "Searched {searched} of {total} models, keep typing to narrow"
+msgstr "{total} 件中 {searched} 件のモデルを検索しました。入力を続けて絞り込んでください"
+
+#: sqladmin/templates/sqladmin/palette.html:37
+msgid "Search inside"
+msgstr "内部を検索"
+
+#: sqladmin/templates/sqladmin/palette.html:38
+#, python-brace-format
+msgid "Go to {name}"
+msgstr "{name} へ移動"
+
+#: sqladmin/templates/sqladmin/palette.html:39
+#, python-brace-format
+msgid "Create {name}"
+msgstr "{name} を作成"
+
+#: sqladmin/templates/sqladmin/palette.html:40
+msgid "page"
+msgstr "ページ"
+
+#: sqladmin/templates/sqladmin/palette.html:41
+msgid "new"
+msgstr "新規"
+
+#: sqladmin/templates/sqladmin/palette.html:42
+msgid "open"
+msgstr "開く"
+
+#: sqladmin/templates/sqladmin/palette.html:43
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr "他 {count} 件。入力を続けて絞り込んでください"
+
+#: sqladmin/templates/sqladmin/palette.html:44
+msgid "No matches"
+msgstr "一致する項目がありません"
+
+#: sqladmin/templates/sqladmin/palette.html:45
+msgid "Nothing found"
+msgstr "見つかりませんでした"
+
+#: sqladmin/templates/sqladmin/palette.html:46
+msgid "Search failed"
+msgstr "検索に失敗しました"
+
+#: sqladmin/templates/sqladmin/palette.html:48
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr "{name} 内を検索"
 
 #: sqladmin/templates/sqladmin/secret_modal.html:26
 msgid "Done"
@@ -241,10 +372,6 @@ msgid ""
 msgstr ""
 "%(imported)s件インポート、%(skipped)s件スキップ、%(processed)s/%(total)s行を処理しました - "
 "有効な行を保存中... (%(seconds)s秒)"
-
-#: sqladmin/templates/sqladmin/modals/import.html:44
-msgid "Import"
-msgstr "インポート"
 
 #: sqladmin/templates/sqladmin/modals/import.html:60
 msgid "Import result"

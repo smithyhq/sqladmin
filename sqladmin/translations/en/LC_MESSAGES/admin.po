@@ -3,14 +3,13 @@
 # This file is distributed under the same license as the SQLAdmin project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-18 14:40+0400\n"
+"POT-Creation-Date: 2026-10-23 15:42+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: Vahid Hasanzade <@vahidzhe>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -19,237 +18,376 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
+#: sqladmin/contrib/rbac.py:366
+msgid "List"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:367
+msgid "Details"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:368
+msgid "Create"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:369 sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/templates/sqladmin/list.html:166
+msgid "Edit"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:370 sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/templates/sqladmin/list.html:174
+#: sqladmin/templates/sqladmin/modals/delete.html:21
+msgid "Delete"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:371 sqladmin/templates/sqladmin/list.html:21
+#: sqladmin/templates/sqladmin/list.html:35
+msgid "Export"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:372
+#: sqladmin/templates/sqladmin/modals/import.html:44
+msgid "Import"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:414
+msgid "Access"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:461
+msgid "Page"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:461 sqladmin/contrib/rbac.py:567
+msgid "Permissions"
+msgstr ""
+
+#: sqladmin/contrib/rbac.py:621
+#, python-format
+msgid "You are not allowed to grant: %(permissions)s"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:7
+#: sqladmin/templates/sqladmin/list.html:50
+#, python-format
+msgid "New %(name)s"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:24
+#: sqladmin/templates/sqladmin/edit.html:26
+#: sqladmin/templates/sqladmin/modals/delete.html:16
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:16
+#: sqladmin/templates/sqladmin/modals/import.html:39
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:16
+msgid "Cancel"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:30
+#: sqladmin/templates/sqladmin/edit.html:32
+msgid "Save"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:32
+#: sqladmin/templates/sqladmin/edit.html:33
+msgid "Save and continue editing"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/create.html:34
+#: sqladmin/templates/sqladmin/edit.html:38
+msgid "Save and add another"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:18
+msgid "Column"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:19
+msgid "Value"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/details.html:65
+msgid "Go Back"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/edit.html:7
+#, python-format
+msgid "Edit %(name)s"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/edit.html:36
+msgid "Save as new"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/layout.html:35
+#: sqladmin/templates/sqladmin/layout.html:37
+#: sqladmin/templates/sqladmin/list.html:106
+#: sqladmin/templates/sqladmin/list.html:108
+#: sqladmin/templates/sqladmin/palette.html:2
+#: sqladmin/templates/sqladmin/palette.html:13
+msgid "Search"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/layout.html:44
+msgid "Language"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/layout.html:60
+#: sqladmin/templates/sqladmin/layout.html:61
+msgid "Logout"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:44
+#: sqladmin/templates/sqladmin/modals/import.html:7
+msgid "Import CSV"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:67
+msgid "You are not authorized to view these records."
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:76
+msgid "Actions"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:83
+msgid "Delete selected items"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:124
+msgid "Select all"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:155
+msgid "Select item"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:160
+msgid "View"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:220
+#, python-format
+msgid "Showing %(start)s to %(end)s of %(count)s items"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:233
+msgid "prev"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:246
+msgid "next"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:252
+msgid "Show"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:255
+#: sqladmin/templates/sqladmin/list.html:261
+#, python-format
+msgid "%(size)s / Page"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/list.html:274
+msgid "Filters"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:6
+#, python-format
+msgid "Login to %(title)s"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:8
+msgid "Username"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:10
+#: sqladmin/templates/sqladmin/login.html:14
+msgid "Enter username"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:19
+#: sqladmin/templates/sqladmin/login.html:23
+#: sqladmin/templates/sqladmin/login.html:27
+msgid "Password"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/login.html:32
+msgid "Login"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:10
+#: sqladmin/templates/sqladmin/palette.html:47
+msgid "Search models, records, commands"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/modals/import.html:4
+#: sqladmin/templates/sqladmin/modals/import.html:58
+#: sqladmin/templates/sqladmin/modals/import.html:78
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/palette.html:15
+#: sqladmin/templates/sqladmin/secret_modal.html:9
+msgid "Close"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:21
+msgid "Click a model to scope, click a record to open"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:29
+msgid "Models"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:30
+msgid "registry, no database query"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:31
+msgid "Commands"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:32
+msgid "Records"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:34
+#, python-brace-format
+msgid "Records in {name}"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:35
+msgid "single model"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:36
+#, python-brace-format
+msgid "Searched {searched} of {total} models, keep typing to narrow"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:37
+msgid "Search inside"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:38
+#, python-brace-format
+msgid "Go to {name}"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:39
+#, python-brace-format
+msgid "Create {name}"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:40
+msgid "page"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:41
+msgid "new"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:42
+msgid "open"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:43
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:44
+msgid "No matches"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:45
+msgid "Nothing found"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:46
+msgid "Search failed"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/palette.html:48
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/secret_modal.html:26
+msgid "Done"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/filters/lookup_filter.html:12
+msgid "Clear filter"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/filters/operation_filter.html:36
+msgid "Apply Filter"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/delete.html:8
+msgid "Please confirm"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:21
+#: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:21
+msgid "Yes"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:11
+msgid "Choose CSV file"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:14
+msgid "No file selected"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:18
+msgid "Skip invalid rows and continue import"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:21
+msgid "Import progress"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:25
+#: sqladmin/templates/sqladmin/modals/import.html:30
+#, python-format
+msgid "%(processed)s/%(total)s rows processed"
+msgstr ""
+
+#: sqladmin/templates/sqladmin/modals/import.html:27
 #, python-format
 msgid ""
 "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
 "processed"
 msgstr ""
 
+#: sqladmin/templates/sqladmin/modals/import.html:29
 #, python-format
 msgid ""
 "%(imported)s imported, %(skipped)s skipped, %(processed)s/%(total)s rows "
 "processed - saving valid rows... (%(seconds)ss)"
 msgstr ""
 
-#, python-format
-msgid "%(processed)s/%(total)s rows processed"
-msgstr ""
-
-#, python-format
-msgid "%(size)s / Page"
-msgstr ""
-
-msgid "Actions"
-msgstr ""
-
-msgid "Apply Filter"
-msgstr ""
-
-msgid "Cancel"
-msgstr ""
-
-msgid "Choose CSV file"
-msgstr ""
-
-msgid "Clear filter"
-msgstr ""
-
-msgid "Click a model to scope, click a record to open"
-msgstr ""
-
-msgid "Close"
-msgstr ""
-
-msgid "Column"
-msgstr ""
-
-msgid "Commands"
-msgstr ""
-
-#, python-brace-format
-msgid "Create {name}"
-msgstr ""
-
-msgid "Delete"
-msgstr ""
-
-msgid "Delete selected items"
-msgstr ""
-
-msgid "Done"
-msgstr ""
-
-msgid "Download CSV"
-msgstr ""
-
-msgid "Download TXT"
-msgstr ""
-
-msgid "Edit"
-msgstr ""
-
-#, python-format
-msgid "Edit %(name)s"
-msgstr ""
-
-msgid "Enter username"
-msgstr ""
-
-msgid "Export"
-msgstr ""
-
-msgid "Filters"
-msgstr ""
-
-msgid "Go Back"
-msgstr ""
-
-#, python-brace-format
-msgid "Go to {name}"
-msgstr ""
-
-msgid "Import"
-msgstr ""
-
-msgid "Import CSV"
-msgstr ""
-
-msgid "Import progress"
-msgstr ""
-
+#: sqladmin/templates/sqladmin/modals/import.html:60
 msgid "Import result"
 msgstr ""
 
-msgid "Language"
-msgstr ""
-
-msgid "Login"
-msgstr ""
-
-#, python-format
-msgid "Login to %(title)s"
-msgstr ""
-
-msgid "Logout"
-msgstr ""
-
+#: sqladmin/templates/sqladmin/modals/import.html:63
 msgid "Missed rows"
 msgstr ""
 
-msgid "Models"
+#: sqladmin/templates/sqladmin/modals/import.html:66
+msgid "Download CSV"
 msgstr ""
 
-#, python-format
-msgid "New %(name)s"
+#: sqladmin/templates/sqladmin/modals/import.html:69
+msgid "Download TXT"
 msgstr ""
 
-msgid "No file selected"
-msgstr ""
-
-msgid "No matches"
-msgstr ""
-
-msgid "Nothing found"
-msgstr ""
-
-msgid "Password"
-msgstr ""
-
-msgid "Please confirm"
-msgstr ""
-
-msgid "Records"
-msgstr ""
-
-#, python-brace-format
-msgid "Records in {name}"
-msgstr ""
-
+#: sqladmin/templates/sqladmin/modals/import.html:82
 msgid "Refresh list"
-msgstr ""
-
-msgid "Save"
-msgstr ""
-
-msgid "Save and add another"
-msgstr ""
-
-msgid "Save and continue editing"
-msgstr ""
-
-msgid "Save as new"
-msgstr ""
-
-msgid "Search"
-msgstr ""
-
-msgid "Search failed"
-msgstr ""
-
-msgid "Search inside"
-msgstr ""
-
-#, python-brace-format
-msgid "Search inside {name}"
-msgstr ""
-
-msgid "Search models, records, commands"
-msgstr ""
-
-#, python-brace-format
-msgid "Searched {searched} of {total} models, keep typing to narrow"
-msgstr ""
-
-msgid "Select all"
-msgstr ""
-
-msgid "Select item"
-msgstr ""
-
-msgid "Show"
-msgstr ""
-
-#, python-format
-msgid "Showing %(start)s to %(end)s of %(count)s items"
-msgstr ""
-
-msgid "Skip invalid rows and continue import"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Value"
-msgstr ""
-
-msgid "View"
-msgstr ""
-
-msgid "Yes"
-msgstr ""
-
-msgid "new"
-msgstr ""
-
-msgid "next"
-msgstr ""
-
-msgid "open"
-msgstr ""
-
-msgid "page"
-msgstr ""
-
-msgid "prev"
-msgstr ""
-
-msgid "registry, no database query"
-msgstr ""
-
-msgid "single model"
-msgstr ""
-
-#, python-brace-format
-msgid "{count} more, keep typing to narrow"
 msgstr ""
 

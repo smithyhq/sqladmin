@@ -15,6 +15,7 @@ from starlette.testclient import TestClient
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from sqladmin import Admin, ModelView
+from sqladmin.i18n import DEFAULT_LOCALE, gettext, set_locale
 from tests.common import sync_engine as engine
 
 Base = declarative_base()  # type: ignore
@@ -227,6 +228,63 @@ def test_get_save_redirect_url():
     # go to fixed edit/create pages and should ignore it.
     response = client.post("/user?page=3", data={"save": "Save and continue editing"})
     assert response.text == "http://testserver/admin/user/edit/1"
+
+
+def _translated(locale: str, label: str) -> str:
+    """Render ``label`` in ``locale`` the way the templates would."""
+
+    set_locale(locale)
+    try:
+        return gettext(label)
+    finally:
+        set_locale(DEFAULT_LOCALE)
+
+
+def test_get_save_redirect_url_localized():
+    """The submit button labels are rendered via gettext (create/edit
+    templates), so in non-English locales the submitted ``save`` value is the
+    translated label. The redirect must be resolved the same way."""
+
+    async def index(request: Request):
+        obj = User(id=1)
+        form_data = await request.form()
+        # LocaleMiddleware would have resolved the locale before the handler.
+        set_locale("ru")
+        try:
+            url = admin.get_save_redirect_url(request, form_data, admin.views[0], obj)
+        finally:
+            set_locale(DEFAULT_LOCALE)
+        return Response(str(url))
+
+    app = Starlette(
+        routes=[
+            Route("/{identity}", index, methods=["POST"]),
+        ]
+    )
+    admin = Admin(app=app, engine=engine)
+
+    class UserAdmin(ModelView, model=User):
+        save_as = True
+
+    admin.add_view(UserAdmin)
+
+    client = TestClient(app)
+
+    response = client.post("/user", data={"save": _translated("ru", "Save")})
+    assert response.text == "http://testserver/admin/user/list"
+
+    response = client.post(
+        "/user", data={"save": _translated("ru", "Save and continue editing")}
+    )
+    assert response.text == "http://testserver/admin/user/edit/1"
+
+    response = client.post("/user", data={"save": _translated("ru", "Save as new")})
+    assert response.text == "http://testserver/admin/user/edit/1"
+
+    response = client.post(
+        "/user", data={"save": _translated("ru", "Save and add another")}
+    )
+    assert response.text == "http://testserver/admin/user/create"
 
 
 def test_build_category_menu():

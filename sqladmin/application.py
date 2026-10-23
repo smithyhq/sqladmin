@@ -65,6 +65,7 @@ from sqladmin.i18n import (
     ngettext,
 )
 from sqladmin.models import BaseView, ModelView
+from sqladmin.palette import build_palette_response, palette_login_required
 from sqladmin.secret import Secret
 from sqladmin.templating import Jinja2Templates
 
@@ -111,10 +112,14 @@ class BaseAdmin:
         authentication_backend: AuthenticationBackend | None = None,
         authorization_backend: AuthorizationBackend | None = None,
         i18n_config: I18nConfig | None = None,
+        palette_search_min_chars: int = 2,
+        palette_search_max_models: int = 8,
         audit_backend: AuditBackend | None = None,
     ) -> None:
         self.app = app
         self.audit_backend = audit_backend or NullAuditBackend()
+        self.palette_search_min_chars = max(0, palette_search_min_chars)
+        self.palette_search_max_models = max(0, palette_search_max_models)
         self.authorization_backend = (
             authorization_backend or AllowAllAuthorizationBackend()
         )
@@ -554,6 +559,8 @@ class Admin(BaseAdminView):
         authorization_backend: AuthorizationBackend | None = None,
         static_files_kwargs: dict[str, Any] | None = None,
         i18n_config: I18nConfig | None = None,
+        palette_search_min_chars: int = 2,
+        palette_search_max_models: int = 8,
         audit_backend: AuditBackend | None = None,
     ) -> None:
         """
@@ -576,6 +583,10 @@ class Admin(BaseAdminView):
             i18n_config: Internationalization configuration. When provided, the
                 interface is translated per request and, if
                 ``language_switcher`` is set, a language switcher is shown.
+            palette_search_min_chars: Minimum term length before the command
+                palette searches records across models. Defaults to 2.
+            palette_search_max_models: Maximum number of models searched by an
+                unscoped command-palette query. Defaults to 8.
         """
 
         super().__init__(
@@ -593,6 +604,8 @@ class Admin(BaseAdminView):
             authentication_backend=authentication_backend,
             authorization_backend=authorization_backend,
             i18n_config=i18n_config,
+            palette_search_min_chars=palette_search_min_chars,
+            palette_search_max_models=palette_search_max_models,
             audit_backend=audit_backend,
         )
 
@@ -650,6 +663,7 @@ class Admin(BaseAdminView):
             Route(
                 "/{identity}/ajax/lookup", endpoint=self.ajax_lookup, name="ajax_lookup"
             ),
+            Route("/palette", endpoint=self.palette, name="palette"),
             Route("/login", endpoint=self.login, name="login", methods=["GET", "POST"]),
             Route("/logout", endpoint=self.logout, name="logout", methods=["GET"]),
             Route(
@@ -1044,6 +1058,12 @@ class Admin(BaseAdminView):
         return FileResponse(
             request_path, filename=request_path.name, content_disposition_type="inline"
         )
+
+    @palette_login_required
+    async def palette(self, request: Request) -> Response:
+        """Command palette search route."""
+
+        return await build_palette_response(self, request)
 
     @login_required
     async def ajax_lookup(self, request: Request) -> Response:

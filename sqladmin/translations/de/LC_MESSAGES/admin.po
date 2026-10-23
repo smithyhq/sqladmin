@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-16 14:31+0000\n"
+"POT-Creation-Date: 2026-10-23 15:42+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Vahid Hasanzade <@vahidzhe>\n"
 "Language: de\n"
@@ -18,52 +18,52 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: sqladmin/contrib/rbac.py:369
+#: sqladmin/contrib/rbac.py:366
 msgid "List"
 msgstr "Liste"
 
-#: sqladmin/contrib/rbac.py:370
+#: sqladmin/contrib/rbac.py:367
 msgid "Details"
 msgstr "Details"
 
-#: sqladmin/contrib/rbac.py:371
+#: sqladmin/contrib/rbac.py:368
 msgid "Create"
 msgstr "Erstellen"
 
-#: sqladmin/contrib/rbac.py:372 sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/contrib/rbac.py:369 sqladmin/templates/sqladmin/details.html:80
 #: sqladmin/templates/sqladmin/list.html:166
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: sqladmin/contrib/rbac.py:373 sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/contrib/rbac.py:370 sqladmin/templates/sqladmin/details.html:73
 #: sqladmin/templates/sqladmin/list.html:174
 #: sqladmin/templates/sqladmin/modals/delete.html:21
 msgid "Delete"
 msgstr "Löschen"
 
-#: sqladmin/contrib/rbac.py:374 sqladmin/templates/sqladmin/list.html:21
+#: sqladmin/contrib/rbac.py:371 sqladmin/templates/sqladmin/list.html:21
 #: sqladmin/templates/sqladmin/list.html:35
 msgid "Export"
 msgstr "Exportieren"
 
-#: sqladmin/contrib/rbac.py:375
+#: sqladmin/contrib/rbac.py:372
 #: sqladmin/templates/sqladmin/modals/import.html:44
 msgid "Import"
 msgstr "Importieren"
 
-#: sqladmin/contrib/rbac.py:423
+#: sqladmin/contrib/rbac.py:414
 msgid "Access"
 msgstr "Zugriff"
 
-#: sqladmin/contrib/rbac.py:467
+#: sqladmin/contrib/rbac.py:461
 msgid "Page"
 msgstr "Seite"
 
-#: sqladmin/contrib/rbac.py:467 sqladmin/contrib/rbac.py:573
+#: sqladmin/contrib/rbac.py:461 sqladmin/contrib/rbac.py:567
 msgid "Permissions"
 msgstr "Berechtigungen"
 
-#: sqladmin/contrib/rbac.py:627
+#: sqladmin/contrib/rbac.py:621
 #, python-format
 msgid "You are not allowed to grant: %(permissions)s"
 msgstr "Sie dürfen folgende Berechtigungen nicht vergeben: %(permissions)s"
@@ -119,13 +119,23 @@ msgstr "%(name)s bearbeiten"
 msgid "Save as new"
 msgstr "Als neu speichern"
 
-#: sqladmin/templates/sqladmin/layout.html:28
-msgid "Logout"
-msgstr "Abmelden"
+#: sqladmin/templates/sqladmin/layout.html:35
+#: sqladmin/templates/sqladmin/layout.html:37
+#: sqladmin/templates/sqladmin/list.html:106
+#: sqladmin/templates/sqladmin/list.html:108
+#: sqladmin/templates/sqladmin/palette.html:2
+#: sqladmin/templates/sqladmin/palette.html:13
+msgid "Search"
+msgstr "Suche"
 
 #: sqladmin/templates/sqladmin/layout.html:44
 msgid "Language"
 msgstr "Sprache"
+
+#: sqladmin/templates/sqladmin/layout.html:60
+#: sqladmin/templates/sqladmin/layout.html:61
+msgid "Logout"
+msgstr "Abmelden"
 
 #: sqladmin/templates/sqladmin/list.html:44
 #: sqladmin/templates/sqladmin/modals/import.html:7
@@ -143,11 +153,6 @@ msgstr "Aktionen"
 #: sqladmin/templates/sqladmin/list.html:83
 msgid "Delete selected items"
 msgstr "Ausgewählte Einträge löschen"
-
-#: sqladmin/templates/sqladmin/list.html:106
-#: sqladmin/templates/sqladmin/list.html:108
-msgid "Search"
-msgstr "Suche"
 
 #: sqladmin/templates/sqladmin/list.html:124
 msgid "Select all"
@@ -212,14 +217,102 @@ msgstr "Passwort"
 msgid "Login"
 msgstr "Anmelden"
 
+#: sqladmin/templates/sqladmin/palette.html:10
+#: sqladmin/templates/sqladmin/palette.html:47
+msgid "Search models, records, commands"
+msgstr "Modelle, Datensätze, Befehle suchen"
+
 #: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
 #: sqladmin/templates/sqladmin/modals/import.html:4
 #: sqladmin/templates/sqladmin/modals/import.html:58
 #: sqladmin/templates/sqladmin/modals/import.html:78
 #: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/palette.html:15
 #: sqladmin/templates/sqladmin/secret_modal.html:9
 msgid "Close"
 msgstr "Schließen"
+
+#: sqladmin/templates/sqladmin/palette.html:21
+msgid "Click a model to scope, click a record to open"
+msgstr "Modell anklicken zum Eingrenzen, Datensatz zum Öffnen"
+
+#: sqladmin/templates/sqladmin/palette.html:29
+msgid "Models"
+msgstr "Modelle"
+
+#: sqladmin/templates/sqladmin/palette.html:30
+msgid "registry, no database query"
+msgstr "Registry, keine Datenbankabfrage"
+
+#: sqladmin/templates/sqladmin/palette.html:31
+msgid "Commands"
+msgstr "Befehle"
+
+#: sqladmin/templates/sqladmin/palette.html:32
+msgid "Records"
+msgstr "Datensätze"
+
+#: sqladmin/templates/sqladmin/palette.html:34
+#, python-brace-format
+msgid "Records in {name}"
+msgstr "Datensätze in {name}"
+
+#: sqladmin/templates/sqladmin/palette.html:35
+msgid "single model"
+msgstr "ein Modell"
+
+#: sqladmin/templates/sqladmin/palette.html:36
+#, python-brace-format
+msgid "Searched {searched} of {total} models, keep typing to narrow"
+msgstr "{searched} von {total} Modellen durchsucht, weiter tippen zum Eingrenzen"
+
+#: sqladmin/templates/sqladmin/palette.html:37
+msgid "Search inside"
+msgstr "Darin suchen"
+
+#: sqladmin/templates/sqladmin/palette.html:38
+#, python-brace-format
+msgid "Go to {name}"
+msgstr "Zu {name} wechseln"
+
+#: sqladmin/templates/sqladmin/palette.html:39
+#, python-brace-format
+msgid "Create {name}"
+msgstr "{name} erstellen"
+
+#: sqladmin/templates/sqladmin/palette.html:40
+msgid "page"
+msgstr "Seite"
+
+#: sqladmin/templates/sqladmin/palette.html:41
+msgid "new"
+msgstr "neu"
+
+#: sqladmin/templates/sqladmin/palette.html:42
+msgid "open"
+msgstr "öffnen"
+
+#: sqladmin/templates/sqladmin/palette.html:43
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr "{count} weitere, weiter tippen zum Eingrenzen"
+
+#: sqladmin/templates/sqladmin/palette.html:44
+msgid "No matches"
+msgstr "Keine Treffer"
+
+#: sqladmin/templates/sqladmin/palette.html:45
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
+#: sqladmin/templates/sqladmin/palette.html:46
+msgid "Search failed"
+msgstr "Suche fehlgeschlagen"
+
+#: sqladmin/templates/sqladmin/palette.html:48
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr "In {name} suchen"
 
 #: sqladmin/templates/sqladmin/secret_modal.html:26
 msgid "Done"

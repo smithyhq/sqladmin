@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SQLAdmin VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-16 14:31+0000\n"
+"POT-Creation-Date: 2026-10-23 15:42+0400\n"
 "PO-Revision-Date: 2026-09-11 13:26+0900\n"
 "Last-Translator: Hiroki Sawano <hiroki.sawano.2512@gmail.com>\n"
 "Language: ja\n"
@@ -18,51 +18,52 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: sqladmin/contrib/rbac.py:369
+#: sqladmin/contrib/rbac.py:366
 msgid "List"
 msgstr "一覧"
 
-#: sqladmin/contrib/rbac.py:370
+#: sqladmin/contrib/rbac.py:367
 msgid "Details"
 msgstr "詳細"
 
-#: sqladmin/contrib/rbac.py:371
+#: sqladmin/contrib/rbac.py:368
 msgid "Create"
 msgstr "作成"
 
-#: sqladmin/contrib/rbac.py:372 sqladmin/templates/sqladmin/details.html:80
+#: sqladmin/contrib/rbac.py:369 sqladmin/templates/sqladmin/details.html:80
 #: sqladmin/templates/sqladmin/list.html:166
 msgid "Edit"
 msgstr "編集"
 
-#: sqladmin/contrib/rbac.py:373 sqladmin/templates/sqladmin/details.html:73
+#: sqladmin/contrib/rbac.py:370 sqladmin/templates/sqladmin/details.html:73
 #: sqladmin/templates/sqladmin/list.html:174
 #: sqladmin/templates/sqladmin/modals/delete.html:21
 msgid "Delete"
 msgstr "削除"
 
-#: sqladmin/contrib/rbac.py:374 sqladmin/templates/sqladmin/list.html:21
+#: sqladmin/contrib/rbac.py:371 sqladmin/templates/sqladmin/list.html:21
 #: sqladmin/templates/sqladmin/list.html:35
 msgid "Export"
 msgstr "エクスポート"
 
-#: sqladmin/contrib/rbac.py:375 sqladmin/templates/sqladmin/modals/import.html:44
+#: sqladmin/contrib/rbac.py:372
+#: sqladmin/templates/sqladmin/modals/import.html:44
 msgid "Import"
 msgstr "インポート"
 
-#: sqladmin/contrib/rbac.py:423
+#: sqladmin/contrib/rbac.py:414
 msgid "Access"
 msgstr "アクセス"
 
-#: sqladmin/contrib/rbac.py:467
+#: sqladmin/contrib/rbac.py:461
 msgid "Page"
 msgstr "ページ"
 
-#: sqladmin/contrib/rbac.py:467 sqladmin/contrib/rbac.py:573
+#: sqladmin/contrib/rbac.py:461 sqladmin/contrib/rbac.py:567
 msgid "Permissions"
 msgstr "権限"
 
-#: sqladmin/contrib/rbac.py:627
+#: sqladmin/contrib/rbac.py:621
 #, python-format
 msgid "You are not allowed to grant: %(permissions)s"
 msgstr "次の権限を付与する権限がありません: %(permissions)s"
@@ -118,13 +119,23 @@ msgstr "%(name)sを編集"
 msgid "Save as new"
 msgstr "新規保存"
 
-#: sqladmin/templates/sqladmin/layout.html:28
-msgid "Logout"
-msgstr "ログアウト"
+#: sqladmin/templates/sqladmin/layout.html:35
+#: sqladmin/templates/sqladmin/layout.html:37
+#: sqladmin/templates/sqladmin/list.html:106
+#: sqladmin/templates/sqladmin/list.html:108
+#: sqladmin/templates/sqladmin/palette.html:2
+#: sqladmin/templates/sqladmin/palette.html:13
+msgid "Search"
+msgstr "検索"
 
 #: sqladmin/templates/sqladmin/layout.html:44
 msgid "Language"
 msgstr "言語"
+
+#: sqladmin/templates/sqladmin/layout.html:60
+#: sqladmin/templates/sqladmin/layout.html:61
+msgid "Logout"
+msgstr "ログアウト"
 
 #: sqladmin/templates/sqladmin/list.html:44
 #: sqladmin/templates/sqladmin/modals/import.html:7
@@ -142,11 +153,6 @@ msgstr "操作"
 #: sqladmin/templates/sqladmin/list.html:83
 msgid "Delete selected items"
 msgstr "選択した項目を削除"
-
-#: sqladmin/templates/sqladmin/list.html:106
-#: sqladmin/templates/sqladmin/list.html:108
-msgid "Search"
-msgstr "検索"
 
 #: sqladmin/templates/sqladmin/list.html:124
 msgid "Select all"
@@ -211,14 +217,102 @@ msgstr "パスワード"
 msgid "Login"
 msgstr "ログイン"
 
+#: sqladmin/templates/sqladmin/palette.html:10
+#: sqladmin/templates/sqladmin/palette.html:47
+msgid "Search models, records, commands"
+msgstr "モデル・レコード・コマンドを検索"
+
 #: sqladmin/templates/sqladmin/modals/details_action_confirmation.html:5
 #: sqladmin/templates/sqladmin/modals/import.html:4
 #: sqladmin/templates/sqladmin/modals/import.html:58
 #: sqladmin/templates/sqladmin/modals/import.html:78
 #: sqladmin/templates/sqladmin/modals/list_action_confirmation.html:5
+#: sqladmin/templates/sqladmin/palette.html:15
 #: sqladmin/templates/sqladmin/secret_modal.html:9
 msgid "Close"
 msgstr "閉じる"
+
+#: sqladmin/templates/sqladmin/palette.html:21
+msgid "Click a model to scope, click a record to open"
+msgstr "モデルをクリックして絞り込み、レコードをクリックして開く"
+
+#: sqladmin/templates/sqladmin/palette.html:29
+msgid "Models"
+msgstr "モデル"
+
+#: sqladmin/templates/sqladmin/palette.html:30
+msgid "registry, no database query"
+msgstr "レジストリ、データベースへのクエリなし"
+
+#: sqladmin/templates/sqladmin/palette.html:31
+msgid "Commands"
+msgstr "コマンド"
+
+#: sqladmin/templates/sqladmin/palette.html:32
+msgid "Records"
+msgstr "レコード"
+
+#: sqladmin/templates/sqladmin/palette.html:34
+#, python-brace-format
+msgid "Records in {name}"
+msgstr "{name} のレコード"
+
+#: sqladmin/templates/sqladmin/palette.html:35
+msgid "single model"
+msgstr "単一モデル"
+
+#: sqladmin/templates/sqladmin/palette.html:36
+#, python-brace-format
+msgid "Searched {searched} of {total} models, keep typing to narrow"
+msgstr "{total} 件中 {searched} 件のモデルを検索しました。入力を続けて絞り込んでください"
+
+#: sqladmin/templates/sqladmin/palette.html:37
+msgid "Search inside"
+msgstr "内部を検索"
+
+#: sqladmin/templates/sqladmin/palette.html:38
+#, python-brace-format
+msgid "Go to {name}"
+msgstr "{name} へ移動"
+
+#: sqladmin/templates/sqladmin/palette.html:39
+#, python-brace-format
+msgid "Create {name}"
+msgstr "{name} を作成"
+
+#: sqladmin/templates/sqladmin/palette.html:40
+msgid "page"
+msgstr "ページ"
+
+#: sqladmin/templates/sqladmin/palette.html:41
+msgid "new"
+msgstr "新規"
+
+#: sqladmin/templates/sqladmin/palette.html:42
+msgid "open"
+msgstr "開く"
+
+#: sqladmin/templates/sqladmin/palette.html:43
+#, python-brace-format
+msgid "{count} more, keep typing to narrow"
+msgstr "他 {count} 件。入力を続けて絞り込んでください"
+
+#: sqladmin/templates/sqladmin/palette.html:44
+msgid "No matches"
+msgstr "一致する項目がありません"
+
+#: sqladmin/templates/sqladmin/palette.html:45
+msgid "Nothing found"
+msgstr "見つかりませんでした"
+
+#: sqladmin/templates/sqladmin/palette.html:46
+msgid "Search failed"
+msgstr "検索に失敗しました"
+
+#: sqladmin/templates/sqladmin/palette.html:48
+#, python-brace-format
+msgid "Search inside {name}"
+msgstr "{name} 内を検索"
 
 #: sqladmin/templates/sqladmin/secret_modal.html:26
 msgid "Done"

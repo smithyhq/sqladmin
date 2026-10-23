@@ -23,22 +23,22 @@
           {{ display_menu(admin._menu, request) }}
         </div>
       </nav>
-      {% if admin.authentication_backend %}
-      <a href="{{ request.url_for('admin:logout') }}" class="btn btn-secondary btn-icon m-2 px-2">
-        <span class="me-2">{{ _("Logout") }}</span>
-        <i class="fa fa-sign-out"></i>
-      </a>
-      {% endif %}
     </div>
   </aside>
   <div class="page-wrapper">
     {% block topbar %}
     {% set show_switcher = i18n_config.language_switcher and i18n_config.language_switcher | length > 1 %}
-    {% if show_switcher %}
     <header class="navbar navbar-expand-md d-print-none sticky-top shadow-sm" data-bs-theme="dark">
       <div class="container-fluid">
-        {# Language switcher, aligned to the right. #}
+        {# Command palette trigger, aligned to the left. #}
+        <button type="button" class="sa-palette-trigger" data-sa-palette-open
+          title="{{ _('Search') }}">
+          <i class="ti ti-search"></i>
+          <span>{{ _("Search") }}</span>
+        </button>
+        {# Language switcher and logout, aligned to the right. #}
         <div class="navbar-nav flex-row ms-auto align-items-center gap-2" id="topbar-end">
+          {% if show_switcher %}
           <div class="nav-item dropdown">
             <a href="#" class="btn btn-outline-light dropdown-toggle d-flex align-items-center px-3"
               data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('Language') }}">
@@ -54,10 +54,17 @@
               {% endfor %}
             </div>
           </div>
+          {% endif %}
+          {% if admin.authentication_backend %}
+          <a href="{{ request.url_for('admin:logout') }}"
+            class="btn btn-outline-light d-flex align-items-center px-3" title="{{ _('Logout') }}">
+            <span class="me-2">{{ _("Logout") }}</span>
+            <i class="fa fa-sign-out"></i>
+          </a>
+          {% endif %}
         </div>
       </div>
     </header>
-    {% endif %}
     {% endblock %}
     <div class="container-fluid">
       <div class="page-header d-print-none">
@@ -86,4 +93,7 @@
     </div>
   </div>
 </div>
+{% block palette %}
+{% include 'sqladmin/palette.html' %}
+{% endblock %}
 {% endblock %}

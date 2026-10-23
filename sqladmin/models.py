@@ -428,6 +428,19 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     Set to `False` to require pressing `Enter` or clicking the search button.
     """
 
+    palette_search: ClassVar[bool] = False
+    """Whether this model joins *unscoped* command-palette search.
+
+    Defaults to ``False`` so adding the palette never silently fans a query out
+    across every model. Reachable from an unscoped query only when this is
+    ``True`` and ``column_searchable_list`` is set. Scoped search (a single
+    model picked first) always works regardless, being one query on one model.
+    The user still needs the ``list`` permission on the model.
+    """
+
+    palette_search_limit: ClassVar[int] = 5
+    """Maximum number of records returned per model from a palette query."""
+
     column_filters: ClassVar[Sequence[ColumnFilter]] = []
     """Collection of the filterable columns for the list view.
     Columns can either be string names or SQLAlchemy columns.
@@ -1730,6 +1743,37 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             expressions.append(cast(field_attr, String).ilike(f"%{term}%"))
 
         return stmt.filter(or_(false(), *expressions))
+
+    def palette_search_query(self, request: Request, term: str) -> Select:
+        """
+        The SQLAlchemy select expression used by the command palette.
+        Defaults to `list_query` + `search_query`, limited to
+        `palette_search_limit` rows. Can be customized.
+        """
+
+        from sqladmin.palette import default_palette_search_query
+
+        return default_palette_search_query(self, request, term)
+
+    async def palette_commands(self, request: Request) -> builtins.list[dict]:
+        """
+        Commands offered by the command palette for this model.
+        Each entry needs `label` and `url`; `icon` and `badge` are optional.
+        Defaults to "Go to" and, when the user may create, "Create".
+
+        ???+ example
+            ```python
+            class UserAdmin(ModelView, model=User):
+                async def palette_commands(self, request):
+                    commands = await super().palette_commands(request)
+                    commands.append({"label": "Docs", "url": "/docs"})
+                    return commands
+            ```
+        """
+
+        from sqladmin.palette import default_model_commands
+
+        return await default_model_commands(self, request)
 
     def list_query(self, request: Request) -> Select:
         """

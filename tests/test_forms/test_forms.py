@@ -8,10 +8,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import (
+    REAL,
     Boolean,
     Column,
     DateTime,
+    Double,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     Interval,
@@ -32,7 +35,16 @@ from sqlalchemy.orm import (
     declarative_base,
     relationship,
 )
-from wtforms import BooleanField, Field, Form, IntegerField, StringField, TimeField
+from wtforms import (
+    BooleanField,
+    DecimalField,
+    Field,
+    FloatField,
+    Form,
+    IntegerField,
+    StringField,
+    TimeField,
+)
 from wtforms.fields import DateTimeField as WTFormsDateTimeField
 from wtforms.fields.core import UnboundField
 
@@ -385,6 +397,34 @@ async def test_form_override_form_converter() -> None:
 
     assert isinstance(Form()._fields["email"], EmailField)
     assert isinstance(Form()._fields["number"], IntegerField)
+
+
+async def test_model_form_float_columns() -> None:
+    """Float no longer subclasses Numeric in SQLAlchemy 2.1 (issue #1166)."""
+
+    class FloatModel(Base):
+        __tablename__ = "model_form_float"
+
+        id = Column(Integer, primary_key=True)
+        ratio = Column(Float)
+        precise = Column(Double)
+        real = Column(REAL)
+        float_as_decimal = Column(Float(asdecimal=True))
+        amount = Column(Numeric(10, 2))
+
+    Form = await get_model_form(model=FloatModel, session_maker=session_maker)
+    fields = Form()._fields
+
+    assert isinstance(fields["ratio"], FloatField)
+    assert isinstance(fields["precise"], FloatField)
+    assert isinstance(fields["real"], FloatField)
+    assert isinstance(fields["float_as_decimal"], DecimalField)
+    assert isinstance(fields["amount"], DecimalField)
+
+    form = Form(DummyData(ratio=["1.5"], precise=["2.25"], real=["3"]))
+    assert form.data["ratio"] == 1.5
+    assert form.data["precise"] == 2.25
+    assert form.data["real"] == 3.0
 
 
 async def test_model_field_clashing_with_wtforms_reserved_attribute() -> None:

@@ -24,6 +24,7 @@ from sqlalchemy.sql.elements import Label
 from wtforms import (
     DecimalField,
     Field,
+    FloatField,
     Form,
     IntegerField,
     StringField,
@@ -451,7 +452,7 @@ class ModelConverter(ModelConverterBase):
     ) -> UnboundField:
         return IntegerField(**kwargs)
 
-    @converts("Numeric")  # includes DECIMAL, Float/FLOAT, REAL, and DOUBLE
+    @converts("Numeric")  # includes DECIMAL and NUMERIC
     def conv_decimal(
         self,
         model: type,
@@ -461,6 +462,19 @@ class ModelConverter(ModelConverterBase):
         # override default decimal places limit, use database defaults instead
         kwargs.setdefault("places", None)
         return DecimalField(**kwargs)
+
+    # SQLAlchemy 2.1 no longer makes Float a subclass of Numeric, so Float
+    # (and its subclasses Double, REAL, DOUBLE_PRECISION) needs its own converter.
+    @converts("Float")
+    def conv_float(
+        self,
+        model: type,
+        prop: ColumnProperty,
+        kwargs: dict[str, Any],
+    ) -> UnboundField:
+        if getattr(prop.columns[0].type, "asdecimal", False):
+            return self.conv_decimal(model=model, prop=prop, kwargs=kwargs)
+        return FloatField(**kwargs)
 
     @converts("JSON", "JSONB")
     def conv_json(

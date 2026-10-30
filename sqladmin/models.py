@@ -1210,11 +1210,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                     whereclause = parent_stmt.whereclause
                     if whereclause is None:
                         continue
+                    # No DISTINCT: _run_query already drops duplicate rows,
+                    # and PostgreSQL can't compare json columns (#1168).
                     stmt = (
                         select(target)
                         .join(getattr(self.model, name))
                         .where(whereclause)
-                        .distinct()
                     )
                     result[name] = await self._run_query(stmt)
                 else:

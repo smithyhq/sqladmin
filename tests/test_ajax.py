@@ -5,7 +5,17 @@ from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import Column, ForeignKey, Integer, String, func, or_, select
+from sqlalchemy import (
+    JSON,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    func,
+    or_,
+    select,
+)
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, foreign, relationship, selectinload
 from sqlalchemy.sql.elements import ColumnElement
@@ -145,6 +155,35 @@ class MissmatchIdsField(Base):
     team_2 = relationship("Team", foreign_keys=[team_2_id])
 
 
+book_authors = Table(
+    "book_authors",
+    Base.metadata,
+    Column("book_id", ForeignKey("books.id"), primary_key=True),
+    Column("author_id", ForeignKey("authors.id"), primary_key=True),
+)
+
+
+class Author(Base):
+    __tablename__ = "authors"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=32))
+    # PostgreSQL has no equality operator for JSON, so SELECT DISTINCT fails
+    extra_info = Column(JSON, default=dict)
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(length=32))
+
+    authors = relationship("Author", secondary=book_authors)
+
+
 class UserAdmin(ModelView, model=User):
     form_ajax_refs = {
         "addresses": {
@@ -186,10 +225,20 @@ class MemberAdmin(ModelView, model=Member):
     }
 
 
+class BookAdmin(ModelView, model=Book):
+    form_columns = ["title", "authors"]
+    form_ajax_refs = {
+        "authors": {
+            "fields": ("name",),
+        }
+    }
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(RoomAdmin)
 admin.add_view(MemberAdmin)
+admin.add_view(BookAdmin)
 
 
 @pytest.fixture(autouse=True)
@@ -360,6 +409,19 @@ async def test_edit_page_template(client: AsyncClient) -> None:
     assert 'data-role="select2-ajax"' in response.text
     assert 'data-url="http://testserver/admin/address/ajax/lookup"' in response.text
     assert 'data-allow-blank="1"' in response.text
+
+
+async def test_edit_page_ajax_relation_to_json_column(client: AsyncClient) -> None:
+    async with session_maker() as s:
+        s.add(Book(id=1, title="Dune", authors=[Author(id=1, name="Frank")]))
+        await s.commit()
+
+    response = await client.get("/admin/book/edit/1")
+    assert response.status_code == 200
+    assert (
+        'data-json="[{&#34;id&#34;: &#34;1&#34;, &#34;text&#34;: &#34;Frank&#34;}]"'
+        in response.text
+    )
 
 
 async def test_create_and_edit_forms(client: AsyncClient) -> None:

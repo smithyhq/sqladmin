@@ -48,7 +48,7 @@ class Photo(Base):
     __tablename__ = "photos"
 
     id = Column(Integer, primary_key=True)
-    key = Column(String, nullable=False)
+    path = Column(String, nullable=False)
 
 
 class UserAdmin(ModelView, model=User):
@@ -56,14 +56,14 @@ class UserAdmin(ModelView, model=User):
 
 
 class PhotoAdmin(ModelView, model=Photo):
-    form_overrides = {Photo.key: FileField}
+    form_overrides = {Photo.path: FileField}
 
     async def on_model_change(
         self, data: dict, model: Any, is_created: bool, request: Request
     ) -> None:
-        upload: UploadFile = data.pop("key")
+        upload: UploadFile = data.pop("path")
         if upload.filename:
-            data["key"] = f"photos/{upload.filename}"
+            data["path"] = f"photos/{upload.filename}"
 
 
 admin.add_view(UserAdmin)
@@ -168,14 +168,14 @@ def test_update_keeps_a_string_column_when_the_file_input_is_empty(
     client: TestClient,
 ) -> None:
     with session_maker() as s:
-        s.add(Photo(id=1, key="photos/old.png"))
+        s.add(Photo(id=1, path="photos/old.png"))
         s.commit()
 
     # httpx drops a file part with an empty filename, which is what a browser
     # sends for a file input left empty, so the body is built by hand.
     body = (
         b"--x\r\n"
-        b'Content-Disposition: form-data; name="key"; filename=""\r\n'
+        b'Content-Disposition: form-data; name="path"; filename=""\r\n'
         b"Content-Type: application/octet-stream\r\n\r\n\r\n"
         b"--x--\r\n"
     )
@@ -188,4 +188,4 @@ def test_update_keeps_a_string_column_when_the_file_input_is_empty(
 
     assert response.status_code == 302
     with session_maker() as s:
-        assert s.get(Photo, 1).key == "photos/old.png"
+        assert s.get(Photo, 1).path == "photos/old.png"

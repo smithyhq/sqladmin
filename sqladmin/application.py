@@ -1125,8 +1125,7 @@ class Admin(BaseAdminView):
                 form_data.append((key, UploadFile(io.BytesIO(b""))))
             elif empty_upload and hasattr(stored, "open"):
                 # In case of update, imitate UploadFile from the stored file.
-                # Any other value, such as a key the view stores itself, has no
-                # file to reopen, so the empty upload is passed on to the view.
+                # Other values, e.g. a path, go to the view as an empty upload.
                 form_data.append(
                     (key, UploadFile(filename=stored.name, file=stored.open()))
                 )

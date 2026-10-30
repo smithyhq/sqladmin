@@ -1,12 +1,15 @@
 from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi_storages import FileSystemStorage, StorageFile
 from fastapi_storages.integrations.sqlalchemy import FileType
-from sqlalchemy import Column, Integer, select
+from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 from starlette.applications import Starlette
+from starlette.datastructures import UploadFile
+from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from sqladmin import Admin, ModelView
@@ -41,11 +44,30 @@ def client() -> Generator[TestClient, None, None]:
         yield c
 
 
+class Photo(Base):
+    __tablename__ = "photos"
+
+    id = Column(Integer, primary_key=True)
+    path = Column(String, nullable=False)
+
+
 class UserAdmin(ModelView, model=User):
     form_overrides = {User.file: FileField, User.optional_file: FileField}
 
 
+class PhotoAdmin(ModelView, model=Photo):
+    form_overrides = {Photo.path: FileField}
+
+    async def on_model_change(
+        self, data: dict, model: Any, is_created: bool, request: Request
+    ) -> None:
+        upload: UploadFile = data.pop("path")
+        if upload.filename:
+            data["path"] = f"photos/{upload.filename}"
+
+
 admin.add_view(UserAdmin)
+admin.add_view(PhotoAdmin)
 
 
 def _query_user() -> User:
@@ -140,3 +162,30 @@ def test_get_form_update(client: TestClient) -> None:
 
     assert response.text.count("Currently:") == 1
     assert response.text.count("checkbox") == 0
+
+
+def test_update_keeps_a_string_column_when_the_file_input_is_empty(
+    client: TestClient,
+) -> None:
+    with session_maker() as s:
+        s.add(Photo(id=1, path="photos/old.png"))
+        s.commit()
+
+    # httpx drops a file part with an empty filename, which is what a browser
+    # sends for a file input left empty, so the body is built by hand.
+    body = (
+        b"--x\r\n"
+        b'Content-Disposition: form-data; name="path"; filename=""\r\n'
+        b"Content-Type: application/octet-stream\r\n\r\n\r\n"
+        b"--x--\r\n"
+    )
+    response = client.post(
+        "/admin/photo/edit/1",
+        content=body,
+        headers={"Content-Type": "multipart/form-data; boundary=x"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    with session_maker() as s:
+        assert s.get(Photo, 1).path == "photos/old.png"

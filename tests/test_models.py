@@ -176,6 +176,13 @@ def test_column_list_by_str_name() -> None:
     assert AddressAdmin().get_list_columns() == ["id", "user_id"]
 
 
+def test_column_list_preserves_configured_order() -> None:
+    class UserAdmin(ModelView, model=User):
+        column_list = [User.name, User.id]
+
+    assert UserAdmin().get_list_columns() == ["name", "id"]
+
+
 def test_column_filters() -> None:
     filter = AllUniqueStringValuesFilter(User.name)
 
@@ -442,6 +449,94 @@ def test_form_excluded_columns_by_model_column() -> None:
         form_excluded_columns = [User.id]
 
     assert UserAdmin().get_form_columns() == ["addresses", "profile", "groups", "name"]
+
+
+async def test_form_rules_preserve_configured_order() -> None:
+    class UserAdmin(ModelView, model=User):
+        form_include_pk = True
+        form_create_rules = ["name", "id"]
+        form_edit_rules = ["id", "name"]
+
+    model_view = UserAdmin()
+    model_view.session_maker = session_maker
+
+    create_form = await model_view.scaffold_form(model_view._form_create_rules)
+    edit_form = await model_view.scaffold_form(model_view._form_edit_rules)
+
+    assert list(create_form()._fields) == ["name", "id"]
+    assert list(edit_form()._fields) == ["id", "name"]
+
+
+async def test_form_rules_respect_form_columns() -> None:
+    class UserAdmin(ModelView, model=User):
+        form_columns = ["name"]
+        form_include_pk = True
+        form_create_rules = ["id", "name"]
+
+    model_view = UserAdmin()
+    model_view.session_maker = session_maker
+    form = await model_view.scaffold_form(model_view._form_create_rules)
+
+    assert list(form()._fields) == ["name"]
+
+
+async def test_form_without_rules_uses_default_order() -> None:
+    class UserAdmin(ModelView, model=User):
+        form_columns = [User.name, User.id]
+        form_include_pk = True
+
+    model_view = UserAdmin()
+    model_view.session_maker = session_maker
+
+    for rules in (None, []):
+        form = await model_view.scaffold_form(rules)
+        assert list(form()._fields) == ["name", "id"]
+
+
+async def test_form_rules_override_specific_rules() -> None:
+    class UserAdmin(ModelView, model=User):
+        form_include_pk = True
+        form_rules = ["name", "id"]
+        form_create_rules = ["id", "name"]
+        form_edit_rules = ["id", "name"]
+
+    model_view = UserAdmin()
+    model_view.session_maker = session_maker
+
+    create_form = await model_view.scaffold_form(model_view._form_create_rules)
+    edit_form = await model_view.scaffold_form(model_view._form_edit_rules)
+
+    assert list(create_form()._fields) == ["name", "id"]
+    assert list(edit_form()._fields) == ["name", "id"]
+
+
+async def test_empty_form_rules_use_specific_rules() -> None:
+    class UserAdmin(ModelView, model=User):
+        form_include_pk = True
+        form_rules = []
+        form_create_rules = ["name", "id"]
+        form_edit_rules = ["id", "name"]
+
+    model_view = UserAdmin()
+    model_view.session_maker = session_maker
+
+    create_form = await model_view.scaffold_form(model_view._form_create_rules)
+    edit_form = await model_view.scaffold_form(model_view._form_edit_rules)
+
+    assert list(create_form()._fields) == ["name", "id"]
+    assert list(edit_form()._fields) == ["id", "name"]
+
+
+async def test_duplicate_and_unknown_form_rules_are_ignored() -> None:
+    class UserAdmin(ModelView, model=User):
+        form_include_pk = True
+        form_create_rules = ["name", "missing", "name", "id"]
+
+    model_view = UserAdmin()
+    model_view.session_maker = session_maker
+    form = await model_view.scaffold_form(model_view._form_create_rules)
+
+    assert list(form()._fields) == ["name", "id"]
 
 
 def test_export_columns_default() -> None:

@@ -770,10 +770,15 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
 
     form_rules: ClassVar[list[str]] = []
-    """List of rendering rules for model creation and edit form.
-    This property changes default form rendering behavior and to rearrange
-    order of rendered fields, add some text between fields, group them, etc.
-    If not set, will use default Flask-Admin form rendering logic.
+    """List of field names controlling the create and edit forms.
+
+    The order of this list sets the order in which the fields are rendered.
+    Fields must also be included by `form_columns` or not excluded by
+    `form_excluded_columns`. Unknown names are ignored and duplicates do not
+    render the field twice.
+
+    If set, this takes precedence over `form_create_rules` and
+    `form_edit_rules`. If not set, those lists are used instead.
 
     ???+ example
         ```python
@@ -786,10 +791,22 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     """
 
     form_create_rules: ClassVar[list[str]] = []
-    """Customized rules for the create form. Cannot be specified with `form_rules`."""
+    """List of field names controlling the create form.
+
+    The order of this list sets the order in which the fields are rendered.
+    Fields must also be included by `form_columns` or not excluded by
+    `form_excluded_columns`. Unknown names are ignored and duplicates do not
+    render the field twice. Ignored when `form_rules` is set.
+    """
 
     form_edit_rules: ClassVar[list[str]] = []
-    """Customized rules for the edit form. Cannot be specified with `form_rules`."""
+    """List of field names controlling the edit form.
+
+    The order of this list sets the order in which the fields are rendered.
+    Fields must also be included by `form_columns` or not excluded by
+    `form_excluded_columns`. Unknown names are ignored and duplicates do not
+    render the field twice. Ignored when `form_rules` is set.
+    """
 
     # General options
     column_labels: ClassVar[dict[MODEL_ATTR, str]] = {}
@@ -1641,12 +1658,17 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         if self.form is not None:
             return self.form
 
+        only = self._form_prop_names
+        if rules:
+            eligible = set(self._form_prop_names)
+            only = [name for name in dict.fromkeys(rules) if name in eligible]
+
         self._ajax_relation_names = set(self._form_ajax_refs.keys())
 
         form = await get_model_form(
             model=self.model,
             session_maker=self.session_maker,
-            only=self._form_prop_names,
+            only=only,
             column_labels=self._column_labels,
             form_args=self.form_args,
             form_widget_args=self.form_widget_args,

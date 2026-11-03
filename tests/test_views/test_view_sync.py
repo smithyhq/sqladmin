@@ -1,5 +1,6 @@
 import enum
 import json
+import re
 from collections.abc import Generator
 
 import pytest
@@ -243,6 +244,19 @@ admin.add_view(MovieAdmin)
 admin.add_view(ProductAdmin)
 admin.add_view(PersonAdmin)
 admin.add_view(WorkerAdmin)
+
+_FORM_CONTROL_ID = re.compile(r'<(?:input|select|textarea)\b[^>]*\bid="([^"]+)"')
+
+
+def _rendered_form_field_ids(html: str) -> list[str]:
+    marker = '<fieldset class="form-fieldset">'
+    assert marker in html, "expected form fieldset was not rendered"
+
+    fieldset = html.split(marker, 1)[1]
+    assert "</fieldset>" in fieldset, "form fieldset was not closed"
+
+    fieldset = fieldset.split("</fieldset>", 1)[0]
+    return _FORM_CONTROL_ID.findall(fieldset)
 
 
 def _parse_ndjson_events(content: str) -> list[dict]:
@@ -580,6 +594,50 @@ def test_create_endpoint_get_form(client: TestClient) -> None:
         in response.text
     )
     assert '<select class="form-control" id="status" name="status">' in response.text
+
+
+def test_form_field_order_follows_configured_rules(client: TestClient) -> None:
+    response = client.get("/admin/user/create")
+
+    assert response.status_code == 200
+    expected_create = [
+        "name",
+        "email",
+        "addresses",
+        "profile",
+        "birthdate",
+        "status",
+    ]
+    ids = [
+        name
+        for name in _rendered_form_field_ids(response.text)
+        if name in expected_create
+    ]
+    assert ids == expected_create
+
+    with session_maker() as session:
+        user = User(name="Joe")
+        session.add(user)
+        session.flush()
+        user_id = user.id
+        session.commit()
+
+    response = client.get(f"/admin/user/edit/{user_id}")
+
+    assert response.status_code == 200
+    expected_edit = [
+        "name",
+        "email",
+        "addresses",
+        "profile",
+        "birthdate",
+    ]
+    ids = [
+        name
+        for name in _rendered_form_field_ids(response.text)
+        if name in expected_edit
+    ]
+    assert ids == expected_edit
 
 
 def test_create_endpoint_with_required_fields(client: TestClient) -> None:

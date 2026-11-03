@@ -413,9 +413,15 @@ The forms are based on `WTForms` package and include the following options:
 - `form_ajax_refs`: Use Ajax with Select2 for loading relationship models async. This is use ful when the related model has a lot of records.
 - `form_converter`: Allow adding custom converters to support additional column types.
 - `form_edit_query`: A method with the signature of `(request) -> stmt` which can customize the edit form data.
-- `form_rules`: List of form rules to manage rendering and behaviour of form.
-- `form_create_rules`: List of form rules to manage rendering and behaviour of form in create page.
-- `form_edit_rules`: List of form rules to manage rendering and behaviour of form in edit page.
+- `form_rules`: Shared list of field names controlling visibility and order in both create and edit forms. When non-empty, takes precedence over `form_create_rules` and `form_edit_rules`.
+- `form_create_rules`: List of field names controlling visibility and order in the create form. Ignored when `form_rules` is non-empty.
+- `form_edit_rules`: List of field names controlling visibility and order in the edit form. Ignored when `form_rules` is non-empty.
+
+Form rules contain model field names. Their order determines the rendering
+order, and fields must also be allowed by `form_columns` or not excluded by
+`form_excluded_columns`. Unknown names are ignored, duplicate names render a
+field once, and empty rules preserve the existing default ordering, determined
+by `form_columns` when configured, otherwise by the model's default field order.
 
 !!! example
 

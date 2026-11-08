@@ -875,6 +875,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._list_relations = [
             getattr(self.model, name) for name in self._list_relation_names
         ]
+        self._list_relation_loads = self._build_relation_loads(self._list_prop_names)
 
         self._details_prop_names = self.get_details_columns()
         self._details_relation_names = [
@@ -996,6 +997,28 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     def _get_prop_name(self, prop: MODEL_ATTR) -> str:
         return prop if isinstance(prop, str) else prop.key
+
+    def _build_relation_loads(self, prop_names: Sequence[str]) -> builtins.list[Any]:
+        """`selectinload` options for the relationships that `prop_names` read.
+
+        A dotted name such as `"user.profile.id"` loads each relationship on
+        its path, so reading it for every row of a page does not lazy-load
+        (in a new session) once per row.
+        """
+        loads: builtins.list[Any] = []
+        for name in prop_names:
+            model: Any = self.model
+            load: Any = None
+            for part in name.split("."):
+                mapper = inspect(model)
+                if part not in mapper.relationships:
+                    break
+                attr = getattr(model, part)
+                load = selectinload(attr) if load is None else load.selectinload(attr)
+                model = mapper.relationships[part].mapper.class_
+            if load is not None:
+                loads.append(load)
+        return loads
 
     def _get_default_sort(self) -> builtins.list[tuple[str, bool]]:
         if self.column_default_sort:
@@ -1123,8 +1146,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         search = request.query_params.get("search", None)
 
         stmt = self.list_query(request)
-        for relation in self._list_relations:
-            stmt = stmt.options(selectinload(relation))
+        stmt = stmt.options(*self._list_relation_loads)
 
         for filter_ in self.get_filters():
             filter_param_name = filter_.parameter_name
@@ -1179,8 +1201,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         limit = None if limit == 0 else limit
         stmt = self.list_query(request).limit(limit)
 
-        for relation in self._list_relations:
-            stmt = stmt.options(selectinload(relation))
+        stmt = stmt.options(*self._list_relation_loads)
 
         rows = await self._run_query(stmt)
         return rows

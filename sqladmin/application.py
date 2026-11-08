@@ -34,6 +34,7 @@ from starlette.responses import (
 )
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from sqladmin._import import handle_import_upload, import_csv, import_error_response
 from sqladmin._menu import CategoryMenu, Menu, ViewMenu
@@ -86,6 +87,40 @@ def _save_button_clicked(form: FormData, label: str) -> bool:
     """
 
     return form.get("save") in (label, gettext(label))
+
+
+class _AdminRouter:
+    """Router proxy that resolves ``admin:`` route names to one Admin's mount.
+
+    ``request.url_for`` resolves names against the top-level router, which
+    returns the first ``Mount`` named ``admin``. When several ``Admin``
+    instances share one app, the ``admin:`` names used by templates and views
+    are rewritten to the mount name of the instance handling the request.
+    """
+
+    def __init__(self, router: Any, mount_name: str) -> None:
+        self._router = router
+        self._mount_name = mount_name
+
+    def url_path_for(self, name: str, /, **path_params: Any) -> Any:
+        if name == "admin" or name.startswith("admin:"):
+            name = self._mount_name + name[len("admin") :]
+        return self._router.url_path_for(name, **path_params)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._router, name)
+
+
+class _AdminRouteNameMiddleware:
+    def __init__(self, app: ASGIApp, mount_name: str) -> None:
+        self.app = app
+        self.mount_name = mount_name
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        router = scope.get("router")
+        if router is not None:
+            scope = {**scope, "router": _AdminRouter(router, self.mount_name)}
+        await self.app(scope, receive, send)
 
 
 class BaseAdmin:
@@ -669,7 +704,17 @@ class Admin(BaseAdminView):
         self.admin.router.routes = routes
         self.admin.exception_handlers = {HTTPException: http_exception}
         self.admin.debug = debug
-        self.app.mount(base_url, app=self.admin, name="admin")
+
+        # Each Admin needs its own mount name so that ``admin:`` URLs resolve to
+        # this instance and not to another Admin mounted on the same app.
+        route_names = {getattr(route, "name", None) for route in self.app.routes}
+        mount_name, index = "admin", 1
+        while mount_name in route_names:
+            index += 1
+            mount_name = f"admin_{index}"
+        if mount_name != "admin":
+            self.admin.add_middleware(_AdminRouteNameMiddleware, mount_name=mount_name)
+        self.app.mount(base_url, app=self.admin, name=mount_name)
 
     @login_required
     async def index(self, request: Request) -> Response:

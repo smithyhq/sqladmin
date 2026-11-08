@@ -1,6 +1,7 @@
 import enum
 import json
-from collections.abc import Generator
+from collections.abc import Callable, Generator
+from typing import Any
 
 import pytest
 from sqlalchemy import (
@@ -12,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    event,
     func,
     select,
 )
@@ -1059,6 +1061,49 @@ def test_export_csv_row_count(client: TestClient) -> None:
 
     response = client.get("/admin/address/export/csv")
     assert row_count(response) == 3
+
+
+def _statements_during(func: Callable[[], object]) -> list[str]:
+    statements: list[str] = []
+
+    def record(conn: Any, cursor: Any, statement: str, *args: Any) -> None:
+        statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", record)
+    try:
+        func()
+    finally:
+        event.remove(engine, "before_cursor_execute", record)
+    return statements
+
+
+def test_dotted_list_column_is_loaded_with_the_rows(client: TestClient) -> None:
+    # AddressAdmin lists "user.profile.id": the profiles must be loaded with
+    # the page, not once per row.
+    def add_addresses(count: int) -> None:
+        with session_maker() as session:
+            for _ in range(count):
+                user = User(name="John Doe", profile=Profile())
+                session.add(user)
+                session.flush()
+                session.add(Address(user_id=user.id))
+            session.commit()
+
+    def list_page() -> None:
+        client.get("/admin/address/list").raise_for_status()
+
+    def export_csv() -> None:
+        client.get("/admin/address/export/csv").raise_for_status()
+
+    add_addresses(1)
+    response = client.get("/admin/address/export/csv")
+    assert response.text == "id,user_id,user,user.profile.id\r\n1,1,User 1,1\r\n"
+    list_statements = len(_statements_during(list_page))
+    export_statements = len(_statements_during(export_csv))
+
+    add_addresses(2)
+    assert len(_statements_during(list_page)) == list_statements
+    assert len(_statements_during(export_csv)) == export_statements
 
 
 def test_export_bad_type_is_404(client: TestClient) -> None:

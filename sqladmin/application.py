@@ -1229,12 +1229,13 @@ class Admin(BaseAdminView):
     @staticmethod
     def _copy_stored_file(obj: Any, key: str) -> UploadFile:
         """
-        Copy a stored file for "Save as new" under the name its storage's
-        `generate_new_filename` gives, so the new row gets its own file.
+        Copy a stored file for "Save as new" under a name the storage has no
+        file for at the path the column writes it to, so the new row gets its
+        own file.
         """
 
         f = getattr(obj, key)
-        storage = getattr(type(obj), key).type.storage
+        column_type = getattr(type(obj), key).type
         message = (
             f"Save as new needs a new upload for {key}: "
             "its storage cannot copy the stored file."
@@ -1245,7 +1246,7 @@ class Admin(BaseAdminView):
             raise NewUploadRequired(message)
         with stored:
             try:
-                name = storage.generate_new_filename(f.name)
+                name = Admin._free_file_name(column_type, Path(f.name).name)
             except NotImplementedError:
                 raise NewUploadRequired(message)
             copy = tempfile.SpooledTemporaryFile(max_size=1024 * 1024)
@@ -1255,9 +1256,26 @@ class Admin(BaseAdminView):
                 copy.close()
                 raise
         copy.seek(0)
-        # A column's `upload_to` (fastapi-storages 0.5.0) stays in the stored
-        # name and is added again on write, so the copy carries the base name.
-        return UploadFile(copy, filename=Path(name).name)  # type: ignore[arg-type]
+        return UploadFile(copy, filename=name)  # type: ignore[arg-type]
+
+    @staticmethod
+    def _free_file_name(column_type: Any, name: str) -> str:
+        """
+        A file name with no stored file at the path the column writes it to.
+
+        The column puts its `upload_to` (fastapi-storages 0.5.0) in front of
+        the name on write, so each name the storage's `generate_new_filename`
+        gives is asked again at that path, until the storage keeps it.
+        """
+
+        get_path = getattr(column_type, "_get_path", lambda name: name)
+        for _ in range(100):
+            path = get_path(name)
+            new_path = column_type.storage.generate_new_filename(path)
+            if Path(new_path) == Path(path):
+                return name
+            name = Path(new_path).name
+        raise NotImplementedError()
 
     @staticmethod
     def _normalize_wtform_data(obj: Any) -> dict:

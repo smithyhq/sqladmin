@@ -60,6 +60,18 @@ class Report(Base):
     )
 
 
+class Archive(Base):
+    __tablename__ = "archives"
+
+    id = Column(Integer, primary_key=True)
+    # The directory depends on the name, so a copy may land outside the
+    # original's.
+    file = Column(
+        FileType(FileSystemStorage(".uploads"), upload_to=lambda n: f"{len(n)}/{n}"),
+        nullable=False,
+    )
+
+
 @pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
@@ -103,7 +115,15 @@ class ReportAdmin(ModelView, model=Report):
 
 admin.add_view(UserAdmin)
 admin.add_view(DocumentAdmin)
+
+
+class ArchiveAdmin(ModelView, model=Archive):
+    form_overrides = {Archive.file: FileField}
+    save_as = True
+
+
 admin.add_view(ReportAdmin)
+admin.add_view(ArchiveAdmin)
 
 
 # Larger than one read buffer, so a rewrite of a file onto itself shows.
@@ -373,6 +393,55 @@ def test_save_as_new_copy_stays_in_the_upload_to_directory(
     assert Path(new.file.name).name not in names_before
     assert Path(new.file.path).read_bytes() == CONTENT
     assert Path(original.file.path).read_bytes() == CONTENT
+
+
+def _name_after_a_clash_without_directory(filename: str) -> str:
+    """Drops the directory once a name is taken, as `S3Storage` does."""
+
+    storage = Report.file.type.storage
+    stem, suffix = Path(filename).stem, Path(filename).suffix
+    name, counter = filename, 0
+    while Path(storage.get_path(name)).exists():
+        counter += 1
+        name = f"{stem}_{counter}{suffix}"
+    return name
+
+
+@pytest.mark.parametrize(
+    "model, generate_new_filename",
+    [
+        (Report, _name_after_a_clash_without_directory),
+        (Archive, None),
+    ],
+)
+def test_save_as_new_copy_never_takes_another_rows_file(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    model: Any,
+    generate_new_filename: Any,
+) -> None:
+    if generate_new_filename:
+        monkeypatch.setattr(
+            model.file.type.storage, "generate_new_filename", generate_new_filename
+        )
+    url = f"/admin/{model.__name__.lower()}"
+    client.post(f"{url}/create", files={"file": ("file.txt", CONTENT)})
+    # The name the storage gives the copy at first, before the column adds
+    # `upload_to`, already belongs to another row.
+    client.post(f"{url}/create", files={"file": ("file_1.txt", b"xyz")})
+
+    response = client.post(
+        f"{url}/edit/1",
+        **multipart(("file", "", b""), ("save", None, b"Save as new")),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+
+    with session_maker() as s:
+        original, other, new = s.scalars(select(model).order_by(model.id)).all()
+    assert new.file.path not in (original.file.path, other.file.path)
+    assert Path(other.file.path).read_bytes() == b"xyz"
+    assert Path(new.file.path).read_bytes() == CONTENT
 
 
 def test_save_as_new_asks_for_a_new_upload_when_the_copy_cannot_be_named(

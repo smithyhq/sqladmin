@@ -19,6 +19,7 @@ from sqladmin import Admin, ModelView
 from sqladmin.fields import FileField, file_display_formatter
 from sqladmin.helpers import validate_servable_file_path
 from tests.common import async_engine as engine
+from tests.common import multipart
 
 pytestmark = pytest.mark.anyio
 
@@ -262,3 +263,66 @@ def test_validate_servable_file_path_rejects_outside_storage_root(
 
     with pytest.raises(ValueError, match="File path not allowed"):
         validate_servable_file_path(str(outside), [storage_root])
+
+
+# Larger than one read buffer, so a rewrite of a file onto itself shows.
+CONTENT = b"a" * 100_000
+
+
+async def test_update_without_new_file_keeps_existing_content(
+    client: AsyncClient,
+) -> None:
+    await client.post("/admin/user/create", files={"file": ("file.txt", CONTENT)})
+
+    response = await client.post("/admin/user/edit/1", **multipart(("file", "", b"")))
+    assert response.status_code == 302
+
+    user = await _query_user()
+    assert user.file.name == "file.txt"
+    assert Path(user.file.path).read_bytes() == CONTENT
+
+
+async def test_update_clear_with_empty_input(client: AsyncClient) -> None:
+    await client.post("/admin/user/create", files={"file": ("file.txt", CONTENT)})
+
+    response = await client.post(
+        "/admin/user/edit/1",
+        **multipart(("file", "", b""), ("file_checkbox", None, b"on")),
+    )
+    assert response.status_code == 302
+
+    user = await _query_user()
+    assert user.file is None
+
+
+async def test_update_with_new_file(client: AsyncClient) -> None:
+    await client.post("/admin/user/create", files={"file": ("file.txt", CONTENT)})
+
+    response = await client.post(
+        "/admin/user/edit/1", **multipart(("file", "new_file.txt", b"xyz"))
+    )
+    assert response.status_code == 302
+
+    user = await _query_user()
+    assert user.file.name == "new_file.txt"
+    assert Path(user.file.path).read_bytes() == b"xyz"
+
+
+async def test_save_as_new_without_new_file_keeps_existing_content(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(UserAdmin, "save_as", True)
+    await client.post("/admin/user/create", files={"file": ("file.txt", CONTENT)})
+
+    response = await client.post(
+        "/admin/user/edit/1",
+        **multipart(("file", "", b""), ("save", None, b"Save as new")),
+    )
+    assert response.status_code == 302
+
+    async with session_maker() as s:
+        original, new = (await s.scalars(select(User).order_by(User.id))).all()
+    assert original.file.name == "file.txt"
+    assert new.file.name != original.file.name
+    for user in (original, new):
+        assert Path(user.file.path).read_bytes() == CONTENT

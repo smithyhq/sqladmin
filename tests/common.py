@@ -22,3 +22,25 @@ class DummyData(dict):  # pragma: no cover
         if not isinstance(v, (list, tuple)):
             v = [v]
         return v
+
+
+def multipart(*parts: tuple[str, str | None, bytes]) -> dict[str, Any]:
+    """
+    Request kwargs for a multipart body built by hand, since httpx drops the
+    empty filename a browser sends for a file input left untouched.
+    A part whose filename is None is a plain field.
+    """
+
+    boundary = "sqladmin-boundary"
+    body = b""
+    for name, filename, content in parts:
+        headers = f'Content-Disposition: form-data; name="{name}"'
+        if filename is not None:
+            headers += f'; filename="{filename}"\r\n'
+            headers += "Content-Type: application/octet-stream"
+        body += f"--{boundary}\r\n{headers}\r\n\r\n".encode() + content + b"\r\n"
+    body += f"--{boundary}--\r\n".encode()
+    return {
+        "content": body,
+        "headers": {"Content-Type": f"multipart/form-data; boundary={boundary}"},
+    }

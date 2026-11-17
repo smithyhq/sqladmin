@@ -690,6 +690,7 @@ To add custom action on models to the Admin, you can use the `action` decorator.
             confirmation_message="Are you sure?",
             add_in_detail=True,
             add_in_list=True,
+            method="POST",
         )
         async def approve_users(self, request: Request):
             pks = request.query_params.get("pks", "").split(",")
@@ -715,6 +716,13 @@ The available options for `action` are:
 - `add_in_list`: A boolean indicating if this action should be available in list page.
 - `add_in_detail`: A boolean indicating if this action should be available in detail page.
 - `confirmation_message`: A string message that if defined, will open a modal to ask for confirmation before calling the action method.
+- `method`: The HTTP method of the action: `"GET"` (default) or `"POST"`. The selected PKs are passed in the `pks` query parameter for both methods.
+
+!!! warning
+
+    Use `"POST"` for actions that change data. A `GET` action can be triggered by a link on another site (CSRF).
+
+Redirects from `POST` actions are sent as `303 See Other`, so the browser loads the target page with `GET`.
 
 ### Toast Notifications
 

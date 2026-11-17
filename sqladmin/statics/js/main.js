@@ -527,6 +527,21 @@ $("#action-delete").on('click', function () {
   showModal('modal-delete');
 });
 
+// Custom actions
+function submitCustomAction(url, method) {
+  if (method !== 'POST') {
+    window.location.href = url;
+    return;
+  }
+
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = url;
+  form.style.display = 'none';
+  document.body.appendChild(form);
+  form.submit();
+}
+
 $("[id^='action-custom-']").on('click', function () {
   var pks = [];
   $('.select-box').each(function () {
@@ -535,7 +550,15 @@ $("[id^='action-custom-']").on('click', function () {
     }
   });
 
-  window.location.href = $(this).attr('data-url') + '?pks=' + pks.join(",");
+  submitCustomAction(
+    $(this).attr('data-url') + '?pks=' + pks.join(","),
+    $(this).attr('data-action-method')
+  );
+});
+
+$(document).on('click', '[data-action-url]', function (event) {
+  event.preventDefault();
+  submitCustomAction($(this).attr('data-action-url'), $(this).attr('data-action-method'));
 });
 
 // Select2 Tags

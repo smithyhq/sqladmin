@@ -89,8 +89,10 @@
               {{ label }}
             </a>
             {% else %}
-            <a href="{{ model_view._url_for_action(request, custom_action) }}?pks={{ get_object_identifier(model) }}"
-              class="btn btn-secondary">
+            {% set action_url = model_view._url_for_action(request, custom_action) ~ '?pks=' ~ get_object_identifier(model) %}
+            {% set action_method = model_view._custom_actions_methods[custom_action] %}
+            <a href="{{ action_url if action_method == 'GET' else '#' }}" class="btn btn-secondary"
+              {% if action_method != 'GET' %}data-action-url="{{ action_url }}" data-action-method="{{ action_method }}"{% endif %}>
               {{ label }}
             </a>
             {% endif %}
@@ -109,7 +111,8 @@
 {% for custom_action in model_view._visible_custom_actions(request, True) %}
 {% if custom_action in model_view._custom_actions_confirmation %}
 {% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
-url=model_view._url_for_action(request, custom_action) + '?pks=' + (get_object_identifier(model) | string) %}
+url=model_view._url_for_action(request, custom_action) + '?pks=' + (get_object_identifier(model) | string),
+method=model_view._custom_actions_methods[custom_action] %}
 {% include 'sqladmin/modals/details_action_confirmation.html' %}
 {% endwith %}
 {% endif %}

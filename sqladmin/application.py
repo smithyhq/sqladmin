@@ -10,6 +10,7 @@ from pathlib import Path
 from types import MethodType
 from typing import (
     Any,
+    Literal,
     cast,
     no_type_check,
 )
@@ -261,9 +262,12 @@ class BaseAdmin:
             self.admin.add_route(
                 route=func,
                 path=f"/{view_instance.identity}/action/" + getattr(func, "_slug"),
-                methods=["GET"],
+                methods=[getattr(func, "_method")],
                 name=f"action-{view_instance.identity}-{getattr(func, '_slug')}",
                 include_in_schema=getattr(func, "_include_in_schema"),
+            )
+            view_instance._custom_actions_methods[getattr(func, "_slug")] = getattr(
+                func, "_method"
             )
 
             if getattr(func, "_add_in_list"):
@@ -1198,6 +1202,26 @@ def expose(
     return wrap
 
 
+def _redirect_with_get(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to answer redirects from POST actions with 303, so the
+    browser does not repeat the POST on the redirect target.
+    """
+
+    @functools.wraps(func)
+    async def wrapper_decorator(*args: Any, **kwargs: Any) -> Any:
+        request = args[1]
+        response = await func(*args, **kwargs)
+        if (
+            request.method == "POST"
+            and isinstance(response, Response)
+            and "location" in response.headers
+        ):
+            response.status_code = status.HTTP_303_SEE_OTHER
+        return response
+
+    return wrapper_decorator
+
+
 def action(
     name: str,
     label: str | None = None,
@@ -1206,6 +1230,7 @@ def action(
     include_in_schema: bool = True,
     add_in_detail: bool = True,
     add_in_list: bool = True,
+    method: Literal["GET", "POST"] = "GET",
 ) -> Callable[..., Any]:
     """Decorate a [`ModelView`][sqladmin.models.ModelView] function
     with this to:
@@ -1224,7 +1249,11 @@ def action(
         include_in_schema: Indicating if the endpoint be included in the schema
         add_in_detail: Indicating if action should be displayed on model detail page
         add_in_list: Indicating if action should be displayed on model list page
+        method: HTTP method of the action - "GET" or "POST"
     """
+
+    if method not in ("GET", "POST"):
+        raise ValueError(f'Invalid method "{method}" for action "{name}"')
 
     @no_type_check
     def wrap(func):
@@ -1235,6 +1264,7 @@ def action(
         func._include_in_schema = include_in_schema
         func._add_in_detail = add_in_detail
         func._add_in_list = add_in_list
-        return login_required(_is_accessible_required(func))
+        func._method = method
+        return _redirect_with_get(login_required(_is_accessible_required(func)))
 
     return wrap

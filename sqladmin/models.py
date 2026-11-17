@@ -1294,7 +1294,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
             except DetachedInstanceError:
                 obj = await self._lazyload_prop(obj, part)
 
-        if obj and isinstance(obj, Enum) and not isinstance(obj, StrEnum):
+        if isinstance(obj, Enum) and not isinstance(obj, StrEnum):
             obj = obj.name
 
         return obj

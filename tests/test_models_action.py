@@ -158,6 +158,14 @@ class UserAdmin(ModelView, model=User):
     async def action_label_details_list_confirm(self, request: Request) -> Response:
         return await self._action_stub(request)  # pragma: no cover
 
+    @action(name="post", method="POST")
+    async def action_post(self, request: Request) -> Response:
+        return await self._action_stub(request)
+
+    @action(name="post_confirm", confirmation_message="!Post Confirm?!", method="POST")
+    async def action_post_confirm(self, request: Request) -> Response:
+        return await self._action_stub(request)  # pragma: no cover
+
 
 @pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
@@ -187,6 +195,8 @@ def test_model_action(client: TestClient) -> None:
         "details-list-confirm": "details_list_confirm",
         "label-list-confirm": "Label List Confirm",
         "label-details-list-confirm": "Label Details List Confirm",
+        "post": "post",
+        "post-confirm": "post_confirm",
     }
 
     assert admin.views[0]._custom_actions_in_detail == {
@@ -198,6 +208,8 @@ def test_model_action(client: TestClient) -> None:
         "label-details-confirm": "Label Details Confirm",
         "label-details-list": "Label Details List",
         "label-details-list-confirm": "Label Details List Confirm",
+        "post": "post",
+        "post-confirm": "post_confirm",
     }
 
     assert admin.views[0]._custom_actions_confirmation == {
@@ -207,6 +219,7 @@ def test_model_action(client: TestClient) -> None:
         "label-details-list-confirm": "!Label Details List Confirm?!",
         "label-list-confirm": "!Label List Confirm?!",
         "list-confirm": "!List Confirm?!",
+        "post-confirm": "!Post Confirm?!",
     }
 
     request = Mock(Request)
@@ -245,6 +258,39 @@ def test_model_action(client: TestClient) -> None:
         assert response.text.count("!Label Details Confirm?!") == 1
         assert response.text.count("!Label List Confirm?!") == 0
         assert response.text.count("!Label Details List Confirm?!") == 1
+
+
+def test_model_action_post(client: TestClient) -> None:
+    assert admin.views[0]._custom_actions_methods["details"] == "GET"
+    assert admin.views[0]._custom_actions_methods["post"] == "POST"
+
+    with Session() as session:
+        user = User()
+        session.add(user)
+        session.commit()
+
+        response = client.post(
+            f"/admin/user/action/post?pks={user.id}", follow_redirects=False
+        )
+        assert response.status_code == 303
+        assert f"User: {user.id}" in response.headers["X-Objs"]
+
+        response = client.get(f"/admin/user/action/post?pks={user.id}")
+        assert response.status_code == 405
+
+        response = client.post(f"/admin/user/action/details?pks={user.id}")
+        assert response.status_code == 405
+
+        response = client.get("/admin/user/list")
+        assert response.text.count('data-action-method="POST"') == 2
+
+        response = client.get(f"/admin/user/details/{user.id}")
+        assert response.text.count('data-action-method="POST"') == 2
+
+
+def test_model_action_invalid_method() -> None:
+    with pytest.raises(ValueError, match="DELETE"):
+        action(name="invalid", method="DELETE")  # type: ignore[arg-type]
 
 
 def test_delete_error_shows_in_list_page(client: TestClient, monkeypatch) -> None:

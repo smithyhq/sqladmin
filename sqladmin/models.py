@@ -928,6 +928,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self._custom_actions_in_list: dict[str, str] = {}
         self._custom_actions_in_detail: dict[str, str] = {}
         self._custom_actions_confirmation: dict[str, str] = {}
+        self._custom_actions_methods: dict[str, str] = {}
 
         self._column_type_formatters = self.column_type_formatters.copy()
         if (

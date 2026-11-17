@@ -90,7 +90,8 @@
                     </a>
                     {% else %}
                     <a class="dropdown-item" id="action-custom-{{ custom_action }}" href="#"
-                      data-url="{{ model_view._url_for_action(request, custom_action) }}">
+                      data-url="{{ model_view._url_for_action(request, custom_action) }}"
+                      data-action-method="{{ model_view._custom_actions_methods[custom_action] }}">
                       {{ label }}
                     </a>
                     {% endif %}
@@ -294,7 +295,7 @@
   {% for custom_action in list_actions %}
   {% if custom_action in model_view._custom_actions_confirmation %}
   {% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
-  url=model_view._url_for_action(request, custom_action) %}
+  url=model_view._url_for_action(request, custom_action), method=model_view._custom_actions_methods[custom_action] %}
   {% include 'sqladmin/modals/list_action_confirmation.html' %}
   {% endwith %}
   {% endif %}

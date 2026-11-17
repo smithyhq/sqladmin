@@ -17,7 +17,8 @@
               </a>
             </div>
             <div class="col">
-              <a href="{{ url }}" class="btn btn-blue w-100">
+              <a href="{{ url if method == 'GET' else '#' }}" class="btn btn-blue w-100"
+                {% if method != 'GET' %}data-action-url="{{ url }}" data-action-method="{{ method }}"{% endif %}>
                 {{ _("Yes") }}
               </a>
             </div>

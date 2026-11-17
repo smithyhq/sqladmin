@@ -42,6 +42,7 @@ class Status(enum.Enum):
 
 
 class Role(int, enum.Enum):
+    GUEST = 0
     ADMIN = 1
     USER = 2
 
@@ -690,6 +691,17 @@ async def test_get_prop_value() -> None:
     assert await ProfileAdmin().get_prop_value(profile, "role") == "ADMIN"
     assert await ProfileAdmin().get_prop_value(profile, "status") == "ACTIVE"
     assert await ProfileAdmin().get_prop_value(profile, "user.name") == "admin"
+
+
+async def test_get_prop_value_falsy_enum() -> None:
+    class ProfileAdmin(ModelView, model=Profile):
+        pass
+
+    profile = Profile(role=Role.GUEST)
+    assert await ProfileAdmin().get_prop_value(profile, "role") == "GUEST"
+
+    profile = Profile(role=None)
+    assert await ProfileAdmin().get_prop_value(profile, "role") is None
 
 
 async def test_model_property_in_columns() -> None:

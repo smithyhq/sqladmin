@@ -1,7 +1,17 @@
 import enum
 
 import pytest
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String
+from sqlalchemy import (
+    ARRAY,
+    JSON,
+    Boolean,
+    Column,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+)
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from starlette.datastructures import MultiDict
 
@@ -14,6 +24,10 @@ from sqladmin.application import Admin
 from tests.common import sync_engine as engine
 
 Base = declarative_base()
+# SQLite cannot create ARRAY columns, so models with them use a separate base
+# that the autouse fixture does not create. validate_import_row never touches
+# the DB.
+JsonBase = declarative_base()
 session_maker = sessionmaker(bind=engine)
 
 
@@ -80,6 +94,25 @@ class ImportUserAdmin(ModelView, model=ImportUser):
 
 class ImportWidgetAdmin(ModelView, model=ImportWidget):
     column_import_list = [ImportWidget.profile_id, ImportWidget.active]
+
+
+class ImportDocument(JsonBase):
+    __tablename__ = "import_document_validate"
+
+    id = Column(Integer, primary_key=True)
+    payload = Column(JSON)
+    payload_b = Column(postgresql.JSONB)
+    tags = Column(ARRAY(String))
+    tags_pg = Column(postgresql.ARRAY(String))
+
+
+class ImportDocumentAdmin(ModelView, model=ImportDocument):
+    column_import_list = [
+        ImportDocument.payload,
+        ImportDocument.payload_b,
+        ImportDocument.tags,
+        ImportDocument.tags_pg,
+    ]
 
 
 @pytest.fixture(autouse=True)
@@ -303,3 +336,70 @@ async def test_validate_import_row_defaults_non_nullable_column_from_form():
     )
     assert errors == {}
     assert merged == {"profile_id": 1, "active": False}
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ('{"a": 1}', {"a": 1}),
+        ('"text"', "text"),
+        ('[1, "two"]', [1, "two"]),
+    ],
+)
+async def test_validate_import_row_accepts_json_and_array(
+    raw: str, expected: object
+) -> None:
+    model_view = _model_view(ImportDocumentAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict(
+        [
+            ("payload", raw),
+            ("payload_b", raw),
+            ("tags", '["a", "b"]'),
+            ("tags_pg", '["c"]'),
+        ]
+    )
+
+    merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportDocument,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+
+    assert errors == {}
+    assert merged == {
+        "payload": expected,
+        "payload_b": expected,
+        "tags": ["a", "b"],
+        "tags_pg": ["c"],
+    }
+
+
+@pytest.mark.anyio
+async def test_validate_import_row_reports_invalid_json_and_array() -> None:
+    model_view = _model_view(ImportDocumentAdmin)
+    form_class = await model_view.scaffold_form(model_view._form_create_rules)
+    row = MultiDict(
+        [
+            ("payload", "NaN"),
+            ("payload_b", "{'a': 1}"),
+            ("tags", "a,b"),
+            ("tags_pg", "[null]"),
+        ]
+    )
+
+    _merged, errors, _row_data = validate_import_row(
+        row,
+        model_view.get_import_columns(),
+        ImportDocument,
+        form_class,
+        Admin._denormalize_wtform_data,
+    )
+
+    assert "NaN is not allowed" in errors["payload"][0]
+    assert "Invalid JSON" in errors["payload_b"][0]
+    assert "Invalid JSON" in errors["tags"][0]
+    assert "Invalid str array item None" in errors["tags_pg"][0]

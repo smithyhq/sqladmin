@@ -10,6 +10,7 @@ import unicodedata
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable, Generator, Sequence
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import (
     Any,
@@ -20,6 +21,7 @@ from typing import (
 
 from sqlalchemy import Column
 from sqlalchemy import inspect as sa_inspect
+from sqlalchemy import types as sa_types
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import RelationshipProperty
 from starlette.datastructures import MultiDict
@@ -354,11 +356,65 @@ def coerce_column_value(column: Column, value: Any) -> Any:
         return value
 
     type_ = get_column_python_type(column)
+    if inspect.isclass(type_) and issubclass(type_, (dict, list)):
+        return _coerce_json(column, value, type_)
+    return _coerce_scalar(type_, value)
+
+
+def _coerce_scalar(type_: type, value: str) -> Any:
     if inspect.isclass(type_) and issubclass(type_, (date, datetime, time)):
         return type_.fromisoformat(value)
     if inspect.isclass(type_) and issubclass(type_, bool):
         return _coerce_bool(value)
     return type_(value)  # type: ignore[call-arg]
+
+
+def _coerce_json(column: Column, value: str, type_: type) -> Any:
+    # JSON columns report `dict` but may hold any JSON value, while ARRAY
+    # columns report `list` and must receive a JSON array of their item type.
+    try:
+        parsed = json.loads(value, parse_constant=_reject_json_constant)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON: {exc.msg}.") from exc
+    if issubclass(type_, list):
+        if not isinstance(parsed, list):
+            raise ValueError("Expected a JSON array.")
+        if isinstance(column.type, sa_types.ARRAY):
+            item_type = _get_python_type(column.type.item_type)
+            dimensions = column.type.dimensions or 1
+            return _coerce_array_items(parsed, item_type, dimensions)
+    return parsed
+
+
+def _reject_json_constant(constant: str) -> Any:
+    # PostgreSQL json/jsonb reject NaN and Infinity, which json.loads allows.
+    raise ValueError(f"Invalid JSON: {constant} is not allowed.")
+
+
+def _coerce_array_items(items: list, item_type: type, dimensions: int) -> list:
+    if dimensions > 1:
+        if not all(isinstance(item, list) for item in items):
+            raise ValueError(f"Expected a {dimensions}-dimensional JSON array.")
+        return [_coerce_array_items(item, item_type, dimensions - 1) for item in items]
+    return [_coerce_array_item(item, item_type) for item in items]
+
+
+def _coerce_array_item(item: Any, item_type: type) -> Any:
+    if issubclass(item_type, bool):
+        valid = isinstance(item, bool)
+    elif issubclass(item_type, int):
+        valid = isinstance(item, int) and not isinstance(item, bool)
+    elif issubclass(item_type, (float, Decimal)):
+        valid = isinstance(item, (int, float)) and not isinstance(item, bool)
+    elif isinstance(item, str):
+        # Types with no JSON equivalent (str, dates, UUIDs, enums) are written
+        # as strings and coerced like a plain CSV cell.
+        return _coerce_scalar(item_type, item)
+    else:
+        valid = False
+    if not valid:
+        raise ValueError(f"Invalid {item_type.__name__} array item {item!r}.")
+    return item
 
 
 def _coerce_bool(value: str) -> bool:
@@ -386,12 +442,22 @@ def build_import_form_row(
     row: MultiDict,
     merged: dict[str, Any],
     import_columns: list[str],
+    model: Any,
 ) -> MultiDict:
+    mapper = sa_inspect(model)
     form_row = MultiDict()
     for column_name in import_columns:
         if column_name in merged:
             value = merged[column_name]
-            if isinstance(value, (list, tuple)):
+            column = mapper.columns.get(column_name)
+            if column is not None and isinstance(column.type, sa_types.JSON):
+                # JSONField parses its single form value with json.loads, so
+                # send JSON rather than str() of the parsed value.
+                if value is not None:
+                    form_row[column_name] = json.dumps(value)
+                else:
+                    form_row[column_name] = ""
+            elif isinstance(value, (list, tuple)):
                 # A multi-select field reads one form value per selected item,
                 # so re-emit each item separately: str()-ing the list would
                 # hand the next validation pass the literal string "['1']".
@@ -435,9 +501,9 @@ def merge_import_row_data(
 
         try:
             merged[column_name] = coerce_column_value(column, raw_value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as exc:
             errors.setdefault(column_name, []).append(
-                f"Invalid value {raw_value!r} for column {column_name}."
+                f"Invalid value {raw_value!r} for column {column_name}: {exc}"
             )
 
     return merged, errors
@@ -462,12 +528,16 @@ def get_direction(prop: MODEL_PROPERTY) -> str:
 
 
 def get_column_python_type(column: Column) -> type:
+    return _get_python_type(column.type)
+
+
+def _get_python_type(sa_type: Any) -> type:
     try:
-        python_type = column.type.python_type
+        python_type = sa_type.python_type
     except NotImplementedError:
-        if hasattr(column.type, "impl"):
+        if hasattr(sa_type, "impl"):
             try:
-                python_type = column.type.impl.python_type
+                python_type = sa_type.impl.python_type
             except NotImplementedError:
                 return str
         else:

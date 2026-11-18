@@ -141,7 +141,7 @@ def validate_import_row(
                 row_errors.setdefault(field_name, []).extend(field_errors)
 
     validation_form = form_class(
-        build_import_form_row(row, merged_import_data, import_columns)
+        build_import_form_row(row, merged_import_data, import_columns, model)
     )
     if not validation_form.validate():
         for field_name, field_errors in validation_form.errors.items():

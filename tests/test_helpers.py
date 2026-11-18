@@ -13,11 +13,13 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     String,
     Time,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.type_api import TypeDecorator
 
@@ -145,9 +147,17 @@ class Document(Base):
     __tablename__ = "document"
     id = Column(Integer, primary_key=True)
     meta = Column(JSON)
+    meta_b = Column(postgresql.JSONB)
     tags = Column(ARRAY(String))
+    tags_pg = Column(postgresql.ARRAY(String))
+    scores = Column(ARRAY(Integer))
+    ratios = Column(ARRAY(Float))
+    flags = Column(ARRAY(Boolean))
+    days = Column(ARRAY(Date))
+    grid = Column(ARRAY(Integer, dimensions=2))
 
 
+@pytest.mark.parametrize("column", [Document.meta, Document.meta_b])
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [
@@ -158,24 +168,66 @@ class Document(Base):
         ("null", None),
     ],
 )
-def test_coerce_column_value_json(raw: str, expected: Any) -> None:
-    assert coerce_column_value(Document.meta, raw) == expected
+def test_coerce_column_value_json(column: Any, raw: str, expected: Any) -> None:
+    assert coerce_column_value(column, raw) == expected
 
 
-def test_coerce_column_value_json_invalid() -> None:
-    with pytest.raises(ValueError, match="Invalid JSON value"):
-        coerce_column_value(Document.meta, "{'a': 1}")
+@pytest.mark.parametrize("column", [Document.meta, Document.meta_b])
+@pytest.mark.parametrize(
+    ("raw", "message"),
+    [
+        ("{'a': 1}", "Invalid JSON"),
+        ("NaN", "NaN is not allowed"),
+        ('{"a": Infinity}', "Infinity is not allowed"),
+        ("[-Infinity]", "-Infinity is not allowed"),
+    ],
+)
+def test_coerce_column_value_json_invalid(column: Any, raw: str, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        coerce_column_value(column, raw)
 
 
-def test_coerce_column_value_array() -> None:
-    assert coerce_column_value(Document.tags, '["a", "b"]') == ["a", "b"]
-    assert coerce_column_value(Document.tags, "[]") == []
+@pytest.mark.parametrize("column", [Document.tags, Document.tags_pg])
+def test_coerce_column_value_array(column: Any) -> None:
+    assert coerce_column_value(column, '["a", "b"]') == ["a", "b"]
+    assert coerce_column_value(column, "[]") == []
 
 
-@pytest.mark.parametrize("raw", ["a,b", '{"a": 1}', '"a"', "['a', 'b']"])
-def test_coerce_column_value_array_invalid(raw: str) -> None:
+@pytest.mark.parametrize("column", [Document.tags, Document.tags_pg])
+@pytest.mark.parametrize(
+    "raw", ["a,b", '{"a": 1}', '"a"', "['a', 'b']", '[["a"]]', "[null]", "[1]"]
+)
+def test_coerce_column_value_array_invalid(column: Any, raw: str) -> None:
     with pytest.raises(ValueError):
-        coerce_column_value(Document.tags, raw)
+        coerce_column_value(column, raw)
+
+
+def test_coerce_column_value_array_item_types() -> None:
+    assert coerce_column_value(Document.scores, "[1, 2]") == [1, 2]
+    assert coerce_column_value(Document.ratios, "[1, 2.5]") == [1, 2.5]
+    assert coerce_column_value(Document.flags, "[true, false]") == [True, False]
+    assert coerce_column_value(Document.days, '["2024-01-15"]') == [date(2024, 1, 15)]
+    assert coerce_column_value(Document.grid, "[[1, 2], [3]]") == [[1, 2], [3]]
+
+
+@pytest.mark.parametrize(
+    ("column", "raw", "message"),
+    [
+        (Document.scores, '["1", "x"]', "Invalid int array item '1'"),
+        (Document.scores, "[true]", "Invalid int array item True"),
+        (Document.scores, "[1.5]", "Invalid int array item 1.5"),
+        (Document.ratios, '["1.5"]', "Invalid float array item '1.5'"),
+        (Document.flags, "[1]", "Invalid bool array item 1"),
+        (Document.days, '["not-a-date"]', "Invalid isoformat"),
+        (Document.grid, "[1, 2]", "Expected a 2-dimensional JSON array"),
+        (Document.grid, '[["x"]]', "Invalid int array item 'x'"),
+    ],
+)
+def test_coerce_column_value_array_item_types_invalid(
+    column: Any, raw: str, message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        coerce_column_value(column, raw)
 
 
 def test_merge_import_row_data_coerces_json_and_array() -> None:
@@ -194,7 +246,30 @@ def test_merge_import_row_data_reports_invalid_array() -> None:
     merged, errors = merge_import_row_data(Document, ["tags"], {"tags": "a,b"}, {})
 
     assert merged == {}
-    assert errors == {"tags": ["Invalid value 'a,b' for column tags."]}
+    assert errors == {
+        "tags": ["Invalid value 'a,b' for column tags: Invalid JSON: Expecting value."]
+    }
+
+
+def test_build_import_form_row_serializes_json_columns() -> None:
+    from starlette.datastructures import MultiDict
+
+    merged = {"meta": {"a": 1}, "meta_b": [1, "two"], "tags": ["a", "b"]}
+    form_row = build_import_form_row(
+        MultiDict(), merged, ["meta", "meta_b", "tags"], Document
+    )
+
+    assert form_row.getlist("meta") == ['{"a": 1}']
+    assert form_row.getlist("meta_b") == ['[1, "two"]']
+    assert form_row.getlist("tags") == ["a", "b"]
+
+
+def test_build_import_form_row_json_null() -> None:
+    from starlette.datastructures import MultiDict
+
+    form_row = build_import_form_row(MultiDict(), {"meta": None}, ["meta"], Document)
+
+    assert form_row["meta"] == ""
 
 
 def test_serialize_import_value_for_form() -> None:
@@ -229,7 +304,7 @@ def test_build_import_form_row_uses_coerced_values() -> None:
 
     row = MultiDict([("active", "False"), ("profile_id", "5")])
     merged = {"active": False, "profile_id": 5}
-    form_row = build_import_form_row(row, merged, ["active", "profile_id"])
+    form_row = build_import_form_row(row, merged, ["active", "profile_id"], Document)
 
     assert form_row["active"] == "false"
     assert form_row["profile_id"] == "5"
@@ -244,7 +319,9 @@ def test_build_import_form_row_repeats_multi_select_values() -> None:
 
     from starlette.datastructures import MultiDict
 
-    form_row = build_import_form_row(MultiDict(), {"tags": ["1", "2"]}, ["tags"])
+    form_row = build_import_form_row(
+        MultiDict(), {"tags": ["1", "2"]}, ["tags"], Document
+    )
 
     assert form_row.getlist("tags") == ["1", "2"]
 
@@ -260,7 +337,7 @@ def test_build_import_form_row_omits_empty_multi_select() -> None:
 
     from starlette.datastructures import MultiDict
 
-    form_row = build_import_form_row(MultiDict(), {"tags": []}, ["tags"])
+    form_row = build_import_form_row(MultiDict(), {"tags": []}, ["tags"], Document)
 
     assert "tags" not in form_row
     assert form_row.getlist("tags") == []

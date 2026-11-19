@@ -1210,11 +1210,13 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
                     whereclause = parent_stmt.whereclause
                     if whereclause is None:
                         continue
+                    # No DISTINCT: _run_query dedupes entities via .unique(),
+                    # and DISTINCT breaks on column types without equality
+                    # (e.g. PostgreSQL json, #1168).
                     stmt = (
                         select(target)
                         .join(getattr(self.model, name))
                         .where(whereclause)
-                        .distinct()
                     )
                     result[name] = await self._run_query(stmt)
                 else:

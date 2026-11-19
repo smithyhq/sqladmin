@@ -168,7 +168,7 @@ class Author(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(length=32))
-    # PostgreSQL has no equality operator for JSON, so SELECT DISTINCT fails
+    # json column: regression for #1168 (SELECT DISTINCT fails on PostgreSQL).
     extra_info = Column(JSON, default=dict)
 
     def __str__(self) -> str:
